@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Pad Sampler</title>
+<meta name="description" content="MPC-artiger 4×4-Sampler: eigene Songs choppen, Sounds aufnehmen, Beats loopen. Läuft offline auf Handy und iPad.">
+<meta name="theme-color" content="#07090d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pad Sampler">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <button id="btnProjects" class="chip" aria-label="Projekte">☰ <span id="projName">Projekt</span></button>
+    <label class="vol" title="Master"><span>VOL</span><input id="master" type="range" min="0" max="1" step="0.01" value="0.9"></label>
+  </header>
+
+  <section id="lcd">
+    <canvas id="wave"></canvas>
+    <div id="lcdInfo"><b id="lcdName">—</b><span id="lcdSub"></span></div>
+    <div id="leds" aria-hidden="true"></div>
+  </section>
+
+  <section id="transport">
+    <button id="btnPlay" class="tbtn play" aria-label="Start">▶ START</button>
+    <button id="btnRec" class="tbtn rec" aria-label="Aufnahme">● REC</button>
+    <button id="btnMetro" class="tbtn" aria-label="Metronom">♪ CLICK</button>
+    <div class="bpm">
+      <button id="bpmDn" class="tbtn sm">−</button>
+      <button id="bpmVal" class="bpmval" aria-label="Tap-Tempo">90</button>
+      <button id="bpmUp" class="tbtn sm">+</button>
+    </div>
+    <select id="bars" aria-label="Loop-Länge"><option value="1">1 Takt</option><option value="2">2 Takte</option><option value="4">4 Takte</option></select>
+  </section>
+
+  <nav id="banks"></nav>
+  <main id="grid" aria-label="Pads"></main>
+
+  <footer id="tools">
+    <button id="btnEdit" class="tool">✎ Edit</button>
+    <button id="btnLib" class="tool">♫ Library</button>
+    <button id="btnMic" class="tool">🎙 Aufnahme</button>
+    <button id="btnChop" class="tool">✂ Chop</button>
+    <button id="btnVocal" class="tool">🎤 Vocal</button>
+    <button id="btnUndo" class="tool">↩ Undo</button>
+    <button id="btnClear" class="tool">⌫ Loop leeren</button>
+  </footer>
+</div>
+
+<div id="sheetWrap" hidden><div id="sheet" role="dialog" aria-modal="true"></div></div>
+<div id="toast" role="status"></div>
+<input id="fileIn" type="file" accept="audio/*,.json" multiple hidden>
+<noscript>Diese App braucht JavaScript.</noscript>
+<script type="module" src="js/ui.js"></script>
+</body>
+</html>
