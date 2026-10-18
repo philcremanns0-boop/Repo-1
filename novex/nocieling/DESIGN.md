@@ -15,7 +15,7 @@ Status: Entwurf vor dem Kundengespräch. Grundlage ist die Auswertung des öffen
 Empfehlung: A und B zeigen. B ist am merkbarsten, A am nächsten an der bestehenden Marke, C passt, wenn Fotografie wachsen soll.
 
 ## (b) Tokens
-Gemeinsam: Tinte `#0D0E10`, Papier `#F7F7F7`, Grau `#A6A6A6`, Grün `#6D7867` (visuelle Annäherung aus Instagram-Bildern, keine CI-Datei). Auf Dunkel wird Grün zu `#A9B8A4` aufgehellt (Kontrast).
+Gemeinsam: Tinte `#0D0E10`, Papier `#F7F7F7`, Grau `#A6A6A6`, Grün `#6D7867` (visuelle Annäherung aus Instagram-Bildern, keine CI-Datei). Nachmessung an den Screenshots: helle Posts reines Weiß (`#FEFCFF` bis `#FFFFFF`), dunkle Flächen bis `#000000`, Grün eher dunkler und grauer (gemessen etwa `#63685F` in dünner Schrift). Für die Umsetzung Weiß rein und Grün eher `#5F695C` testen. Auf Dunkel wird Grün zu `#A9B8A4` aufgehellt (Kontrast).
 Fonts im Produktivbetrieb selbst hosten (DSGVO). A: Archivo (wdth 62, 900) und IBM Plex Sans/Mono. B: Archivo, IBM Plex Sans/Mono. C: Schibsted Grotesk, Fragment Mono. Body 16 bis 17 px.
 
 ## (c) Motion-Storyboard
