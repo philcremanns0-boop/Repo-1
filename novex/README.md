@@ -5,13 +5,13 @@ Jeder deiner Punkte, mit Status und Fundort. Status: **fertig** (nutzbar), **Ent
 | # | Punkt | Status | Wo |
 |---|---|---|---|
 | 1 | Zahnarzt-Website, Call morgen 20:00 | **Entwurf** | Artifact "Zahnarzt Stilrichtungen" (privater Link in der Antwort), `zahnarzt/stilrichtungen.html`, `zahnarzt/DESIGN.md` |
-| 2 | Autofabrik-Website fertigstellen | **braucht dich** | Dateien liegen nicht in dieser Sitzung. Repository oder ZIP bereitstellen oder am Rechner |
+| 2 | Autofabrik-Website | **online (laut Phil)** | Porsche-Modell-Lizenz laut Phil in Ordnung. Weitere Änderungen nur, wenn Dateien in einer Sitzung liegen |
 | 3 | Nocieling Media: Website | **braucht dich** | `nocieling/BRIEFING.md` (zehn Minuten Angaben, dann baue ich) |
 | 4 | Neue Kunden gewinnen | **fertig** | `outreach/Outreach-System.xlsx`, `prompts/chatgpt-lead-recherche.md` |
 | 5 | NOVEX als Marke, Referenzen (Duolingo gratis, Brünette) | **Entwurf** | `research/02-content-plan-higgsfield.md`. Referenzen-Sektion braucht Links von dir |
 | 6 | Awwwards-Niveau im ersten Wurf | **Entwurf** | `research/09-website-qualitaet-awwwards.md`, `research/04-token-effizienz.md` (CLAUDE.md-Vorlage) |
 | 7 | Mehr Kreativität | **Entwurf** | Drei Richtungen statt einer (Punkt 1), Prozess in 09 |
-| 8 | MCP für 3D-Modelle (Sketchfab) | **braucht dich** | `research/07-3d-modelle-sketchfab-mcp.md`. Netzwerkfreigabe und API-Schlüssel nötig |
+| 8 | MCP für 3D-Modelle (Sketchfab) | **vorbereitet, braucht dich** | `.mcp.json` (Paket geprüft), Schritte in `ANLEITUNGEN.md` Punkt 4 und 5: Netzwerkfreigabe und API-Schlüssel |
 | 9 | Codex als Prüfer | **Entwurf** | Empfehlung in `research/08-abos-ipad-codex.md`, Prompt `prompts/chatgpt-design-kritik.md` |
 | 10 | Claude und ChatGPT besser verbinden | **Entwurf** | `research/08-abos-ipad-codex.md`, `prompts/chatgpt-abo-inventur.md` |
 | 11 | Token-Effizienz | **fertig** | `research/04-token-effizienz.md` |
@@ -31,6 +31,17 @@ Jeder deiner Punkte, mit Status und Fundort. Status: **fertig** (nutzbar), **Ent
 | 25 | Mikro-SaaS | **geparkt** | Bewertung in 03 |
 | 26 | Reels-Blocker | **geparkt** | `research/06-instagram-reels-saved.md` |
 | 27 | Mehr Geld verdienen | **Entwurf** | Empfehlung in 03, Outreach-System und Rechner |
+
+## Zweite Runde (Ergänzungen von Phil)
+| Punkt | Status | Wo |
+|---|---|---|
+| Zertifikate erstellen und bearbeiten | **abgelehnt, Alternative gebaut** | `prompts/chatgpt-lernpfad-zertifikate.md` (echte, prüfbare Nachweise) |
+| Outreach-System verstehen | **erklärt** | `ANLEITUNGEN.md` Punkt 1 |
+| Jarvis über Claude statt API-Schlüssel, Telegram | **erklärt** | `ANLEITUNGEN.md` Punkt 2 und 3 (BotFather-Anleitung) |
+| Recherche-Ergebnisse in Skills und CLAUDE.md | **fertig** | `CLAUDE.md`, `.claude/skills/` (drei Skills) |
+| Gesperrte Seiten und Instagram über ChatGPT Work | **Prompts fertig** | `prompts/chatgpt-work-referenzen.md` |
+| Hyperrealismus-Test Supermarkt mit Gemini | **Prompt fertig, Test braucht dich** | `prompts/video-supermarkt-ruhe.md` |
+| Netzwerkfreigabe, Sketchfab, Branch erklärt | **erklärt** | `ANLEITUNGEN.md` Punkt 4 bis 6 |
 
 ## Was nur du lösen kannst (nach Dringlichkeit)
 1. **Heute Abend:** Zahnarzt-Artifact auf dem iPad öffnen, Tab "Fragen für den Call" ansehen.

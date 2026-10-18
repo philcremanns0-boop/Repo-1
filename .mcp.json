@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "sketchfab": {
+      "command": "npx",
+      "args": ["-y", "sketchfab-mcp@1.0.7"],
+      "env": {
+        "SKETCHFAB_API_KEY": "${SKETCHFAB_API_KEY}"
+      }
+    }
+  }
+}
