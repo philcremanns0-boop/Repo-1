@@ -26,6 +26,35 @@ V4 ist ein langer Text-zu-Video-Prompt im Veo-Stil. Er hatte außerdem einen Den
 | Danach Augen 1,3 s und 0,8 s zu | "slow blink" und "eyes close" werden als lange Lidschlussphase gerendert | maximal eine entspannte, längere Phase, und die Dauer nennen ("about 0.6 seconds") |
 | Hände unscharf beim Aufsetzen | schnelle Bewegung | Bewegung ruhiger, "slow and deliberate", Endbild fixiert das Ergebnis |
 
+## Warum die KI Gegenstände aus dem Nichts erzeugt (Erklärung, teils Vermutung)
+Ich kann nicht in die Modelle hineinsehen. Diese Erklärung beruht auf dem, was über solche Modelle allgemein bekannt ist, und auf dem, was in deinen Videos zu sehen ist.
+1. **Kein Objektgedächtnis.** Ein Videomodell führt keine Liste "Objekt Kopfhörer, Ort Hals, jetzt Ort Kopf". Es erzeugt Bilder, die zu den vorherigen Bildern und zum Text *plausibel* aussehen. Dass ein Gegenstand nur einmal existiert und sich bewegt statt zu kopieren, ist nur eine gelernte Gewohnheit, keine Regel. Je länger der Clip, desto mehr Fehler sammeln sich an. Am Anfang ist es meist am besten.
+2. **Bewegen heißt für das Modell zweimal ändern.** Am alten Ort muss etwas verschwinden und am neuen Ort erscheinen. Das ist schwerer als etwas bestehen zu lassen. Typischer Fehler: Der neue Ort entsteht, der alte bleibt als Geist aus den früheren Bildern stehen. Das siehst du bei den Kopfhörern.
+3. **Starke Gewohnheiten aus den Trainingsdaten.** Menschen mit Over-Ear-Kopfhörern tragen sie sehr oft um den Hals oder auf dem Kopf. Das Bild "Kopfhörer am Hals" ist ein häufiges Muster. Das Modell fällt dorthin zurück.
+4. **Verneinungen funktionieren schlecht.** Wenn der Prompt "neck bare, no headphones around neck" sagt, steht das Wort für Kopfhörer am Hals im Text und kann das Gegenteil bewirken ("denke nicht an einen Elefanten"). Das ist eine Vermutung, passt aber zu dem, was du siehst: Je mehr ich den Hals erwähnt habe, desto sicherer taucht das Paar auf. Deshalb: den Hals gar nicht erwähnen, und den Zustand nur positiv beschreiben.
+5. **Ton ist ein eigener Schritt.** Der Ton wird zusätzlich zum Bild erzeugt. In den Trainingsvideos gibt es fast immer Umgebungsgeräusche, echte Stille ist selten. Das Modell neigt deshalb zu Grundrauschen, auch wenn du "silence" schreibst. Verneinungen wie "no hum" helfen wieder nur wenig.
+
+**Was daraus folgt:**
+- Kurze Clips (3 bis 5 Sekunden) mit nur einer Veränderung pro Clip, dann schneiden.
+- Gegenstände nicht über eine große Strecke bewegen lassen, wenn es sich vermeiden lässt.
+- Zustände positiv beschreiben, Verneinungen vermeiden, störende Begriffe weglassen.
+- Start- und Endbild nur nutzen, wenn die Bilder gut sind (siehe unten, ChatGPT statt Flow).
+- Ton immer in der Nachbearbeitung machen.
+
+## Wofür ist welcher Prompt im Paket?
+| Prompt | Werkzeug | Wofür |
+|---|---|---|
+| Master-Prompt | ChatGPT Work | Recherche-Aufgaben abarbeiten (Nocieling, Instagram, Design-Kritik, Fakten). Hat nichts mit Video zu tun |
+| F1, F2 | ChatGPT (oder Flow) | Start- und Endbild für die Supermarkt-Szene |
+| F3 | Flow, nur wenn Start- und Endbild gut sind | Video zwischen zwei Bildern |
+| F4 | Flow ohne Bilder | Video nur aus Text |
+| H1, H1b | Higgsfield | Endergebnis aus Start- und Endbild |
+| Foto-Prompt 1 bis 3 | ChatGPT oder Higgsfield-Bildmodelle | Realistische Personen als Standbilder: Basis für Werbung, Social Media oder das Gesicht für einen Face Swap |
+| Foto-Prompt 4 und 5 | Higgsfield | Ein Standbild animieren (ruhige Bewegung, kurzer Satz) |
+| Foto-Prompt 6 | Higgsfield | Deine eigene Videoaufnahme steuert die Figur (Motion Control) |
+| Prompt-Veredler | ChatGPT | Macht aus einer Idee in Worten einen guten Prompt |
+Für Standbilder genügt ChatGPT, weil du dort laut deiner Angabe beliebig viele erzeugen kannst und nur jedes zehnte gut sein muss. Higgsfield brauchst du für Video, Motion Control und Face Swap.
+
 ## Track 1: Google Flow
 ### F1: Startbild (Nano Banana, 9:16)
 ```
@@ -94,3 +123,39 @@ Bei Test 2 funktionierte das: Lärm um -20 bis -24 dB, ab 3,25 s Stille unter -7
 4. Gewinner-Bilder bei Higgsfield als Start- und Endbild hochladen, H1 laufen lassen, Ton aus.
 5. Ton über mich nachbearbeiten.
 6. Vor Veröffentlichung kennzeichnen (Instagram "AI info", TikTok).
+
+## Test 3: Varianten ohne Start- und Endbild (alle in Flow, je 3 Läufe)
+Start- und Endbild in Flow haben bei dir nicht funktioniert, weil die Bilder schlecht waren. Diese drei Varianten brauchen keine Bilder und vermeiden den Gegenstand, der sich über eine große Strecke bewegt. Der Hals wird nirgends erwähnt. Es sind Hypothesen, der Test zeigt, welche trägt.
+
+### V-A: Kopfhörer in der Hand
+```
+Vertical 9:16, handheld smartphone footage, 6 seconds, one continuous take, 28mm equivalent, the camera keeps the same distance, no push-in, no zoom. A woman in her early 30s with a loose low ponytail, flyaway strands, light freckles, no visible makeup, beige quilted jacket, canvas tote bag on her left shoulder, stands in a busy supermarket aisle under flat white fluorescent light. Her left hand rests on a shopping cart handle at the bottom of the frame. In her right hand she holds a pair of silver over-ear headphones in front of her chest. Behind her: shoppers with carts, a toddler crying in a cart seat, blurred boxes, out-of-focus price signs, no readable text.
+Audio: very loud, dense supermarket noise: rattling carts, overlapping unintelligible voices, a toddler wailing, scanner beeps. She looks tense and scans left, then right. Then, in one slow deliberate motion, she raises the headphones with both hands straight up to her head and lowers them onto her ears. The loud noise continues until the exact moment the ear cups touch her ears, then stops completely. Total silence. Her hands rest on the cart handle, shoulders drop, lips closed, one slow breath in through the nose and out through slightly parted lips, a faint relieved half-smile. She blinks naturally about every three seconds. Real-time speed, natural skin texture with visible pores, no music, nobody speaks.
+```
+
+### V-B: Knopfdruck, kein Gegenstand wird bewegt
+```
+Vertical 9:16, handheld smartphone footage, 6 seconds, one continuous take, 28mm equivalent, the camera keeps the same distance, no push-in, no zoom. A woman in her early 30s with a loose low ponytail, flyaway strands, light freckles, no visible makeup, beige quilted jacket, canvas tote bag, wearing silver over-ear headphones on her head, stands in a busy supermarket aisle under flat white fluorescent light, holding a shopping cart handle at the bottom of the frame. Behind her: shoppers with carts, a toddler crying in a cart seat, blurred boxes, out-of-focus price signs, no readable text.
+Audio: very loud, dense supermarket noise: rattling carts, overlapping unintelligible voices, a toddler wailing, scanner beeps, even though she wears the headphones. She looks tense and scans left, then right. Then she lifts one hand and presses a small button on top of the right ear cup with her index finger. At the exact moment of the press, all sound stops completely. Total silence. Her hand returns to the cart handle, shoulders drop, lips closed, one slow breath in through the nose and out through slightly parted lips, a faint relieved half-smile. Behind her the shoppers keep moving and the toddler keeps crying with an open mouth, silently. She blinks naturally about every three seconds. Real-time speed, natural skin texture with visible pores, no music, nobody speaks.
+```
+
+### V-C: Zwei kurze Clips, geschnitten
+Clip 1 (4 Sekunden):
+```
+Vertical 9:16, handheld smartphone footage, 4 seconds, 28mm equivalent, same distance, no push-in. A woman in her early 30s, loose low ponytail, flyaway strands, light freckles, beige quilted jacket, canvas tote bag, stands in a busy supermarket aisle under flat white fluorescent light, one hand on a shopping cart handle at the bottom of the frame, silver over-ear headphones in her other hand in front of her chest. Behind her: shoppers, a toddler crying in a cart seat, blurred boxes, no readable text. Audio: very loud supermarket noise. She looks tense, scans left, then raises the headphones with both hands slowly towards her ears. The clip ends the moment the ear cups touch her ears. Natural skin texture, real-time speed, no music, nobody speaks.
+```
+Clip 2 (4 Sekunden), anderes Setup:
+```
+Vertical 9:16, handheld smartphone footage, 4 seconds, 28mm equivalent, same distance, no push-in. The same woman, same beige quilted jacket and bag, same supermarket aisle, wearing silver over-ear headphones on her head, both hands resting on a shopping cart handle at the bottom of the frame. Her shoulders drop, her jaw softens, lips closed, she breathes in slowly through the nose and out through slightly parted lips, then a faint relieved half-smile. Behind her the shoppers keep moving and a toddler cries with an open mouth, silently. Audio: silence, only her slow breath. She blinks naturally once or twice. Natural skin texture, real-time speed, no music, nobody speaks.
+```
+Clip 2 passt zu Clip 1 nur, wenn Frau und Raum gleich aussehen. Das gelingt am besten, wenn du das letzte Bild von Clip 1 als Referenzbild oder Startbild für Clip 2 verwendest. Geschnitten wird beim Kontakt der Ohrmuscheln.
+
+## Start- und Endbild mit ChatGPT statt Flow
+Du hast gesagt, ChatGPT erzeugt die besseren Bilder und du kannst beliebig viele machen. Dann so:
+1. Startbild: F1 in ChatGPT einfügen und vier Varianten anfordern, die beste wählen.
+2. Endbild: das gewählte Bild hochladen und ein *Bearbeiten* verlangen (nicht neu erzeugen). So bleiben Gesicht und Raum gleich.
+```
+Bearbeite genau dieses Bild und ändere nur das Folgende: Die silbernen Over-Ear-Kopfhörer sitzen jetzt auf ihren Ohren, das Kopfband liegt über dem Kopf. Am Hals und auf der Brust hängt nichts, man sieht nur die beige Jacke und den Kragen. Die Hände liegen locker am Griff des Einkaufswagens, die Schultern sind entspannt, die Lippen geschlossen, die Augen offen, ein leichtes, erleichtertes Halblächeln. Alles andere bleibt unverändert: gleiche Frau, gleiches Gesicht, gleiche Jacke, gleiche Tasche, gleicher Gang, gleiche Kameraposition, gleiche Menschen im Hintergrund, gleiches Licht. Gib nur das bearbeitete Bild aus.
+```
+3. Prüfen: Gleiche Frau? Gleicher Hintergrund? Hals leer? Wenn nicht, neu bearbeiten lassen.
+4. Dann bei Higgsfield Start- und Endbild hochladen (H1) oder in Flow als Referenzbild nutzen, falls Start- und Endbild dort wieder schlecht werden.
