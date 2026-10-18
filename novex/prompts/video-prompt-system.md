@@ -168,8 +168,10 @@ Vertical 9:16, handheld smartphone footage, 4 seconds, 28mm equivalent, same dis
 ```
 Clip 2 passt zu Clip 1 nur, wenn Frau und Raum gleich aussehen. Das gelingt am besten, wenn du das letzte Bild von Clip 1 als Referenzbild oder Startbild für Clip 2 verwendest. Geschnitten wird beim Kontakt der Ohrmuscheln.
 
-## Start- und Endbild mit ChatGPT statt Flow
-Du hast gesagt, ChatGPT erzeugt die besseren Bilder und du kannst beliebig viele machen. Dann so:
+## Start- und Endbild: ChatGPT hat bei dir nicht funktioniert
+Stand 18.10.: Die Bilder aus ChatGPT waren bei dir unbrauchbar, die aus Flow ebenfalls. Der Katalog von Higgsfield nennt dafür andere Modelle: **Soul 2.0** (gebaut für realistische UGC-Menschen) für das Startbild und **Nano Banana Pro** (nimmt Referenzbilder) für das Endbild mit dem Startbild als Referenz. Preise stehen im Katalog nicht, schau sie vor dem Start in der Higgsfield-Oberfläche an und mache zuerst nur zwei oder drei Bilder. Schick mir ein, zwei der schlechten Bilder, dann sage ich dir, woran es liegt (Haut, Licht, Gesicht, Hände) und passe den Prompt an.
+
+Der folgende Ablauf gilt für jedes Bildmodell, auch für ChatGPT, falls es später besser klappt:
 1. Startbild: F1 in ChatGPT einfügen und vier Varianten anfordern, die beste wählen.
 2. Endbild: das gewählte Bild hochladen und ein *Bearbeiten* verlangen (nicht neu erzeugen). So bleiben Gesicht und Raum gleich.
 ```
