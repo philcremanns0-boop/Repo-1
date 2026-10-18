@@ -27,7 +27,7 @@ Dein aufgenommenes Video liefert Bewegung, Timing und Mimik, die KI-Person liefe
 4. **Prüfen.** Gesicht über den Clip stabil? Augen, Zähne, Hände, Schmuck? Mundbewegung zum Ton?
 5. **Ton.** Dein Originalton passt zur übertragenen Mimik. Soll eine andere Stimme sprechen, ist ein separater Voice- oder Lip-Sync-Schritt nötig.
 
-Wichtig: "Gesicht tauschen" und "Bewegung übertragen" sind verschiedene Verfahren. Eine Quelle beschreibt Face Swap als bildweises Ersetzen des Gesichts im Original, mit separatem Lip-Sync für Sprache. Ob Higgsfield deine Aufnahme direkt mit deinem eigenen Gesicht tauschen kann, geht aus meinen Quellen nicht hervor. Das musst du in der aktuellen Oberfläche prüfen.
+Wichtig: "Gesicht tauschen" und "Bewegung übertragen" sind verschiedene Verfahren. Face Swap ersetzt das Gesicht in deinem Originalvideo, Körper, Stimme und Bewegung bleiben deine. Motion Control lässt eine KI-Figur deine Bewegung nachspielen. Nachtrag aus der Gegenrecherche von ChatGPT (18.10.2026, von mir nicht geprüft): Higgsfield bietet "Video Face Swap" mit Zielvideo plus Gesichtsreferenz, Motion Control ist dafür nicht nötig. Das passt zu deinem Plan: eigenes Video aufnehmen, ein KI-Gesicht daraufsetzen. Dafür brauchst du ein sehr gutes, realistisches Gesichtsbild der Figur (Prompts 1 und 2). Der Tausch ist so gut wie das Referenzbild.
 
 ### B. Foto zu Video
 Erst ein überzeugendes Standbild, dann animieren.
@@ -51,7 +51,7 @@ Nach dem Training einer Identität: das Gesicht nicht erneut beschreiben, den Pr
 
 ## 4. Testplan (60 Minuten, etwa 20 Generierungen)
 
-Dein Higgsfield-Konto hatte zuletzt 840,75 Credits. Wie viele Credits ein Bild oder Video kostet, konnte ich nicht ermitteln. Notiere die Kosten der ersten drei Generierungen und rechne dann hoch.
+Dein Higgsfield-Konto hatte zuletzt 840,75 Credits. Laut ChatGPT kostet Kling 3.0 Motion Control im Pro-Modus 15 Credits bei 5 s, 27 bei 10 s und 77 bei 30 s (kein konstanter Sekundenpreis, von mir nicht geprüft). Bilder und andere Modelle kenne ich nicht. Notiere die Kosten der ersten drei Generierungen und rechne dann hoch.
 
 | Runde | Was | Ziel |
 |---|---|---|
@@ -64,7 +64,7 @@ Bewertung je Ergebnis (0 = schwach, 1 = okay, 2 = überzeugend): Haut, Augen, Z�
 ## 5. Rechtliches und Fairness (keine Rechtsberatung)
 
 - Nur dein eigenes Gesicht oder Figuren, die frei erfunden sind. Nie das Aussehen einer realen Person ohne deren Zustimmung.
-- Plattformen verlangen meist eine Kennzeichnung realistischer KI-Inhalte. In der EU gelten nach meinem Kenntnisstand ab 2026 Transparenzpflichten für täuschend echte KI-Inhalte. Genauen Stand und Ausnahmen bitte prüfen.
+- Instagram ("AI info") und TikTok verlangen eine Kennzeichnung bestimmter realistischer KI-Inhalte. Laut ChatGPT mit Quellen gilt Artikel 50 des EU AI Act grundsätzlich ab 2. August 2026, professionelle Verwender müssen Deepfakes klar offenlegen. Wann genau du als Agentur betroffen bist und welche Ausnahmen gelten, bitte prüfen lassen.
 - Keine erfundenen Kundenstimmen oder Bewertungen mit KI-Menschen. Das ist irreführende Werbung.
 - Für Kundenprojekte (Zahnarzt, Praxis): echte Fotos von echten Menschen. Ein KI-Arzt ist ein Vertrauensbruch.
 

@@ -40,6 +40,8 @@ Jeder deiner Punkte, mit Status und Fundort. Status: **fertig** (nutzbar), **Ent
 | Jarvis über Claude statt API-Schlüssel, Telegram | **erklärt** | `ANLEITUNGEN.md` Punkt 2 und 3 (BotFather-Anleitung) |
 | Recherche-Ergebnisse in Skills und CLAUDE.md | **fertig** | `CLAUDE.md`, `.claude/skills/` (drei Skills) |
 | Gesperrte Seiten und Instagram über ChatGPT Work | **Prompts fertig** | `prompts/chatgpt-work-referenzen.md` |
+| Ergebnis von ChatGPT Work ausgewertet (18.10.) | **fertig** | `research/10-chatgpt-ergebnisse.md`, nächste Prompts in `prompts/chatgpt-naechste-schritte.md` |
+| Video-Test Supermarkt, erste Messung | **fertig** | `prompts/video-supermarkt-ruhe.md` (Version 4) |
 | Hyperrealismus-Test Supermarkt mit Gemini | **Prompt fertig, Test braucht dich** | `prompts/video-supermarkt-ruhe.md` |
 | Netzwerkfreigabe, Sketchfab, Branch erklärt | **erklärt** | `ANLEITUNGEN.md` Punkt 4 bis 6 |
 

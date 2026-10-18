@@ -13,7 +13,7 @@ Endgültige Herleitung erst, wenn Interieur, Team und Geschichte der Praxis beka
 ## (b) Tokens (je Richtung)
 A: bg #EDEFE8 · fg #1B231F · muted #56615A · akzent #3E5A47 · tint #D3DBCC · sand #CDB59A. Display Instrument Serif, Body Hanken Grotesk.
 B: bg #F6F6F2 · fg #13171A · muted #5A6267 · akzent #2338D6 · pale #E4E8F7. Display Familjen Grotesk, Body Public Sans, Mono DM Mono.
-C: petrol #12393B · flieder #D8D3EE · mint #EEF3EE · butter #F2D96B · ink #0B1F20. Display Anybody (Breitenachse), Body Karla.
+C: petrol #12393B · flieder #D8D3EE · mint #EEF3EE · butter #F2D96B · ink #0B1F20. Display Anybody (Breitenachse), Body Karla. Letztes Wort der Hauptzeile in kursiver Instrument Serif (Kontrast Grotesk und Serif im selben Satz, Anregung aus der Analyse von Normal is Boring, siehe research/10).
 Fonts im Produktivbetrieb selbst hosten (DSGVO, Regeln §5).
 Body 17 bis 18 px, Zeilenlänge max. 65 Zeichen, Kontrast mindestens AA, Touch-Ziele mindestens 44 px.
 

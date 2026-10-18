@@ -9,6 +9,7 @@ Werkzeuge: `novex/outreach/Outreach-System.xlsx` (Pipeline, Dashboard, Rechner, 
 
 ## Harte Regeln
 - Kein Erstkontakt per E-Mail, DM oder Telefon ohne Einwilligung (UWG, nach meinem Wissen auch im B2B). Das ist keine Rechtsberatung. Bei Unsicherheit Phil auf IHK oder Fachanwalt verweisen.
+- Es gibt in § 7 Abs. 3 UWG eine enge Ausnahme für Bestandskunden (E-Mail-Adresse aus einem Verkauf, ähnliche Waren, Widerspruch möglich). Sie gilt nicht für Kaltkontakte. Eine Adresse aus dem Impressum ist keine Einwilligung.
 - Erlaubte Wege: Brief, persönlicher Besuch, Empfehlung, Inbound (Reels, Referenzen, Kommentar-Auslöser). Nach einer Antwort oder Anfrage ist normale Kommunikation zulässig.
 - Nur geschäftliche Daten aus Impressum und öffentlichen Unternehmensseiten. Quelle notieren. Widerspruch und "kein Interesse" sofort respektieren (Sperrliste).
 - Keine erfundenen Referenzen, Bewertungen oder Kundenstimmen.
