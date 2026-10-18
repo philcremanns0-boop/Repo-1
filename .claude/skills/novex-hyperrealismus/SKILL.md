@@ -20,5 +20,16 @@ Kurze Clips (4 bis 8 Sekunden). Zeitleiste in Abschnitten, Ton pro Abschnitt in 
 ## Schleife
 Version schreiben, gegen die Fehlerliste prüfen (Floskeln, Zeitleiste, Ton, Kamera, Haut, Text im Bild, riskante Handgriffe), verbessern, nach dem ersten Ergebnis mit Standbildern und Tonbeschreibung diagnostizieren (Tabelle in `video-supermarkt-ruhe.md`).
 
+## Lehren aus Test 1 (Supermarkt, Veo, gemessen mit ffmpeg)
+- Objekte, die später benutzt werden, ab Sekunde 0 sichtbar machen, sonst tauchen sie plötzlich auf.
+- Kamera festhalten, wenn etwas im Bild bleiben muss (kein Heranfahren, kein Schwenk).
+- Ton an Bildereignisse binden ("in dem Moment, in dem ...") statt an Sekunden. Zeitangaben hält das Modell nicht genau ein.
+- Blinzeln beschreiben: etwa alle 3 Sekunden, nie länger als eine halbe Sekunde. Ein Satz wie "eyes close for a moment" erzeugt über eine Sekunde Lidschluss.
+- Mund festlegen (Lippen geschlossen), sonst wirkt Atmen wie Sprechen.
+- Tonwechsel stark formulieren ("cuts to almost complete silence, as if muted"). Ein Pegelsprung von 8 dB wirkt schwach.
+- Bei Objektkontinuität Start- und Endbild nutzen, falls das Werkzeug es erlaubt.
+- Vergleiche nur mit neuem Chat pro Prompt und mehreren Durchläufen, sonst vermischt sich Reihenfolge mit Qualität.
+- Werkzeuge: Standbilder alle 0,5 s und Gesichtsstreifen mit ffmpeg, Pegel mit `volumedetect` und `astats` (Datei vorher in einen eigenen Ordner legen).
+
 ## Grenzen
 Nur eigenes Gesicht oder erfundene Figuren. KI-Inhalte kennzeichnen, wo es Plattformen oder Recht verlangen. Keine erfundenen Kundenstimmen. Credits nur nach Rücksprache ausgeben.
