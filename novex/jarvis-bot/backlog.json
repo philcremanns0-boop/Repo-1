@@ -1,0 +1,20 @@
+[
+  {"text": "Zahnarzt-Call 20:00: Stilrichtungen-Artifact und Call-Fragen öffnen", "tag": "zahnarzt", "prio": 1, "remind": "2026-10-19 19:30"},
+  {"text": "Zahnarzt: nach dem Call Konzeptdokument und Briefing-Fragebogen schicken", "tag": "zahnarzt", "prio": 1},
+  {"text": "Autofabrik-Website fertigstellen (am Rechner)", "tag": "autofabrik", "prio": 1},
+  {"text": "Nocieling Media: Instagram-Link und Leistungen klären, dann Website bauen", "tag": "nocieling", "prio": 1},
+  {"text": "Outreach: erste 20 Leads recherchieren (ChatGPT-Prompt aus prompts/)", "tag": "outreach", "prio": 1},
+  {"text": "Outreach: Mini-Audit für die Top-10-Leads", "tag": "outreach", "prio": 2},
+  {"text": "Recht für Kaltakquise kurz prüfen lassen (IHK oder Anwalt), bevor etwas rausgeht", "tag": "outreach", "prio": 1},
+  {"text": "NOVEX-Website: Referenzen ergänzen (Duolingo gratis, Brünette, Zahnarzt, Autofabrik)", "tag": "novex", "prio": 2},
+  {"text": "Cloud-Umgebung: Netzwerkfreigabe für normalisboring.es, awwwards.com, unpkg.com", "tag": "tools", "prio": 2},
+  {"text": "Sketchfab-MCP einrichten (API-Key, Netzwerkfreigabe)", "tag": "tools", "prio": 2},
+  {"text": "Jarvis-Bot deployen (Token bei @BotFather holen)", "tag": "jarvis", "prio": 1},
+  {"text": "Higgsfield: Hyperrealismus-Testreihe mit den Prompts aus research/", "tag": "content", "prio": 2},
+  {"text": "Content-Plan 30 Tage umsetzen", "tag": "content", "prio": 2},
+  {"text": "Instagram-Saved-Reels-Auswertung mit ChatGPT Work starten (Prompt aus prompts/)", "tag": "ig", "prio": 2},
+  {"text": "Token-Effizienz-Regeln in CLAUDE.md übernehmen", "tag": "tools", "prio": 2},
+  {"text": "Deep-Research-Ergebnis Business-Ideen durchgehen", "tag": "ideen", "prio": 3},
+  {"text": "Mikro-SaaS-Idee auswählen", "tag": "saas", "prio": 3},
+  {"text": "Roblox: parken, Entscheidung nach dem ersten Kundenumsatz", "tag": "ideen", "prio": 3}
+]

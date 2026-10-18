@@ -1,0 +1,669 @@
+<title>Zahnarzt Stilrichtungen</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,100..900&family=DM+Mono:wght@400;500&family=Familjen+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Karla:wght@400;500;700&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: Werkzeugleiste oben (Praxisdaten live, Tabs), darunter drei Website-Entwürfe als Rahmen mit eigenem Look.
+   Die Entwürfe haben je eine eigene Palette und bleiben in Hell/Dunkel gleich, die Leiste folgt dem Theme. */
+:root {
+  --bg: #F3F3EF;
+  --fg: #151A19;
+  --muted: #59635F;
+  --line: #D6D9D3;
+  --surface: #FFFFFF;
+  --accent: #2F5D50;
+  --accent-fg: #FFFFFF;
+  --focus: #1F4FD8;
+  --font-ui: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1413; --fg: #E9EEEB; --muted: #98A5A0; --line: #27302D;
+    --surface: #161D1B; --accent: #86BFAA; --accent-fg: #0B120F; --focus: #8FB0FF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1413; --fg: #E9EEEB; --muted: #98A5A0; --line: #27302D;
+  --surface: #161D1B; --accent: #86BFAA; --accent-fg: #0B120F; --focus: #8FB0FF;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 400 16px/1.55 var(--font-ui);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 56px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 50; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.wrap { max-width: 1180px; margin-inline: auto; }
+
+/* Werkzeugleiste */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 40; background: var(--bg); border-bottom: 1px solid var(--line); padding-block: 12px; }
+.bar-top { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 20px; justify-content: space-between; }
+.bar h1 { margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: .01em; }
+.bar h1 small { display: block; font-weight: 400; color: var(--muted); font-size: .8rem; }
+.live { display: flex; flex-wrap: wrap; gap: 10px; }
+.live label { display: grid; gap: 2px; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.live input { font: inherit; font-size: .95rem; text-transform: none; letter-spacing: 0; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 40px; width: min(220px, 44vw); }
+.tabs { display: flex; gap: 6px; margin-top: 12px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.tabs button { flex: none; border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 9px 16px; min-height: 44px; font-size: .92rem; }
+.tabs button[aria-selected="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+main { padding-top: 24px; }
+.panel[hidden] { display: none; }
+.note { color: var(--muted); font-size: .88rem; max-width: 70ch; }
+.ph { border-bottom: 1px dotted currentColor; cursor: help; }
+
+/* Überblick */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; margin-block: 16px 24px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.card h3 { margin: 0; font-size: 1.15rem; }
+.card .tag { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.card dl { margin: 0; display: grid; grid-template-columns: 90px 1fr; gap: 6px 12px; font-size: .9rem; }
+.card dt { color: var(--muted); }
+.card dd { margin: 0; min-width: 0; }
+.card button.go { justify-self: start; margin-top: 4px; background: var(--accent); color: var(--accent-fg); border: 0; border-radius: 999px; padding: 10px 18px; min-height: 44px; font-weight: 500; }
+.rec { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 6px; padding: 16px 20px; max-width: 78ch; }
+.rec h3 { margin: 0 0 6px; font-size: 1rem; }
+.rec p { margin: 0 0 8px; }
+.rec p:last-child { margin: 0; }
+
+/* Website-Rahmen */
+.site { container-type: inline-size; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.site a { color: inherit; }
+.photo { display: grid; place-items: center; text-align: center; padding: 12px; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ===== A · Stille ===== */
+.a { --a-bg:#EDEFE8; --a-fg:#1B231F; --a-mute:#56615A; --a-moss:#3E5A47; --a-tint:#D3DBCC; --a-sand:#CDB59A; --a-line:#C6CEC0; --a-on:#F4F6F1;
+  background: var(--a-bg); color: var(--a-fg); font: 400 17px/1.6 'Hanken Grotesk', system-ui, sans-serif; }
+.a-nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px clamp(18px, 4cqi, 48px); }
+.a-logo { display: flex; align-items: center; gap: 10px; font: 400 1.4rem/1 'Instrument Serif', Georgia, serif; min-width: 0; }
+.a-logo i { flex: none; width: 20px; height: 26px; border-radius: 10px 10px 2px 2px; background: var(--a-moss); }
+.a-nav nav { display: flex; gap: 28px; font-size: .95rem; color: var(--a-mute); }
+.a-btn { display: inline-flex; align-items: center; white-space: nowrap; min-height: 44px; padding: 0 22px; border-radius: 999px; background: var(--a-moss); color: var(--a-on) !important; font-weight: 500; text-decoration: none; border: 0; }
+.a-btn.ghost { background: transparent; color: var(--a-fg) !important; box-shadow: inset 0 0 0 1px var(--a-moss); }
+.a-hero { display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(20px, 5cqi, 64px); align-items: center; padding: clamp(16px, 4cqi, 56px) clamp(18px, 4cqi, 48px) clamp(32px, 6cqi, 80px); }
+.a-eyebrow { font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--a-mute); margin: 0 0 18px; }
+.a h2.big { margin: 0; font: 400 clamp(2.6rem, 9.2cqi, 5.6rem)/1.02 'Instrument Serif', Georgia, serif; letter-spacing: -.012em; text-wrap: balance; }
+.a h2.big em { color: var(--a-moss); }
+.a-lead { max-width: 46ch; color: var(--a-mute); margin: 22px 0 28px; font-size: 1.08rem; }
+.a-cta { display: flex; flex-wrap: wrap; gap: 12px; }
+.a-art { position: relative; aspect-ratio: 4 / 5; max-width: 100%; }
+.a-art svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.a-art .photo { position: absolute; left: 54%; right: 5%; bottom: 6%; color: var(--a-on); opacity: .85; }
+.a-svc { padding: clamp(28px, 6cqi, 72px) clamp(18px, 4cqi, 48px); border-top: 1px solid var(--a-line); display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 5cqi, 72px); }
+.a-svc h3, .a-visit h3 { margin: 0 0 18px; font: 400 .8rem/1.2 'Hanken Grotesk', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--a-mute); }
+.a-list { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--a-line); }
+.a-list button { width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 14px 0; background: none; border: 0; border-top: 1px solid var(--a-line); font: 400 clamp(1.5rem, 4.4cqi, 2.3rem)/1.15 'Instrument Serif', Georgia, serif; color: var(--a-fg); transition: padding-left .25s ease, color .25s ease; }
+.a-list button span:last-child { font: 400 1.1rem 'Hanken Grotesk', sans-serif; opacity: 0; transition: opacity .2s; }
+.a-list button[aria-current="true"] { color: var(--a-moss); padding-left: 14px; }
+.a-list button[aria-current="true"] span:last-child { opacity: 1; }
+.a-pane { background: var(--a-tint); border-radius: 999px 999px 10px 10px / 220px 220px 10px 10px; padding: clamp(40px, 9cqi, 96px) clamp(22px, 5cqi, 56px) 36px; align-self: start; min-height: 320px; }
+.a-pane h4 { margin: 0 0 10px; font: italic 400 1.9rem/1.1 'Instrument Serif', Georgia, serif; }
+.a-pane p { margin: 0 0 12px; max-width: 40ch; }
+.a-pane small { color: var(--a-mute); }
+.a-visit { padding: clamp(28px, 6cqi, 72px) clamp(18px, 4cqi, 48px); background: var(--a-moss); color: var(--a-on); display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 5cqi, 72px); }
+.a-visit h3 { color: #B9CABB; }
+.a-hours { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 24px; font-size: 1.02rem; }
+.a-hours dt { color: #B9CABB; } .a-hours dd { margin: 0; }
+.a-hours .today { color: #fff; font-weight: 600; }
+.status { display: inline-block; margin-top: 18px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.14); font-size: .9rem; }
+.a-visit .a-btn { background: var(--a-on); color: var(--a-moss) !important; }
+.a-visit p { margin: 0 0 18px; max-width: 42ch; }
+.a-foot { padding: 18px clamp(18px, 4cqi, 48px); font-size: .85rem; color: var(--a-mute); display: flex; flex-wrap: wrap; gap: 6px 24px; justify-content: space-between; }
+
+/* ===== B · Raster ===== */
+.b { --b-bg:#F6F6F2; --b-fg:#13171A; --b-mute:#5A6267; --b-line:#C9CDCA; --b-blue:#2338D6; --b-pale:#E4E8F7;
+  background: var(--b-bg); color: var(--b-fg); font: 400 17px/1.55 'Public Sans', system-ui, sans-serif; }
+.b-nav { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px; padding: 14px clamp(16px, 3cqi, 36px); border-bottom: 1px solid var(--b-line); }
+.b-logo { font: 600 1.05rem/1 'Familjen Grotesk', sans-serif; letter-spacing: -.01em; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.b-logo i { flex: none; width: 14px; height: 14px; background: var(--b-blue); display: block; }
+.b-nav nav { display: flex; gap: 22px; font: 400 .72rem/1 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .08em; color: var(--b-mute); }
+.b-hero { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--b-line); }
+.b-copy { padding: clamp(24px, 5cqi, 64px) clamp(16px, 3cqi, 36px); border-right: 1px solid var(--b-line); display: grid; align-content: space-between; gap: 32px; }
+.b h2.big { margin: 0; font: 600 clamp(2.3rem, 7cqi, 4.6rem)/1 'Familjen Grotesk', sans-serif; letter-spacing: -.035em; text-wrap: balance; }
+.b h2.big span { color: var(--b-blue); }
+.b-lead { margin: 0 0 20px; max-width: 40ch; color: var(--b-mute); }
+.b-cta { display: flex; flex-wrap: wrap; gap: 10px; }
+.b-btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; background: var(--b-blue); color: #fff !important; text-decoration: none; font-weight: 500; border: 0; border-radius: 2px; }
+.b-btn.line { background: transparent; color: var(--b-fg) !important; box-shadow: inset 0 0 0 1px var(--b-fg); }
+.b-plan { padding: clamp(16px, 3cqi, 36px); display: grid; gap: 12px; align-content: start; }
+.b-label { font: 400 .72rem/1.2 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .08em; color: var(--b-mute); margin: 0; }
+.b-plan svg { width: 100%; height: auto; display: block; overflow: visible; }
+.room rect { fill: var(--b-bg); stroke: var(--b-fg); stroke-width: 1.2; transition: fill .2s, stroke .2s; }
+.room text { font: 400 12px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .05em; fill: var(--b-fg); pointer-events: none; }
+.room { cursor: pointer; outline: none; }
+.room:hover rect, .room[aria-pressed="true"] rect { fill: var(--b-pale); stroke: var(--b-blue); stroke-width: 2; }
+.room:focus-visible rect { stroke: var(--b-blue); stroke-width: 3; stroke-dasharray: 5 3; }
+.b-roominfo { min-height: 4.6em; margin: 0; padding: 12px 14px; background: var(--b-pale); border-left: 3px solid var(--b-blue); font-size: .98rem; }
+.b-roominfo b { font-family: 'Familjen Grotesk', sans-serif; font-weight: 600; }
+.b-hours { padding: clamp(20px, 4cqi, 48px) clamp(16px, 3cqi, 36px); display: grid; gap: 14px; }
+.b-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid var(--b-fg); border-left: 1px solid var(--b-line); }
+.b-day { border-right: 1px solid var(--b-line); border-bottom: 1px solid var(--b-line); padding: 12px 10px 14px; display: grid; gap: 6px; min-width: 0; }
+.b-day b { font: 500 .72rem/1 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; }
+.b-day span { font: 400 .85rem/1.25 'DM Mono', monospace; color: var(--b-mute); }
+.b-day.today { background: var(--b-blue); color: #fff; } .b-day.today span { color: #E1E6FF; }
+.b-day.closed span { opacity: .6; }
+.b-status { margin: 0; font-size: .95rem; }
+.b-foot { padding: 16px clamp(16px, 3cqi, 36px); font: 400 .72rem/1.5 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .06em; color: var(--b-mute); border-top: 1px solid var(--b-line); display: flex; flex-wrap: wrap; gap: 6px 24px; justify-content: space-between; }
+
+/* ===== C · Eigenwillig ===== */
+.c { --c-petrol:#12393B; --c-lilac:#D8D3EE; --c-mint:#EEF3EE; --c-butter:#F2D96B; --c-ink:#0B1F20;
+  background: var(--c-mint); color: var(--c-ink); font: 400 17px/1.55 'Karla', system-ui, sans-serif; }
+.c-nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px clamp(16px, 3cqi, 32px); background: var(--c-lilac); }
+.c-logo { font: 800 1.1rem/1 'Anybody', sans-serif; font-variation-settings: 'wdth' 70, 'wght' 800; text-transform: uppercase; letter-spacing: .02em; min-width: 0; }
+.c-nav nav { display: flex; gap: 20px; font-weight: 700; font-size: .92rem; }
+.c-hero { position: relative; background: var(--c-lilac); padding: clamp(18px, 3cqi, 30px) clamp(16px, 3cqi, 32px) clamp(24px, 4cqi, 48px); touch-action: pan-y; overflow: hidden; }
+.c-type { margin: 0; font-family: 'Anybody', Impact, 'Arial Narrow', sans-serif; font-weight: 800; text-transform: uppercase; line-height: .9; letter-spacing: -.01em; color: var(--c-petrol); font-variation-settings: 'wdth' var(--w, 100), 'wght' 800; font-stretch: calc(var(--w, 100) * 1%); }
+.c-type .ln { display: block; white-space: nowrap; width: max-content; }
+.c-type .ln + .ln { color: var(--c-ink); }
+.c-type .w { display: inline; }
+.c-type.split .ln { width: auto; }
+.c-type.split .w { display: block; width: max-content; }
+.c-ctl { display: flex; align-items: center; gap: 12px; margin-top: 18px; font-size: .85rem; font-weight: 700; }
+.c-ctl input { flex: 0 1 220px; accent-color: var(--c-petrol); min-height: 44px; }
+.c-lead { max-width: 44ch; margin: 14px 0 0; font-size: 1.1rem; }
+.c-sticker { position: absolute; right: clamp(12px, 4cqi, 48px); bottom: clamp(12px, 2.5cqi, 28px); width: clamp(92px, 11cqi, 136px); aspect-ratio: 1; border-radius: 50%; background: var(--c-butter); display: grid; place-items: center; text-decoration: none; color: var(--c-ink) !important; }
+.c-sticker svg { position: absolute; inset: 0; width: 100%; height: 100%; animation: spin 22s linear infinite; }
+.c-sticker svg text { font: 800 12.5px 'Anybody', sans-serif; letter-spacing: .14em; fill: var(--c-ink); text-transform: uppercase; }
+.c-sticker b { font: 800 clamp(1.6rem, 4cqi, 2.6rem)/1 'Anybody', sans-serif; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.c-svc { display: grid; grid-template-columns: 1fr 1fr; }
+.c-tile { text-align: left; border: 0; border-radius: 0; padding: clamp(20px, 4cqi, 40px) clamp(16px, 3cqi, 32px); min-height: 170px; display: grid; align-content: start; gap: 0; position: relative; }
+.c-tile:nth-child(1) { background: var(--c-petrol); color: var(--c-mint); }
+.c-tile:nth-child(2) { background: var(--c-butter); color: var(--c-ink); }
+.c-tile:nth-child(3) { background: var(--c-mint); color: var(--c-ink); box-shadow: inset 0 0 0 1px var(--c-petrol); }
+.c-tile:nth-child(4) { background: var(--c-lilac); color: var(--c-ink); }
+.c-tile .t { display: block; font: 800 clamp(1.7rem, 5cqi, 3rem)/.95 'Anybody', sans-serif; font-variation-settings: 'wdth' 80, 'wght' 800; text-transform: uppercase; padding-right: 36px; transition: font-variation-settings .35s ease; }
+.c-tile:hover .t, .c-tile[aria-expanded="true"] .t { font-variation-settings: 'wdth' 120, 'wght' 800; }
+.c-tile::after { content: "+"; position: absolute; right: clamp(16px, 3cqi, 32px); top: clamp(16px, 3cqi, 32px); font: 700 1.8rem/1 'Karla', sans-serif; transition: transform .25s; }
+.c-tile[aria-expanded="true"]::after { transform: rotate(45deg); }
+.c-tile .more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s ease; }
+.c-tile[aria-expanded="true"] .more { grid-template-rows: 1fr; }
+.c-tile .inner { display: block; overflow: hidden; min-height: 0; }
+.c-tile .txt { display: block; margin-top: 14px; max-width: 36ch; font-size: 1rem; line-height: 1.5; }
+.c-visit { background: var(--c-petrol); color: var(--c-mint); padding: clamp(24px, 5cqi, 64px) clamp(16px, 3cqi, 32px); display: grid; grid-template-columns: 1.1fr .9fr; gap: clamp(16px, 4cqi, 56px); align-items: end; }
+.c-visit h3 { margin: 0 0 10px; font: 800 clamp(1.6rem, 5cqi, 3rem)/.95 'Anybody', sans-serif; font-variation-settings: 'wdth' 90, 'wght' 800; text-transform: uppercase; }
+.c-hours { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 20px; font-size: 1.05rem; }
+.c-hours dt { font-weight: 700; } .c-hours dd { margin: 0; }
+.c-hours .today { color: var(--c-butter); }
+.c-visit .status { background: var(--c-butter); color: var(--c-ink); font-weight: 700; }
+.c-visit .c-btn { display: inline-flex; align-items: center; min-height: 48px; padding: 0 24px; border-radius: 999px; background: var(--c-butter); color: var(--c-ink) !important; font-weight: 700; text-decoration: none; margin-top: 14px; }
+.c-foot { padding: 14px clamp(16px, 3cqi, 32px); font-size: .85rem; display: flex; flex-wrap: wrap; gap: 6px 24px; justify-content: space-between; background: var(--c-ink); color: var(--c-mint); }
+
+/* Call-Fragen */
+.call { display: grid; gap: 16px; max-width: 860px; }
+.call details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 4px 18px; }
+.call summary { cursor: pointer; font-weight: 600; padding: 14px 0; min-height: 44px; }
+.call ul { list-style: none; margin: 0; padding: 0 0 12px; display: grid; gap: 4px; }
+.call li label { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; min-height: 44px; }
+.call input[type=checkbox] { width: 22px; height: 22px; margin-top: 2px; flex: none; accent-color: var(--accent); }
+.call textarea, .call .pick { width: 100%; font: inherit; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-height: 90px; }
+.call fieldset { border: 0; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+.call fieldset label { border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px; min-height: 44px; display: inline-flex; align-items: center; gap: 8px; }
+
+/* Schmale Rahmen */
+@container (max-width: 700px) {
+  .a-nav nav, .b-nav nav, .c-nav nav { display: none; }
+  .a-hero, .a-svc, .a-visit, .b-hero, .c-visit { grid-template-columns: 1fr; }
+  .a-art { max-width: 340px; }
+  .a-pane { min-height: 0; }
+  .b-copy { border-right: 0; border-bottom: 1px solid var(--b-line); }
+  .room text { font-size: 15px; }
+  .b-days { grid-template-columns: 1fr; }
+  .b-day { grid-template-columns: 56px 1fr; align-items: baseline; }
+  .c-svc { grid-template-columns: 1fr; }
+  .c-tile { min-height: 120px; }
+  .c-sticker { position: relative; right: auto; bottom: auto; margin: 20px 0 0 auto; width: 112px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .c-sticker svg { animation: none; }
+  .a-list button, .c-tile h3, .c-tile::after, .c-tile .more { transition: none; }
+}
+</style>
+
+<div class="wrap">
+  <header class="bar">
+    <div class="bar-top">
+      <h1>Zahnarzt-Website<small>Drei Stilrichtungen zum Auswählen. Alle Texte und Zeiten sind Vorschläge.</small></h1>
+      <div class="live">
+        <label for="pn">Praxisname<input id="pn" type="text" placeholder="Praxis Mustermann" autocomplete="off"></label>
+        <label for="pc">Ort<input id="pc" type="text" placeholder="Musterstadt" autocomplete="off"></label>
+      </div>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Ansicht">
+      <button role="tab" id="t-over" aria-controls="p-over" aria-selected="true" data-tab="over">Überblick</button>
+      <button role="tab" id="t-a" aria-controls="p-a" aria-selected="false" data-tab="a">A · Stille</button>
+      <button role="tab" id="t-b" aria-controls="p-b" aria-selected="false" data-tab="b">B · Raster</button>
+      <button role="tab" id="t-c" aria-controls="p-c" aria-selected="false" data-tab="c">C · Eigenwillig</button>
+      <button role="tab" id="t-call" aria-controls="p-call" aria-selected="false" data-tab="call">Fragen für den Call</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ÜBERBLICK -->
+    <section class="panel" id="p-over" role="tabpanel" aria-labelledby="t-over">
+      <p class="note">Gleiche Praxis, drei Haltungen. Alle drei folgen den Regeln für Medizin: ruhige Bewegung, keine Dringlichkeit, große Lesbarkeit, Sie-Form, keine Heilversprechen. Praxisname und Ort oben eintippen, dann ändert sich jede Ansicht live.</p>
+      <div class="cards">
+        <article class="card">
+          <span class="tag">Richtung A · ruhig</span>
+          <h3>Stille</h3>
+          <p style="margin:0">Weiche Bögen, Serifenschrift, Moosgrün. Wirkt wie ein gut gestalteter Praxisraum: Ruhe vor dem ersten Termin.</p>
+          <dl>
+            <dt>Schrift</dt><dd>Instrument Serif und Hanken Grotesk</dd>
+            <dt>Farbe</dt><dd>Salbeiweiß, Moosgrün, Sand</dd>
+            <dt>Signatur</dt><dd>Leistungsindex mit Vorschau. Maus: Hover. Touch: Tippen. Tastatur: Fokus.</dd>
+            <dt>Passt, wenn</dt><dd>Angstpatienten, Familien, ältere Zielgruppe wichtig sind</dd>
+          </dl>
+          <button class="go" data-go="a">Ansehen</button>
+        </article>
+        <article class="card">
+          <span class="tag">Richtung B · präzise</span>
+          <h3>Raster</h3>
+          <p style="margin:0">Hairlines, Mono-Schrift, ein Ultramarin. Betont Sauberkeit und Ablauf. Die Praxis wird als Grundriss erklärt.</p>
+          <dl>
+            <dt>Schrift</dt><dd>Familjen Grotesk, Public Sans, DM Mono</dd>
+            <dt>Farbe</dt><dd>Papierweiß, Tinte, Ultramarin</dd>
+            <dt>Signatur</dt><dd>Praxis-Grundriss. Maus: Hover. Touch: Tippen. Tastatur: Tab und Enter.</dd>
+            <dt>Passt, wenn</dt><dd>Technik, Hygiene und Transparenz im Vordergrund stehen</dd>
+          </dl>
+          <button class="go" data-go="b">Ansehen</button>
+        </article>
+        <article class="card">
+          <span class="tag">Richtung C · mutig</span>
+          <h3>Eigenwillig</h3>
+          <p style="margin:0">Riesige, verformbare Schrift und Farbflächen in Petrol, Flieder und Butter. Näher an Awwwards-Seiten wie Normal is Boring als jede Praxisseite in der Region.</p>
+          <dl>
+            <dt>Schrift</dt><dd>Anybody (Breite verstellbar) und Karla</dd>
+            <dt>Farbe</dt><dd>Petrol, Flieder, Mintweiß, Butter</dd>
+            <dt>Signatur</dt><dd>Schriftbreite. Maus: Bewegung. Touch: Wischen. Tastatur: Regler.</dd>
+            <dt>Passt, wenn</dt><dd>die Praxis auffallen und jüngere Patienten erreichen will</dd>
+          </dl>
+          <button class="go" data-go="c">Ansehen</button>
+        </article>
+      </div>
+      <div class="rec">
+        <h3>Meine Einschätzung</h3>
+        <p>Für den Anspruch „Awwwards-Niveau“ ist C die stärkste Idee, verlangt aber eine Praxis, die Mut hat. A ist die sicherste Wahl für einen Zahnarzt. B liegt dazwischen und wirkt am modernsten, ohne zu polarisieren.</p>
+        <p>Vorschlag für den Call: A und C zeigen. Wenn die Praxis bei C zögert, A mit einem einzigen mutigen Element aus C ergänzen, zum Beispiel der verformbaren Überschrift.</p>
+      </div>
+      <p class="note" style="margin-top:16px">Bilder sind hier Platzhalter. Für die fertige Seite braucht es echte Fotos von Praxis und Team. Heilmittelwerbegesetz, Berufsordnung und Impressumspflichten müssen vor dem Livegang geprüft werden.</p>
+    </section>
+
+    <!-- A -->
+    <section class="panel" id="p-a" role="tabpanel" aria-labelledby="t-a" hidden>
+      <div class="site a" aria-label="Entwurf A, Stille">
+        <header class="a-nav">
+          <span class="a-logo"><i aria-hidden="true"></i><span data-bind="name">Praxis Mustermann</span></span>
+          <nav aria-label="Beispielnavigation"><span>Leistungen</span><span>Praxis</span><span>Team</span><span>Anfahrt</span></nav>
+          <a class="a-btn" href="#p-a" onclick="return false">Termin anfragen</a>
+        </header>
+        <div class="a-hero">
+          <div>
+            <p class="a-eyebrow">Zahnmedizin in <span data-bind="city">Musterstadt</span></p>
+            <h2 class="big">Ruhig behandelt.<br><em>Klar erklärt.</em></h2>
+            <p class="a-lead">Jeder Schritt wird vorher besprochen. So wissen Sie zu jedem Zeitpunkt, was als Nächstes passiert und warum.</p>
+            <div class="a-cta">
+              <a class="a-btn" href="#p-a" onclick="return false">Online-Termin</a>
+              <a class="a-btn ghost" href="#p-a" onclick="return false">Leistungen ansehen</a>
+            </div>
+          </div>
+          <div class="a-art" aria-hidden="true">
+            <svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid meet">
+              <path d="M20 500 V210 A130 130 0 0 1 280 210 V500 Z" fill="#D3DBCC"/>
+              <path d="M150 500 V150 A125 125 0 0 1 400 150 V500 Z" fill="#3E5A47"/>
+              <path d="M60 500 V290 A70 70 0 0 1 200 290 V500 Z" fill="#CDB59A"/>
+            </svg>
+            <div class="photo">Foto: Behandlungsraum<br>(Echtfoto folgt)</div>
+          </div>
+        </div>
+        <div class="a-svc">
+          <div>
+            <h3>Leistungen (Beispiele)</h3>
+            <ul class="a-list" id="aList"></ul>
+          </div>
+          <div class="a-pane" id="aPane" aria-live="polite"></div>
+        </div>
+        <div class="a-visit">
+          <div>
+            <h3>Sprechzeiten (Beispiel)</h3>
+            <dl class="a-hours" data-hours="a"></dl>
+            <span class="status" data-bind="status"></span>
+          </div>
+          <div>
+            <h3>Termin</h3>
+            <p>Online-Termine laufen über das bekannte Buchungssystem der Praxis. Telefonisch erreichen Sie uns zu den Sprechzeiten unter <span class="ph" title="Platzhalter, Nummer der Praxis">0000 000000</span>.</p>
+            <a class="a-btn" href="#p-a" onclick="return false">Online-Termin buchen</a>
+          </div>
+        </div>
+        <footer class="a-foot">
+          <span>Notfall außerhalb der Sprechzeiten: <span class="ph" title="Platzhalter, Notdienst der Region eintragen">Notdienst-Hinweis</span></span>
+          <span>Impressum · Datenschutz · Barrierefreiheit</span>
+        </footer>
+      </div>
+    </section>
+
+    <!-- B -->
+    <section class="panel" id="p-b" role="tabpanel" aria-labelledby="t-b" hidden>
+      <div class="site b" aria-label="Entwurf B, Raster">
+        <header class="b-nav">
+          <span class="b-logo"><i aria-hidden="true"></i><span data-bind="name">Praxis Mustermann</span></span>
+          <nav aria-label="Beispielnavigation"><span>Leistungen</span><span>Praxis</span><span>Team</span><span>Kontakt</span></nav>
+        </header>
+        <div class="b-hero">
+          <div class="b-copy">
+            <h2 class="big">Zahnmedizin, die <span>Schritt für Schritt</span> erklärt wird.</h2>
+            <div>
+              <p class="b-lead">Hier sehen Sie, wo was passiert, bevor Sie zum ersten Mal da sind. Zahnarzt in <span data-bind="city">Musterstadt</span>.</p>
+              <div class="b-cta">
+                <a class="b-btn" href="#p-b" onclick="return false">Termin buchen</a>
+                <a class="b-btn line" href="#p-b" onclick="return false">Leistungen</a>
+              </div>
+            </div>
+          </div>
+          <div class="b-plan">
+            <p class="b-label">Praxis-Rundgang, Beispielgrundriss</p>
+            <svg viewBox="0 0 480 350" role="group" aria-label="Grundriss der Praxis mit auswählbaren Räumen">
+              <g class="room" role="button" tabindex="0" aria-pressed="false" data-room="empfang" aria-label="Empfang"><rect x="1" y="1" width="150" height="110"/><text x="12" y="24">Empfang</text></g>
+              <g class="room" role="button" tabindex="0" aria-pressed="false" data-room="warten" aria-label="Wartezimmer"><rect x="151" y="1" width="170" height="110"/><text x="162" y="24">Wartezimmer</text></g>
+              <g class="room" role="button" tabindex="0" aria-pressed="false" data-room="wc" aria-label="WC"><rect x="321" y="1" width="158" height="110"/><text x="332" y="24">WC</text></g>
+              <g class="room" role="button" tabindex="0" aria-pressed="false" data-room="b1" aria-label="Behandlung 1"><rect x="1" y="111" width="150" height="120"/><text x="12" y="134">Behandlung 1</text></g>
+              <g class="room" role="button" tabindex="0" aria-pressed="false" data-room="b2" aria-label="Behandlung 2"><rect x="151" y="111" width="170" height="120"/><text x="162" y="134">Behandlung 2</text></g>
+              <g class="room" role="button" tabindex="0" aria-pressed="false" data-room="pz" aria-label="Prophylaxe"><rect x="321" y="111" width="158" height="120"/><text x="332" y="134">Prophylaxe</text></g>
+              <g class="room" role="button" tabindex="0" aria-pressed="false" data-room="steri" aria-label="Sterilisation"><rect x="1" y="231" width="150" height="118"/><text x="12" y="254">Sterilisation</text></g>
+              <g class="room" role="button" tabindex="0" aria-pressed="false" data-room="rtg" aria-label="Röntgen"><rect x="151" y="231" width="170" height="118"/><text x="162" y="254">Röntgen</text></g>
+              <g class="room" role="button" tabindex="0" aria-pressed="false" data-room="buero" aria-label="Büro"><rect x="321" y="231" width="158" height="118"/><text x="332" y="254">Büro</text></g>
+            </svg>
+            <p class="b-roominfo" id="roomInfo" aria-live="polite"></p>
+          </div>
+        </div>
+        <div class="b-hours">
+          <p class="b-label">Sprechzeiten, Beispiel</p>
+          <div class="b-days" data-hours="b"></div>
+          <p class="b-status"><span data-bind="status"></span></p>
+        </div>
+        <footer class="b-foot">
+          <span>Notfall außerhalb der Sprechzeiten: <span class="ph" title="Platzhalter, Notdienst der Region eintragen">Notdienst-Hinweis</span></span>
+          <span>Impressum · Datenschutz · Barrierefreiheit</span>
+        </footer>
+      </div>
+    </section>
+
+    <!-- C -->
+    <section class="panel" id="p-c" role="tabpanel" aria-labelledby="t-c" hidden>
+      <div class="site c" aria-label="Entwurf C, Eigenwillig">
+        <header class="c-nav">
+          <span class="c-logo" data-bind="name">Praxis Mustermann</span>
+          <nav aria-label="Beispielnavigation"><span>Leistungen</span><span>Praxis</span><span>Kontakt</span></nav>
+        </header>
+        <div class="c-hero" id="cHero">
+          <h2 class="c-type" id="cType"><span class="ln"><span class="w">Erst</span> <span class="w">zuhören.</span></span><span class="ln"><span class="w">Dann</span> <span class="w">behandeln.</span></span></h2>
+          <div class="c-ctl">
+            <label for="cw">Schriftbreite</label>
+            <input id="cw" type="range" min="50" max="150" step="5" value="100" aria-valuetext="100 Prozent">
+          </div>
+          <p class="c-lead">Zahnmedizin in <span data-bind="city">Musterstadt</span>. Wir hören Ihre Fragen zuerst und erklären danach, was wir vorschlagen.</p>
+          <a class="c-sticker" href="#p-c" onclick="return false" aria-label="Termin anfragen">
+            <svg viewBox="0 0 100 100" aria-hidden="true"><defs><path id="circ" d="M50 50 m-38 0 a38 38 0 1 1 76 0 a38 38 0 1 1 -76 0"/></defs><text><textPath href="#circ">Termin anfragen · Termin anfragen · </textPath></text></svg>
+            <b aria-hidden="true">→</b>
+          </a>
+        </div>
+        <div class="c-svc" id="cSvc"></div>
+        <div class="c-visit">
+          <div>
+            <h3>Wann wir da sind</h3>
+            <dl class="c-hours" data-hours="c"></dl>
+            <span class="status" data-bind="status"></span>
+          </div>
+          <div>
+            <p style="margin:0">Termine buchen Sie online über das gewohnte System der Praxis. Telefon: <span class="ph" title="Platzhalter, Nummer der Praxis">0000 000000</span></p>
+            <a class="c-btn" href="#p-c" onclick="return false">Online-Termin buchen</a>
+          </div>
+        </div>
+        <footer class="c-foot">
+          <span>Notfall außerhalb der Sprechzeiten: <span class="ph" title="Platzhalter, Notdienst der Region eintragen">Notdienst-Hinweis</span></span>
+          <span>Impressum · Datenschutz · Barrierefreiheit</span>
+        </footer>
+      </div>
+    </section>
+
+    <!-- CALL -->
+    <section class="panel" id="p-call" role="tabpanel" aria-labelledby="t-call" hidden>
+      <p class="note">Während des Calls abhaken und mitschreiben. Alles wird nur in diesem Browser gespeichert.</p>
+      <div class="call" id="callRoot">
+        <details open><summary>Praxis und Ziel</summary>
+          <ul>
+            <li><label><input type="checkbox" data-key="q1"> Name, Standort, Team, Schwerpunkte (Implantologie, Ästhetik, Kinder, Angstpatienten)?</label></li>
+            <li><label><input type="checkbox" data-key="q2"> Gibt es eine Seite? Was stört daran? Domain, Hosting, Zugänge?</label></li>
+            <li><label><input type="checkbox" data-key="q3"> Wen will die Praxis mehr gewinnen? Welche Leistungen sollen wachsen?</label></li>
+            <li><label><input type="checkbox" data-key="q4"> Wichtigste Aktion: Online-Termin, Anruf oder Formular? Welches Buchungssystem?</label></li>
+            <li><label><input type="checkbox" data-key="q5"> Drei Wörter, die die Praxis beschreiben. Was unterscheidet sie von der Praxis nebenan?</label></li>
+          </ul>
+        </details>
+        <details open><summary>Stil und Material</summary>
+          <ul>
+            <li><label><input type="checkbox" data-key="m1"> Welche Seiten gefallen? Was auf keinen Fall?</label></li>
+            <li><label><input type="checkbox" data-key="m2"> Logo, Farben, Schriften vorhanden? Fotos von Räumen und Team? Fotograf nötig?</label></li>
+            <li><label><input type="checkbox" data-key="m3"> Wer liefert Texte? Leistungsliste, Preise sichtbar oder nicht?</label></li>
+          </ul>
+          <p style="margin:0 0 8px;font-weight:600">Welche Richtung gefällt am meisten?</p>
+          <fieldset aria-label="Gewählte Richtung">
+            <label><input type="radio" name="dir" value="A" data-key="dirA"> A · Stille</label>
+            <label><input type="radio" name="dir" value="B" data-key="dirB"> B · Raster</label>
+            <label><input type="radio" name="dir" value="C" data-key="dirC"> C · Eigenwillig</label>
+            <label><input type="radio" name="dir" value="mix" data-key="dirMix"> Mischung</label>
+          </fieldset>
+          <textarea class="pick" aria-label="Notizen zu Stil" placeholder="Was gefällt, was nicht, welche Wörter fallen?" data-key="notesStyle"></textarea>
+          <div style="height:12px"></div>
+        </details>
+        <details open><summary>Recht und Organisation</summary>
+          <ul>
+            <li><label><input type="checkbox" data-key="r1"> Impressum, Kammerangaben, Berufsbezeichnung vollständig?</label></li>
+            <li><label><input type="checkbox" data-key="r2"> Heilmittelwerbegesetz: keine Heilversprechen, keine Vorher/Nachher-Bilder ohne Prüfung.</label></li>
+            <li><label><input type="checkbox" data-key="r3"> Umfang, Seitenzahl, Sprachen, Deadline, Wartung nach dem Livegang.</label></li>
+            <li><label><input type="checkbox" data-key="r4"> Preise und Vertrag erst nach Briefing nennen, Angebot schriftlich nachreichen.</label></li>
+            <li><label><input type="checkbox" data-key="r5"> Nächster Schritt: Briefing-Fragebogen, Termin für die Konzeptvorstellung.</label></li>
+          </ul>
+        </details>
+        <details open><summary>Freie Notizen</summary>
+          <textarea aria-label="Freie Notizen" placeholder="Notizen zum Call" data-key="notesFree" style="min-height:160px;margin-bottom:14px"></textarea>
+        </details>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+
+  /* Praxisdaten live */
+  var pn = $('#pn'), pc = $('#pc');
+  pn.value = store.get('zs.name') || ''; pc.value = store.get('zs.city') || '';
+  function applyBind() {
+    var n = pn.value.trim() || 'Praxis Mustermann', c = pc.value.trim() || 'Musterstadt';
+    $$('[data-bind="name"]').forEach(function (e) { e.textContent = n; });
+    $$('[data-bind="city"]').forEach(function (e) { e.textContent = c; });
+    store.set('zs.name', pn.value); store.set('zs.city', pc.value);
+    fitC();
+  }
+  pn.addEventListener('input', applyBind); pc.addEventListener('input', applyBind);
+
+  /* Sprechzeiten (Beispielwerte) */
+  var DAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  var LONG = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+  var HOURS = { 1: [8, 18], 2: [8, 18], 3: [8, 13], 4: [8, 18], 5: [8, 14] };
+  function span(d) { var h = HOURS[d]; return h ? h[0] + '–' + h[1] + ' Uhr' : 'geschlossen'; }
+  function statusText() {
+    var now = new Date(), d = now.getDay(), t = now.getHours() + now.getMinutes() / 60, h = HOURS[d];
+    if (h && t >= h[0] && t < h[1]) return 'Jetzt geöffnet, heute bis ' + h[1] + ' Uhr';
+    if (h && t < h[0]) return 'Jetzt geschlossen, öffnet heute um ' + h[0] + ' Uhr';
+    for (var i = 1; i <= 7; i++) {
+      var nd = (d + i) % 7;
+      if (HOURS[nd]) return 'Jetzt geschlossen, wieder geöffnet ' + (i === 1 ? 'morgen' : LONG[nd]) + ' um ' + HOURS[nd][0] + ' Uhr';
+    }
+    return 'Jetzt geschlossen';
+  }
+  function renderHours() {
+    var today = new Date().getDay(), order = [1, 2, 3, 4, 5, 6, 0];
+    $$('[data-hours="a"], [data-hours="c"]').forEach(function (dl) {
+      dl.innerHTML = order.slice(0, 5).map(function (d) {
+        return '<dt class="' + (d === today ? 'today' : '') + '">' + LONG[d] + '</dt><dd class="' + (d === today ? 'today' : '') + '">' + span(d) + '</dd>';
+      }).join('');
+    });
+    $$('[data-hours="b"]').forEach(function (g) {
+      g.innerHTML = order.map(function (d) {
+        return '<div class="b-day' + (d === today ? ' today' : '') + (HOURS[d] ? '' : ' closed') + '"><b>' + DAYS[d] + '</b><span>' + span(d) + '</span></div>';
+      }).join('');
+    });
+    var s = statusText();
+    $$('[data-bind="status"]').forEach(function (e) { e.textContent = s; });
+  }
+  renderHours();
+
+  /* Tabs */
+  var tabs = $$('.tabs [role="tab"]'), panels = $$('.panel');
+  function show(id, focus) {
+    tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.tab === id)); t.tabIndex = t.dataset.tab === id ? 0 : -1; });
+    panels.forEach(function (p) { p.hidden = p.id !== 'p-' + id; });
+    try { history.replaceState(null, '', '#' + id); } catch (e) {}
+    if (id === 'c') fitC();
+    if (focus) window.scrollTo({ top: 0 });
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { show(t.dataset.tab, true); });
+    t.addEventListener('keydown', function (e) {
+      var n = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : null;
+      if (n === null) return;
+      n = (n + tabs.length) % tabs.length; tabs[n].focus(); show(tabs[n].dataset.tab);
+    });
+  });
+  $$('[data-go]').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.go, true); }); });
+
+  /* A · Leistungsindex */
+  var SVC = [
+    ['Prophylaxe', 'Regelmäßige Kontrolle und professionelle Zahnreinigung. Wir zeigen Ihnen, was zu Hause gut funktioniert.', 'Textvorschlag, mit Praxis abstimmen'],
+    ['Zahnerhaltung', 'Füllungen und Wurzelbehandlungen mit dem Ziel, den eigenen Zahn so lange wie möglich zu behalten.', 'Textvorschlag, mit Praxis abstimmen'],
+    ['Zahnersatz', 'Kronen, Brücken und Prothesen. Sie bekommen vorher die Optionen erklärt und entscheiden mit.', 'Textvorschlag, mit Praxis abstimmen'],
+    ['Kinder und Angstpatienten', 'Mehr Zeit, kleine Schritte, Pausen jederzeit. Wir besprechen vorab, was Ihnen hilft.', 'Textvorschlag, mit Praxis abstimmen']
+  ];
+  var aList = $('#aList'), aPane = $('#aPane');
+  function aSelect(i) {
+    $$('button', aList).forEach(function (b, j) { b.setAttribute('aria-current', String(i === j)); });
+    var s = SVC[i];
+    aPane.innerHTML = '<h4></h4><p></p><small></small>';
+    $('h4', aPane).textContent = s[0]; $('p', aPane).textContent = s[1]; $('small', aPane).textContent = s[2];
+  }
+  SVC.forEach(function (s, i) {
+    var li = document.createElement('li'), b = document.createElement('button');
+    b.type = 'button'; b.innerHTML = '<span></span><span aria-hidden="true">→</span>'; b.firstChild.textContent = s[0];
+    b.addEventListener('mouseenter', function () { if (matchMedia('(hover:hover)').matches) aSelect(i); });
+    b.addEventListener('focus', function () { aSelect(i); });
+    b.addEventListener('click', function () { aSelect(i); });
+    li.appendChild(b); aList.appendChild(li);
+  });
+  aSelect(0);
+
+  /* B · Grundriss */
+  var ROOMS = {
+    empfang: ['Empfang', 'Anmeldung, Terminvergabe und Fragen zur Abrechnung. Hier werden Sie begrüßt und bekommen alles Organisatorische erklärt.'],
+    warten: ['Wartezimmer', 'Kurze Wartezeit ist das Ziel. Wenn es länger dauert, sagen wir Ihnen, warum.'],
+    wc: ['WC', 'Gleich neben dem Wartezimmer. Hinweise zur Barrierefreiheit hier eintragen, sobald sie geprüft sind.'],
+    b1: ['Behandlung 1', 'Kontrolle, Füllungen, Wurzelbehandlung. Der Stuhl lässt sich komplett anpassen, Pausen sind jederzeit möglich.'],
+    b2: ['Behandlung 2', 'Zahnersatz und größere Eingriffe. Vorher wird der Ablauf besprochen, nicht währenddessen.'],
+    pz: ['Prophylaxe', 'Professionelle Zahnreinigung und Putzberatung, ruhiger Raum mit mehr Zeit pro Termin.'],
+    steri: ['Sterilisation', 'Instrumente werden nach festem Ablauf aufbereitet. Details zum Verfahren von der Praxis ergänzen lassen.'],
+    rtg: ['Röntgen', 'Aufnahmen nur, wenn sie nötig sind. Sie erfahren vorher, wofür.'],
+    buero: ['Büro', 'Verwaltung und Rückfragen, nicht öffentlich zugänglich.']
+  };
+  var info = $('#roomInfo'), rooms = $$('.room');
+  function rSelect(k) {
+    rooms.forEach(function (r) { r.setAttribute('aria-pressed', String(r.dataset.room === k)); });
+    info.innerHTML = '<b></b><br><span></span>';
+    $('b', info).textContent = ROOMS[k][0]; $('span', info).textContent = ROOMS[k][1] + ' (Textvorschlag)';
+  }
+  rooms.forEach(function (r) {
+    r.addEventListener('mouseenter', function () { if (matchMedia('(hover:hover)').matches) rSelect(r.dataset.room); });
+    r.addEventListener('focus', function () { rSelect(r.dataset.room); });
+    r.addEventListener('click', function () { rSelect(r.dataset.room); });
+    r.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rSelect(r.dataset.room); } });
+  });
+  rSelect('empfang');
+
+  /* C · Kacheln */
+  var CT = [
+    ['Prophylaxe', 'Kontrolle, Reinigung, Beratung. Alles, was später Arbeit spart.'],
+    ['Zahnerhaltung', 'Füllungen und Wurzelbehandlung. Der eigene Zahn soll bleiben.'],
+    ['Zahnersatz', 'Kronen, Brücken, Prothesen. Sie sehen vorher, was möglich ist.'],
+    ['Angst ist okay', 'Kleine Schritte, Stoppsignal, viel Zeit. Wir planen das vorher mit Ihnen.']
+  ];
+  var cSvc = $('#cSvc');
+  CT.forEach(function (c) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'c-tile'; b.setAttribute('aria-expanded', 'false');
+    b.innerHTML = '<span class="t"></span><span class="more"><span class="inner"><span class="txt"></span></span></span>';
+    $('.t', b).textContent = c[0]; $('.txt', b).textContent = c[1] + ' (Textvorschlag)';
+    b.addEventListener('click', function () { b.setAttribute('aria-expanded', String(b.getAttribute('aria-expanded') !== 'true')); });
+    b.addEventListener('mouseenter', function () { if (matchMedia('(hover:hover)').matches) b.setAttribute('aria-expanded', 'true'); });
+    cSvc.appendChild(b);
+  });
+  var cw = $('#cw'), cType = $('#cType'), cHero = $('#cHero'), raf = 0;
+  function fitC() {
+    if (!cType || cType.offsetParent === null) return;
+    var cs = getComputedStyle(cHero);
+    var avail = cHero.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    if (avail <= 0) return;
+    var split = avail < 520;
+    cType.classList.toggle('split', split);
+    $$('.ln, .w', cType).forEach(function (e) { e.style.fontSize = ''; });
+    $$(split ? '.w' : '.ln', cType).forEach(function (l) {
+      l.style.fontSize = '100px';
+      var w = l.getBoundingClientRect().width || 1;
+      l.style.fontSize = Math.max(28, Math.min(split ? 190 : 260, 100 * avail / w)) + 'px';
+    });
+  }
+  function setW(v) {
+    v = Math.max(50, Math.min(150, v)); cType.style.setProperty('--w', v); cw.value = v; cw.setAttribute('aria-valuetext', Math.round(v) + ' Prozent');
+    cancelAnimationFrame(raf); raf = requestAnimationFrame(fitC);
+  }
+  cw.addEventListener('input', function () { setW(+cw.value); });
+  cHero.addEventListener('pointermove', function (e) {
+    if (e.target === cw) return;
+    var r = cHero.getBoundingClientRect(); setW(50 + 100 * ((e.clientX - r.left) / r.width));
+  });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitC);
+  window.addEventListener('resize', fitC);
+  if (window.ResizeObserver) new ResizeObserver(fitC).observe(cHero);
+  setW(100);
+
+  /* Call-Fragen speichern */
+  var callEls = $$('#callRoot [data-key]');
+  var saved = {}; try { saved = JSON.parse(store.get('zs.call') || '{}'); } catch (e) {}
+  callEls.forEach(function (el) {
+    var k = el.dataset.key;
+    if (el.type === 'checkbox' || el.type === 'radio') el.checked = !!saved[k]; else if (saved[k]) el.value = saved[k];
+    el.addEventListener('input', function () {
+      var o = {};
+      callEls.forEach(function (x) { o[x.dataset.key] = (x.type === 'checkbox' || x.type === 'radio') ? x.checked : x.value; });
+      store.set('zs.call', JSON.stringify(o));
+    });
+  });
+
+  applyBind();
+  var h = (location.hash || '').replace('#', '');
+  show(['over', 'a', 'b', 'c', 'call'].indexOf(h) > -1 ? h : 'over');
+})();
+</script>

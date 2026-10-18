@@ -1,0 +1,16 @@
+# Für einen Linux-Rechner oder Raspberry Pi: nach /etc/systemd/system/jarvis.service kopieren,
+# Pfade und Benutzer anpassen, dann: sudo systemctl enable --now jarvis
+[Unit]
+Description=Jarvis-Light Telegram-Bot
+After=network-online.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/jarvis-bot
+EnvironmentFile=/home/pi/jarvis-bot/.env
+ExecStart=/usr/bin/python3 bot.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
