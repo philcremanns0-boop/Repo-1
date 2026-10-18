@@ -30,7 +30,7 @@ Nur nutzen, wenn du den Beitrag wirklich willst. Das Hauptkonto nicht verwenden.
 Öffne im angemeldeten Zweitkonto den Beitrag Nr. 11 (averlo.co, Websitebudgets 500, 3.000 und 10.000). Schreibe als Kommentar genau das Wort WEBSITE, ohne Zusatz. Kommentiere nichts anderes, folge niemandem und like nichts. Danach prüfe, ob eine Nachricht oder ein Link eingeht. Öffne Links nur, wenn sie zu einer normalen Website oder einem Dokument führen, nicht zu Downloads, Anmeldeseiten oder Zahlungen. Fasse den Inhalt zusammen und nenne den Link. Wenn Instagram eine Warnung oder ein Captcha zeigt, stoppe sofort und melde es mir.
 ```
 
-## Prompt 4: Leads Zahnärzte
+## Prompt 4: Leads Zahnärzte (pausiert, Outreach ruht)
 Die Stadt hatte ich nicht vorgegeben. Du hast im Bericht Aachen plus 30 km angenommen. Falls das stimmt, so lassen, sonst Stadt ändern.
 ```
 Du bist Recherche-Assistent für eine Webdesign-Agentur (NOVEX, Deutschland). Finde 30 Zahnarztpraxen in Aachen und 30 km Umkreis, deren Website erkennbar Verbesserungsbedarf hat.

@@ -29,6 +29,10 @@ Version schreiben, gegen die Fehlerliste prüfen (Floskeln, Zeitleiste, Ton, Kam
 - Tonwechsel stark formulieren ("cuts to almost complete silence, as if muted"). Ein Pegelsprung von 8 dB wirkt schwach.
 - Bei Objektkontinuität Start- und Endbild nutzen, falls das Werkzeug es erlaubt.
 - Vergleiche nur mit neuem Chat pro Prompt und mehreren Durchläufen, sonst vermischt sich Reihenfolge mit Qualität.
+- Test 2 (Flow): Zustände nicht als Dauerzustand beschreiben. "Hängt um den Hals" und später "hebt sie vom Hals" erzeugt ein zweites Paar. Besser Start- und Endbild und den Satz "danach ist der Hals leer".
+- Wunsch "Stille" nie mit "leises Brummen" formulieren, das Modell rendert Dauerrauschen. Stille und Atem in der Nachbearbeitung mit ffmpeg erzeugen (Lärm bis zum Schnittpunkt, 0,12 s Abfall, dann Stille und synthetischer Atem). Schnittpunkt aus Bildern bestimmen.
+- Prompt-System: Look kommt aus Start- und Endbild, Bewegung aus dem Prompt. Flow (gratis) für Bilder und Tests, Higgsfield nur für das Endergebnis mit denselben Bildern, Ton aus. Details in `novex/prompts/video-prompt-system.md`.
+- Higgsfield-Modelle mit Start- und Endbild und Tonschalter laut Katalog: Kling v3.0, Kling 3.0 Omni (Frames), Seedance 2.0 und Mini, Seedance 1.5 Pro, Gemini Omni Flash 1.1. Preise stehen nicht im Katalog.
 - Werkzeuge: Standbilder alle 0,5 s und Gesichtsstreifen mit ffmpeg, Pegel mit `volumedetect` und `astats` (Datei vorher in einen eigenen Ordner legen).
 
 ## Grenzen

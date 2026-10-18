@@ -126,3 +126,14 @@ Schick mir 2 bis 3 Standbilder (Sekunde 1, 4, 7) und beschreibe den Ton. Dann di
 
 ## Vergleichsprotokoll Gemini gegen Higgsfield
 Beide Videos nebeneinander, Ton an. Je 0 bis 2 Punkte: Haut, Augen, Hände, Kopfhörer-Form, Bewegung, Ton-Wechsel, Mimik, Umgebung, Handy-Look. Maximal 18. Notiere Punkte und Dauer pro Version. So siehst du, ob der gelernte Prompt das günstigere Werkzeug an das teurere heranführt. Ein unabhängiger Beleg wäre das nicht, nur dein eigener Test.
+
+## Auswertung Test 2 (Google Flow, Version 4, 720x1280, 24 fps, 8 s)
+| Beobachtung | Beleg | Ergebnis |
+|---|---|---|
+| Kopfhörer um den Hals von Anfang an, Wagen bleibt im Bild | Bilder bei 0 bis 1,5 s | Fix aus Test 1 wirkt |
+| Zweites Paar Kopfhörer am Hals nach dem Aufsetzen | Ab etwa 3,2 s trägt sie ein Paar auf dem Kopf und eines am Hals | Mein Prompt beschrieb "hängt um den Hals" als Dauerzustand |
+| Ton nicht still | Gesamtpegel ab 3,5 s konstant bei etwa -32 dB, Bereich unter 400 Hz die ganze Zeit bei etwa -34 dB, Höhen über 3 kHz fallen erst um 6 s auf -50 dB | Mein Prompt verlangte "faint low air hum", das Modell machte daraus ein Dauerbrummen |
+| Blinzeln | Natürlich bei 1,0 s und 3,2 s. Danach Augen zu von etwa 4,5 bis 5,8 s und von 7,0 bis 7,8 s | Gut bis 3,2 s, danach zu lange Lidschlussphasen |
+| Kopfhörer sitzen bei etwa 3,0 s | Bilder bei 2,25 bis 3,25 s | Schnittpunkt für die Tonnachbearbeitung |
+
+Aus Test 1 und Test 2 ist das Prompt-System in `video-prompt-system.md` entstanden (Flow für Bilder und Tests, Higgsfield für das Endergebnis, Ton in der Nachbearbeitung).

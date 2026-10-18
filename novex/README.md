@@ -7,7 +7,7 @@ Jeder deiner Punkte, mit Status und Fundort. Status: **fertig** (nutzbar), **Ent
 | 1 | Zahnarzt-Website, Call morgen 20:00 | **Entwurf** | Artifact "Zahnarzt Stilrichtungen" (privater Link in der Antwort), `zahnarzt/stilrichtungen.html`, `zahnarzt/DESIGN.md` |
 | 2 | Autofabrik-Website | **online (laut Phil)** | Porsche-Modell-Lizenz laut Phil in Ordnung. Weitere Änderungen nur, wenn Dateien in einer Sitzung liegen |
 | 3 | Nocieling Media: Website | **braucht dich** | `nocieling/BRIEFING.md` (zehn Minuten Angaben, dann baue ich) |
-| 4 | Neue Kunden gewinnen | **fertig** | `outreach/Outreach-System.xlsx`, `prompts/chatgpt-lead-recherche.md` |
+| 4 | Neue Kunden gewinnen | **pausiert (Phil, 18.10.)** | `outreach/Outreach-System.xlsx`, `prompts/chatgpt-lead-recherche.md` |
 | 5 | NOVEX als Marke, Referenzen (Duolingo gratis, Brünette) | **Entwurf** | `research/02-content-plan-higgsfield.md`. Referenzen-Sektion braucht Links von dir |
 | 6 | Awwwards-Niveau im ersten Wurf | **Entwurf** | `research/09-website-qualitaet-awwwards.md`, `research/04-token-effizienz.md` (CLAUDE.md-Vorlage) |
 | 7 | Mehr Kreativität | **Entwurf** | Drei Richtungen statt einer (Punkt 1), Prozess in 09 |
