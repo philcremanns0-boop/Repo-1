@@ -1,0 +1,558 @@
+<title>No Ceiling Stilrichtungen</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Fragment+Mono&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Schibsted+Grotesk:wght@400;500;700;800&display=swap">
+<style>
+/* Layout: Werkzeugleiste (Markenname live, Tabs), darunter drei Website-Entwürfe mit eigenem Look.
+   Die Entwürfe behalten ihre Farben in beiden Themes, die Leiste folgt dem Theme. */
+:root {
+  --bg: #F4F4F2; --fg: #141617; --muted: #5B6163; --line: #D9DBD8; --surface: #FFFFFF;
+  --accent: #4E5A4A; --accent-fg: #FFFFFF; --focus: #1F4FD8;
+  --font-ui: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0E1011; --fg: #E8EAE8; --muted: #9AA19E; --line: #272B2D; --surface: #16191A; --accent: #A9B8A4; --accent-fg: #0E1011; --focus: #8FB0FF; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0E1011; --fg: #E8EAE8; --muted: #9AA19E; --line: #272B2D; --surface: #16191A; --accent: #A9B8A4; --accent-fg: #0E1011; --focus: #8FB0FF; color-scheme: dark; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.55 var(--font-ui);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 56px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 50; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.wrap { max-width: 1180px; margin-inline: auto; }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 40; background: var(--bg); border-bottom: 1px solid var(--line); padding-block: 12px; }
+.bar-top { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 20px; justify-content: space-between; }
+.bar h1 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+.bar h1 small { display: block; font-weight: 400; color: var(--muted); font-size: .8rem; }
+.live label { display: grid; gap: 2px; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.live input { font: inherit; font-size: .95rem; text-transform: none; letter-spacing: 0; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 40px; width: min(260px, 70vw); }
+.tabs { display: flex; gap: 6px; margin-top: 12px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.tabs button { flex: none; border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 9px 16px; min-height: 44px; font-size: .92rem; }
+.tabs button[aria-selected="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+main { padding-top: 24px; }
+.panel[hidden] { display: none; }
+.note { color: var(--muted); font-size: .88rem; max-width: 72ch; }
+.ph { border-bottom: 1px dotted currentColor; cursor: help; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; margin-block: 16px 24px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.card h3 { margin: 0; font-size: 1.15rem; }
+.card .tag { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.card dl { margin: 0; display: grid; grid-template-columns: 84px 1fr; gap: 6px 12px; font-size: .9rem; }
+.card dt { color: var(--muted); } .card dd { margin: 0; min-width: 0; }
+.card button.go { justify-self: start; margin-top: 4px; background: var(--accent); color: var(--accent-fg); border: 0; border-radius: 999px; padding: 10px 18px; min-height: 44px; font-weight: 500; }
+.rec { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 6px; padding: 16px 20px; max-width: 80ch; }
+.rec h3 { margin: 0 0 6px; font-size: 1rem; } .rec p { margin: 0 0 8px; } .rec p:last-child { margin: 0; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; margin-block: 12px 20px; }
+.facts div { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; font-size: .9rem; }
+.facts b { display: block; font-family: var(--font-mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+.sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; border: 1px solid var(--line); margin-right: 4px; }
+.site { container-type: inline-size; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.site a { color: inherit; }
+.ph-box { display: grid; place-items: center; text-align: center; padding: 10px; font: 500 .7rem/1.3 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ===== A · Gerüst ===== */
+.a { --a-ink:#0D0E10; --a-paper:#F7F7F7; --a-grey:#A6A6A6; --a-card:#EAEAE8; --a-green:#6D7867; --a-line:#D5D5D2;
+  background: var(--a-paper); color: var(--a-ink); font: 400 17px/1.55 'IBM Plex Sans', system-ui, sans-serif; }
+.a-top { background: var(--a-ink); color: var(--a-paper); padding: clamp(16px,3cqi,30px) clamp(16px,3cqi,32px) 0; overflow: hidden; }
+.a-nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.a-logo { font: 800 1rem/1 'Archivo', sans-serif; letter-spacing: .12em; text-transform: uppercase; min-width: 0; }
+.a-nav nav { display: flex; gap: 22px; font: 400 .78rem 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: .08em; color: var(--a-grey); }
+.a-pill { display: inline-flex; align-items: center; min-height: 44px; padding: 0 22px; border-radius: 999px; background: var(--a-paper); color: var(--a-ink) !important; font-weight: 600; text-decoration: none; border: 0; white-space: nowrap; }
+.a-pill.dark { background: var(--a-ink); color: var(--a-paper) !important; }
+.a-big { margin: clamp(20px,6cqi,64px) 0 0; font-family: 'Archivo', Impact, sans-serif; font-weight: 900; font-variation-settings: 'wdth' 62; font-stretch: 62%; text-transform: uppercase; line-height: .78; letter-spacing: -.03em; }
+.a-big .row1 { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+.a-big .w { display: block; white-space: nowrap; width: max-content; }
+.a-big .w2 { line-height: .86; margin-bottom: -.05em; }
+.a-side { max-width: 34ch; font: 400 clamp(.95rem,2cqi,1.15rem)/1.4 'IBM Plex Sans', sans-serif; letter-spacing: 0; text-transform: none; padding-bottom: .4em; display: grid; gap: 14px; justify-items: start; }
+.a-side p { margin: 0; color: #CFCFCB; }
+.a-proc { padding: clamp(28px,6cqi,72px) clamp(16px,3cqi,32px); }
+.a-label { margin: 0 0 10px; font: 500 .75rem 'IBM Plex Mono', monospace; letter-spacing: .1em; text-transform: uppercase; color: #6A6F6B; }
+.a h3 { margin: 0 0 22px; font: 800 clamp(1.9rem,6cqi,3.6rem)/1 'Archivo', sans-serif; font-variation-settings: 'wdth' 80; letter-spacing: -.02em; max-width: 18ch; text-wrap: balance; }
+.a-ba { --p: 50; position: relative; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 28px; overflow: hidden; touch-action: pan-y; cursor: ew-resize; user-select: none; background: #111; }
+.a-ba > .a-after, .a-ba > .a-before { position: absolute; inset: 0; display: grid; align-content: end; padding: clamp(14px,3cqi,32px); }
+.a-after { background: radial-gradient(120% 90% at 80% 20%, #8C9A86 0%, #3C463A 45%, #0D0E10 100%); color: #F7F7F7; }
+.a-before { background: linear-gradient(#5B5D5F, #3E4042); color: #D6D6D2; clip-path: inset(0 calc(100% - var(--p) * 1%) 0 0); }
+.a-before::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 2px, transparent 2px 5px); }
+.a-ba .t { font: 900 clamp(1.6rem,7cqi,4rem)/.9 'Archivo', sans-serif; font-variation-settings: 'wdth' 62; text-transform: uppercase; position: relative; }
+.a-ba .m { font: 500 .72rem 'IBM Plex Mono', monospace; letter-spacing: .08em; text-transform: uppercase; opacity: .85; position: relative; margin-top: 8px; max-width: 42%; }
+.a-after { justify-items: end; text-align: right; }
+.a-handle { position: absolute; top: 0; bottom: 0; left: calc(var(--p) * 1%); width: 3px; background: #F7F7F7; transform: translateX(-50%); pointer-events: none; }
+.a-handle::after { content: "↔"; position: absolute; top: 50%; left: 50%; width: 46px; height: 46px; transform: translate(-50%,-50%); border-radius: 50%; background: #F7F7F7; color: #0D0E10; display: grid; place-items: center; font-size: 1.1rem; }
+.a-range { width: 100%; margin-top: 14px; accent-color: var(--a-green); min-height: 44px; }
+.a-svc { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; padding: 0 clamp(16px,3cqi,32px) clamp(28px,5cqi,64px); }
+.a-card { background: var(--a-card); border-radius: 28px; padding: clamp(18px,3cqi,32px); min-height: 190px; display: grid; align-content: space-between; gap: 18px; }
+.a-card h4 { margin: 0; font: 800 clamp(1.5rem,4.4cqi,2.6rem)/1 'Archivo', sans-serif; font-variation-settings: 'wdth' 75; letter-spacing: -.01em; text-transform: uppercase; }
+.a-card p { margin: 0; max-width: 36ch; }
+.a-card .tags { display: flex; flex-wrap: wrap; gap: 6px; font: 400 .72rem 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase; color: #5A5F5B; }
+.a-card .tags span { border: 1px solid #B9BBB7; border-radius: 999px; padding: 3px 10px; }
+.a-steps { margin: 0; padding: 0 clamp(16px,3cqi,32px) clamp(28px,5cqi,64px); list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; counter-reset: s; border-top: 1px solid var(--a-line); }
+.a-steps li { padding: 18px 14px 0 0; counter-increment: s; }
+.a-steps li::before { content: counter(s, decimal-leading-zero); display: block; font: 500 .78rem 'IBM Plex Mono', monospace; color: #6A6F6B; margin-bottom: 8px; }
+.a-steps b { display: block; font: 800 1.2rem/1.1 'Archivo', sans-serif; font-variation-settings: 'wdth' 80; text-transform: uppercase; }
+.a-steps span { font-size: .9rem; color: #4A4F4B; }
+.a-contact { background: var(--a-ink); color: var(--a-paper); padding: clamp(28px,6cqi,72px) clamp(16px,3cqi,32px); display: grid; grid-template-columns: 1.1fr .9fr; gap: clamp(20px,4cqi,56px); align-items: end; }
+.a-contact h3 { color: var(--a-paper); margin: 0; }
+.a-form { display: grid; gap: 10px; }
+.a-form input, .a-form textarea { font: inherit; color: var(--a-paper); background: #1B1D20; border: 1px solid #34373B; border-radius: 14px; padding: 12px 14px; min-height: 48px; width: 100%; }
+.a-form textarea { min-height: 90px; resize: vertical; }
+.a-form small { color: #A6A6A6; }
+.a-foot { background: var(--a-ink); color: var(--a-grey); border-top: 1px solid #25282B; padding: 16px clamp(16px,3cqi,32px); font: 400 .78rem 'IBM Plex Mono', monospace; display: flex; flex-wrap: wrap; gap: 6px 24px; justify-content: space-between; }
+
+/* ===== B · Timeline ===== */
+.b { --b-bg:#14161A; --b-panel:#1B1E23; --b-line:#2D3137; --b-fg:#ECEDEA; --b-mute:#9CA2A6; --b-green:#A9B8A4; --b-clip:#3A4637;
+  background: var(--b-bg); color: var(--b-fg); font: 400 16px/1.55 'IBM Plex Sans', system-ui, sans-serif; padding-bottom: 8px; }
+.b-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px clamp(14px,2.5cqi,24px); border-bottom: 1px solid var(--b-line); font: 400 .75rem 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--b-mute); }
+.b-bar b { color: var(--b-fg); font-weight: 500; }
+.b-mon { margin: clamp(12px,2.5cqi,24px); display: grid; grid-template-columns: 1.4fr 1fr; gap: clamp(12px,2.5cqi,24px); }
+.b-screen { position: relative; aspect-ratio: 16 / 9; background: radial-gradient(100% 120% at 20% 0%, #2B3329 0%, #14161A 70%); border: 1px solid var(--b-line); border-radius: 10px; overflow: hidden; display: grid; align-content: end; padding: clamp(14px,3cqi,32px); }
+.b-screen .k { position: absolute; left: 14px; top: 12px; font: 400 .72rem 'IBM Plex Mono', monospace; letter-spacing: .08em; color: var(--b-mute); text-transform: uppercase; }
+.b-screen .tc { position: absolute; right: 14px; top: 12px; font: 500 .8rem 'IBM Plex Mono', monospace; color: var(--b-green); font-variant-numeric: tabular-nums; }
+.b-screen h2 { margin: 0 0 8px; font: 800 clamp(1.8rem,6.5cqi,4rem)/.95 'Archivo', sans-serif; font-variation-settings: 'wdth' 70; text-transform: uppercase; letter-spacing: -.02em; transition: opacity .25s; }
+.b-screen p { margin: 0; max-width: 40ch; color: #D4D6D2; transition: opacity .25s; }
+.b-screen .cta { margin-top: 14px; }
+.b-info { background: var(--b-panel); border: 1px solid var(--b-line); border-radius: 10px; padding: 16px; display: grid; gap: 10px; align-content: start; font-size: .92rem; color: var(--b-mute); }
+.b-info b { color: var(--b-fg); font: 500 .75rem 'IBM Plex Mono', monospace; letter-spacing: .08em; text-transform: uppercase; }
+.b-info ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.b-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 999px; background: var(--b-fg); color: #14161A !important; font-weight: 600; text-decoration: none; border: 0; }
+.b-btn.ghost { background: transparent; color: var(--b-fg) !important; box-shadow: inset 0 0 0 1px #4A5057; }
+.b-ctl { display: flex; align-items: center; gap: 10px; margin: 0 clamp(12px,2.5cqi,24px) 10px; font: 400 .75rem 'IBM Plex Mono', monospace; color: var(--b-mute); text-transform: uppercase; letter-spacing: .06em; flex-wrap: wrap; }
+.b-tl { position: relative; margin: 0 clamp(12px,2.5cqi,24px); background: var(--b-panel); border: 1px solid var(--b-line); border-radius: 10px; padding: 0 0 10px; touch-action: pan-y; cursor: ew-resize; user-select: none; overflow: hidden; }
+.b-tl:focus-visible { outline: 3px solid #8FB0FF; outline-offset: 2px; }
+.b-ruler { position: relative; height: 30px; margin: 0 8px 0 36px; border-bottom: 1px solid var(--b-line); font: 400 .66rem 'IBM Plex Mono', monospace; color: var(--b-mute); }
+.b-ruler i { position: absolute; top: 0; bottom: 0; border-left: 1px solid var(--b-line); padding: 8px 0 0 4px; font-style: normal; }
+.b-trk { position: relative; height: 54px; margin: 8px 8px 0 36px; background: #15181C; border-radius: 6px; }
+.b-trk.s { height: 34px; }
+.b-trk .lab { position: absolute; left: -30px; top: 50%; transform: translateY(-50%); font: 500 .66rem 'IBM Plex Mono', monospace; color: #8A9094; text-transform: uppercase; }
+.b-clip { position: absolute; top: 3px; bottom: 3px; border-radius: 5px; padding: 18px 8px 0; overflow: hidden; font: 500 .74rem/1.2 'IBM Plex Sans', sans-serif; white-space: nowrap; text-overflow: ellipsis; color: #101310; }
+.b-clip.on { box-shadow: 0 0 0 2px #ECEDEA inset; }
+.b-wave { position: absolute; inset: 6px 0; display: flex; align-items: center; gap: 2px; }
+.b-wave i { flex: 1; min-width: 1px; background: #5B6760; border-radius: 1px; }
+.b-play { position: absolute; top: 0; bottom: 0; left: 0; width: 2px; background: #ECEDEA; z-index: 5; pointer-events: none; transform: translateX(8px); }
+.b-play::before { content: ""; position: absolute; top: 0; left: 50%; width: 14px; height: 14px; background: #ECEDEA; clip-path: polygon(0 0, 100% 0, 50% 100%); transform: translateX(-50%); }
+.b-all { margin: 18px clamp(12px,2.5cqi,24px) 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.b-all div { background: var(--b-panel); border: 1px solid var(--b-line); border-radius: 8px; padding: 12px 14px; font-size: .9rem; color: var(--b-mute); }
+.b-all b { display: block; color: var(--b-fg); font: 500 .78rem 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 2px; }
+.b-foot { margin: 14px clamp(12px,2.5cqi,24px) 6px; padding-top: 12px; border-top: 1px solid var(--b-line); font: 400 .72rem 'IBM Plex Mono', monospace; color: var(--b-mute); display: flex; flex-wrap: wrap; gap: 6px 24px; justify-content: space-between; text-transform: uppercase; }
+
+/* ===== C · Kontaktbogen ===== */
+.c { --c-bg:#FFFFFF; --c-ink:#0D0E10; --c-grey:#8C8F8D; --c-line:#DEDFDC; --c-green:#6D7867; --c-soft:#F1F1EF;
+  background: var(--c-bg); color: var(--c-ink); font: 400 17px/1.55 'Schibsted Grotesk', system-ui, sans-serif; }
+.c-nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px clamp(16px,3cqi,32px); }
+.c-logo { font: 800 1.05rem/1 'Schibsted Grotesk', sans-serif; letter-spacing: -.01em; min-width: 0; }
+.c-nav nav { display: flex; gap: 22px; font: 400 .78rem 'Fragment Mono', monospace; text-transform: uppercase; letter-spacing: .06em; color: var(--c-grey); }
+.c-hero { position: relative; padding: clamp(10px,3cqi,40px) clamp(16px,3cqi,32px) clamp(24px,5cqi,64px); display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,.8fr); gap: clamp(16px,3cqi,40px); align-items: center; }
+.c-hero h2 { margin: 0; font: 800 clamp(2.1rem,6cqi,4.8rem)/.98 'Schibsted Grotesk', sans-serif; letter-spacing: -.045em; text-wrap: balance; }
+.c-hero h2 em { font-style: normal; color: var(--c-green); }
+.c-hero p { margin: 18px 0 22px; max-width: 40ch; color: #3E4240; font-size: 1.08rem; }
+.c-btn { display: inline-flex; align-items: center; min-height: 46px; padding: 0 24px; border-radius: 999px; background: var(--c-ink); color: #fff !important; font-weight: 700; text-decoration: none; border: 0; }
+.c-btn.line { background: transparent; color: var(--c-ink) !important; box-shadow: inset 0 0 0 1.5px var(--c-ink); }
+.c-coll { position: relative; aspect-ratio: 1 / 1.05; max-width: 100%; }
+.c-coll .ph-box { position: absolute; border-radius: 4px; color: #fff; }
+.c-coll .p1 { left: 0; top: 4%; width: 58%; height: 52%; background: linear-gradient(135deg, #3B3F3C, #0D0E10); }
+.c-coll .p2 { right: 0; top: 0; width: 38%; height: 30%; background: linear-gradient(160deg, #A6A6A6, #5C5F5D); }
+.c-coll .p3 { left: 38%; top: 44%; width: 40%; height: 40%; background: linear-gradient(135deg, #8F9C8A, #4D5949); z-index: 2; }
+.c-coll .p4 { right: 2%; bottom: 0; width: 34%; height: 44%; background: linear-gradient(120deg, #E2E2DE, #B8BAB5); color: #0D0E10; place-items: end end; text-align: right; }
+.c-sheet { background: var(--c-soft); padding: clamp(20px,4cqi,48px) clamp(16px,3cqi,32px); border-block: 1px solid var(--c-line); }
+.c-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; margin-bottom: 16px; }
+.c-head h3 { margin: 0; font: 800 clamp(1.6rem,4.6cqi,2.8rem)/1 'Schibsted Grotesk', sans-serif; letter-spacing: -.03em; }
+.c-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.c-chips button { border: 1.5px solid var(--c-ink); background: transparent; color: var(--c-ink); border-radius: 999px; padding: 8px 16px; min-height: 44px; font: 400 .8rem 'Fragment Mono', monospace; text-transform: uppercase; letter-spacing: .05em; }
+.c-chips button[aria-pressed="true"] { background: var(--c-ink); color: #fff; }
+.c-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.c-fr { position: relative; text-align: left; border: 0; padding: 0; background: #0D0E10; border-radius: 3px; aspect-ratio: 3 / 2; overflow: hidden; transition: transform .2s ease; }
+.c-fr[hidden] { display: none; }
+.c-fr:hover { transform: translateY(-3px); }
+.c-fr span.g { position: absolute; inset: 0; }
+.c-fr .n { position: absolute; left: 8px; bottom: 6px; font: 400 .68rem 'Fragment Mono', monospace; color: #fff; letter-spacing: .06em; }
+.c-fr.lt .n, .c-fr.lt .k { color: #0D0E10; }
+.c-fr .k { position: absolute; right: 8px; top: 6px; font: 400 .62rem 'Fragment Mono', monospace; color: #fff; letter-spacing: .08em; text-transform: uppercase; }
+.c-fr[aria-pressed="true"]::after { content: ""; position: absolute; inset: 6% 4%; border: 3px solid var(--c-green); border-radius: 50%; transform: rotate(-3deg); pointer-events: none; background: rgba(109,120,103,.08); }
+.c-prev { margin-top: 18px; display: grid; grid-template-columns: 1.3fr 1fr; gap: clamp(12px,3cqi,32px); align-items: center; }
+.c-prev .view { aspect-ratio: 16 / 9; border-radius: 4px; position: relative; overflow: hidden; }
+.c-prev .view .ph-box { position: absolute; inset: 0; color: #fff; }
+.c-prev h4 { margin: 0 0 6px; font: 800 clamp(1.4rem,3.6cqi,2.2rem)/1 'Schibsted Grotesk', sans-serif; letter-spacing: -.03em; }
+.c-prev p { margin: 0 0 12px; color: #3E4240; }
+.c-prev .nv { display: flex; gap: 8px; }
+.c-svc { padding: clamp(24px,5cqi,64px) clamp(16px,3cqi,32px); }
+.c-row { display: grid; grid-template-columns: .8fr 1fr; gap: 16px 32px; padding: 20px 0; border-top: 1.5px solid var(--c-ink); align-items: baseline; }
+.c-row:last-child { border-bottom: 1.5px solid var(--c-ink); }
+.c-row h4 { margin: 0; font: 800 clamp(1.6rem,4.8cqi,3rem)/1 'Schibsted Grotesk', sans-serif; letter-spacing: -.035em; }
+.c-row p { margin: 0; max-width: 46ch; color: #3E4240; }
+.c-steps { display: flex; flex-wrap: wrap; gap: 8px 10px; padding: 0 clamp(16px,3cqi,32px) clamp(20px,4cqi,48px); list-style: none; margin: 0; counter-reset: s; }
+.c-steps li { counter-increment: s; border: 1.5px solid var(--c-ink); border-radius: 999px; padding: 8px 16px; font: 400 .8rem 'Fragment Mono', monospace; text-transform: uppercase; letter-spacing: .05em; }
+.c-steps li::before { content: counter(s) " "; color: var(--c-green); }
+.c-end { background: var(--c-ink); color: #fff; padding: clamp(28px,6cqi,72px) clamp(16px,3cqi,32px); display: grid; grid-template-columns: 1.2fr .8fr; gap: 24px; align-items: end; }
+.c-end h3 { margin: 0; font: 800 clamp(2.2rem,8cqi,5.4rem)/.94 'Schibsted Grotesk', sans-serif; letter-spacing: -.045em; }
+.c-end p { margin: 0 0 14px; color: #C9CBC8; }
+.c-end .c-btn { background: #fff; color: var(--c-ink) !important; }
+.c-foot { background: var(--c-ink); color: #8C8F8D; border-top: 1px solid #26292B; padding: 14px clamp(16px,3cqi,32px); font: 400 .74rem 'Fragment Mono', monospace; display: flex; flex-wrap: wrap; gap: 6px 24px; justify-content: space-between; text-transform: uppercase; }
+
+/* Fragen */
+.call { display: grid; gap: 16px; max-width: 860px; }
+.call details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 4px 18px; }
+.call summary { cursor: pointer; font-weight: 600; padding: 14px 0; min-height: 44px; }
+.call ul { list-style: none; margin: 0; padding: 0 0 12px; display: grid; gap: 4px; }
+.call li label { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; min-height: 44px; }
+.call input[type=checkbox] { width: 22px; height: 22px; margin-top: 2px; flex: none; accent-color: var(--accent); }
+.call textarea { width: 100%; font: inherit; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-height: 120px; margin-bottom: 14px; }
+
+@container (max-width: 760px) {
+  .a-nav nav, .c-nav nav { display: none; }
+  .a-big .row1 { flex-direction: column; align-items: flex-start; }
+  .a-svc, .a-contact, .c-hero, .c-prev, .c-end, .c-row, .b-mon { grid-template-columns: 1fr; }
+  .a-steps { grid-template-columns: 1fr 1fr; }
+  .a-ba { aspect-ratio: 4 / 3; }
+  .c-grid { grid-template-columns: repeat(2, 1fr); }
+  .b-all { grid-template-columns: 1fr; }
+  .b-screen { aspect-ratio: 4 / 3; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .b-screen h2, .b-screen p, .c-fr { transition: none; }
+}
+</style>
+
+<div class="wrap">
+  <header class="bar">
+    <div class="bar-top">
+      <h1>No Ceiling Media: Website-Konzept<small>Drei Stilrichtungen. Inhalte aus dem öffentlichen Instagram-Profil abgeleitet, Platzhalter markiert.</small></h1>
+      <div class="live"><label for="bn">Markenname<input id="bn" type="text" placeholder="No Ceiling Media" autocomplete="off"></label></div>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Ansicht">
+      <button role="tab" id="t-over" aria-controls="p-over" aria-selected="true" data-tab="over">Überblick</button>
+      <button role="tab" id="t-a" aria-controls="p-a" aria-selected="false" data-tab="a">A · Gerüst</button>
+      <button role="tab" id="t-b" aria-controls="p-b" aria-selected="false" data-tab="b">B · Timeline</button>
+      <button role="tab" id="t-c" aria-controls="p-c" aria-selected="false" data-tab="c">C · Kontaktbogen</button>
+      <button role="tab" id="t-q" aria-controls="p-q" aria-selected="false" data-tab="q">Fragen an den Kunden</button>
+    </div>
+  </header>
+  <main>
+    <section class="panel" id="p-over" role="tabpanel" aria-labelledby="t-over">
+      <p class="note">Grundlage ist die Auswertung des öffentlichen Instagram-Profils (40 Beiträge). Es gibt keine Website, keine Preise und keinen belegten Firmensitz. Alles, was nicht belegt ist, steht als Platzhalter oder Frage da. Markennamen und Kunden Dritter kommen nicht vor.</p>
+      <div class="facts">
+        <div><b>Angebot (belegt)</b>Videoschnitt, Motion Design, Foto (Events, Porträt, Produkt), Visitenkarten</div>
+        <div><b>Zielgruppe (Eindruck)</b>Creator, kleine Marken, Events. Jung, direkt, Anfrage per DM</div>
+        <div><b>Gestaltung heute</b>Schwarz, Weiß, Grau, riesige angeschnittene Wörter, Collagen auf Weiß, abgerundete UI-Karten</div>
+        <div><b>Farben (Annäherung)</b><span class="sw" style="background:#0D0E10"></span>#0D0E10 <span class="sw" style="background:#F7F7F7"></span>#F7F7F7 <span class="sw" style="background:#A6A6A6"></span>#A6A6A6 <span class="sw" style="background:#6D7867"></span>#6D7867</div>
+      </div>
+      <div class="cards">
+        <article class="card"><span class="tag">Richtung A · ruhig bis kräftig</span><h3>Gerüst</h3>
+          <p style="margin:0">Baut die vorhandene Marke aus: Schwarz und Weiß, ein riesiges, angeschnittenes Wort, abgerundete Karten. Zeigt den Prozess statt Behauptungen.</p>
+          <dl><dt>Schrift</dt><dd>Archivo (schmal, extrafett), IBM Plex Sans</dd><dt>Signatur</dt><dd>Vorher/Nachher-Regler. Maus: ziehen. Touch: wischen. Tastatur: Regler mit Pfeiltasten.</dd><dt>Passt, wenn</dt><dd>die Marke sofort wiedererkennbar bleiben soll</dd></dl>
+          <button class="go" data-go="a">Ansehen</button></article>
+        <article class="card"><span class="tag">Richtung B · energisch</span><h3>Timeline</h3>
+          <p style="margin:0">Die Seite ist ein Schnittfenster: Monitor, Spuren, beweglicher Abspielkopf. Wer die Seite benutzt, bedient eine Timeline. Zeigt Kompetenz, ohne sie zu behaupten.</p>
+          <dl><dt>Schrift</dt><dd>Archivo, IBM Plex Sans und Mono</dd><dt>Signatur</dt><dd>Abspielkopf. Maus: ziehen. Touch: wischen. Tastatur: Pfeiltasten, Pos1, Ende. Dazu Abspielen-Knopf.</dd><dt>Passt, wenn</dt><dd>die Agentur auffallen will und Videoschnitt das Kernangebot ist</dd></dl>
+          <button class="go" data-go="b">Ansehen</button></article>
+        <article class="card"><span class="tag">Richtung C · ruhig</span><h3>Kontaktbogen</h3>
+          <p style="margin:0">Weiße Fläche, große Schrift, ein Kontaktbogen wie in der Fotografie. Übersetzt ihre Collagen in ein ordnendes Raster. Filter für Video, Foto, Motion.</p>
+          <dl><dt>Schrift</dt><dd>Schibsted Grotesk, Fragment Mono</dd><dt>Signatur</dt><dd>Kontaktbogen mit Markierung und Vorschau. Maus: Hover und Klick. Touch: Tippen. Tastatur: Tab und Enter.</dd><dt>Passt, wenn</dt><dd>Fotografie und Ruhe wichtiger sind als Effekte</dd></dl>
+          <button class="go" data-go="c">Ansehen</button></article>
+      </div>
+      <div class="rec"><h3>Meine Einschätzung</h3>
+        <p>B ist die stärkste Idee für eine Videoschnitt-Agentur und die am besten merkbare, aber auch die ungewöhnlichste Bedienung. A ist die sicherste und wirkt am meisten wie ihre bestehende Marke. C passt am besten, wenn Fotografie das Hauptangebot werden soll.</p>
+        <p>Vorschlag: A und B zeigen. Wenn B zu mutig wirkt, den Vorher/Nachher-Regler aus A in B einbauen.</p></div>
+      <p class="note" style="margin-top:16px">Nicht übernommen: das Monogramm der Marke, ihre Wortmarken, Bilder und Kunden, identische Animationen und der Stil, der nur aus DM-Aufforderungen besteht. Kundenprobleme und überprüfbare Ergebnisse (Zahlen, Zitate) fehlen noch und sollten auf der Seite stärker sein als Selbstdarstellung. Vor dem Livegang braucht die Seite ein vollständiges Impressum.</p>
+    </section>
+
+    <!-- A -->
+    <section class="panel" id="p-a" role="tabpanel" aria-labelledby="t-a" hidden>
+      <div class="site a" aria-label="Entwurf A, Gerüst">
+        <div class="a-top">
+          <header class="a-nav"><span class="a-logo" data-bind="brand">No Ceiling Media</span><nav aria-label="Beispielnavigation"><span>Arbeiten</span><span>Leistungen</span><span>Ablauf</span><span>Kontakt</span></nav><a class="a-pill" href="#p-a" onclick="return false">Anfragen</a></header>
+          <h2 class="a-big" id="aBig"><span class="row1"><span class="w w1">No</span><span class="a-side"><p>Mehr Aufmerksamkeit. Mehr Wachstum. Schnitt, Motion Design und Fotografie für Creator und Marken.</p><a class="a-pill" href="#p-a" onclick="return false">Projekt besprechen</a></span></span><span class="w w2">Ceiling</span></h2>
+        </div>
+        <div class="a-proc">
+          <p class="a-label">Prozess sichtbar</p>
+          <h3>Vom Rohmaterial zum fertigen Reel.</h3>
+          <div class="a-ba" id="baBox" style="--p:50" aria-label="Vergleich Rohmaterial und fertiger Schnitt">
+            <div class="a-after"><span class="t">Fertig</span><span class="m">Platzhalter · fertiges Reel</span></div>
+            <div class="a-before"><span class="t">Rohmaterial</span><span class="m">Platzhalter · Rohschnitt</span></div>
+            <div class="a-handle"></div>
+          </div>
+          <input class="a-range" id="baRange" type="range" min="0" max="100" value="50" aria-label="Vergleichsregler zwischen Rohmaterial und fertigem Reel">
+        </div>
+        <div class="a-svc">
+          <article class="a-card"><h4>Videoschnitt</h4><p>Aus Rohmaterial wird ein Video, das Aufmerksamkeit hält. Für YouTube, Reels und Kampagnen.</p><div class="tags"><span>YouTube</span><span>Reels</span><span>Kampagnen</span></div></article>
+          <article class="a-card"><h4>Motion Design</h4><p>Titel, Animationen und UI-Mockups, die zur Marke passen.</p><div class="tags"><span>Titel</span><span>Animation</span><span>Mockups</span></div></article>
+          <article class="a-card"><h4>Fotografie</h4><p>Events, Porträts und Produkte, in einer Bildsprache, die zusammenhält.</p><div class="tags"><span>Events</span><span>Porträt</span><span>Produkt</span></div></article>
+          <article class="a-card"><h4>Branding-Details</h4><p>Visitenkarten und kleine Auftritte, die den Look der Marke weitertragen.</p><div class="tags"><span>Visitenkarten</span><span>Details</span></div></article>
+        </div>
+        <ol class="a-steps" aria-label="Ablauf (Beispiel)"><li><b>Briefing</b><span>Ziel, Zielgruppe, Beispiele.</span></li><li><b>Material</b><span>Rohdaten und Dreh.</span></li><li><b>Schnitt</b><span>Erste Fassung.</span></li><li><b>Feedback</b><span>Gemeinsam schärfen.</span></li><li><b>Lieferung</b><span>Formate für jede Plattform.</span></li></ol>
+        <div class="a-contact">
+          <div><p class="a-label" style="color:#A6A6A6">Kontakt</p><h3>Schreib uns.</h3><p style="margin:0;color:#CFCFCB">Per Direktnachricht auf Instagram: <span class="ph" title="Öffentliches Profil, bitte mit dem Kunden bestätigen">@_noceilingmedia</span>. E-Mail: <span class="ph" title="Platzhalter, Adresse folgt">[E-Mail folgt]</span></p></div>
+          <form class="a-form" id="aForm"><label class="sr" for="af1">Name</label><input id="af1" type="text" placeholder="Name"><label class="sr" for="af2">Nachricht</label><textarea id="af2" placeholder="Worum geht es?"></textarea><a class="a-pill" href="#p-a" onclick="return false" id="aSend">Beispiel senden</a><small id="aMsg" aria-live="polite">Dieses Formular ist ein Platzhalter und sendet nichts.</small></form>
+        </div>
+        <footer class="a-foot"><span>Impressum, Datenschutz: <span class="ph" title="Pflichtangaben vom Kunden">[Angaben folgen]</span></span><span>© <span data-bind="brand">No Ceiling Media</span></span></footer>
+      </div>
+    </section>
+
+    <!-- B -->
+    <section class="panel" id="p-b" role="tabpanel" aria-labelledby="t-b" hidden>
+      <div class="site b" aria-label="Entwurf B, Timeline">
+        <div class="b-bar"><span><b data-bind="brand">No Ceiling Media</b> / Sequenz 01</span><span>9:16 · 30 FPS</span></div>
+        <div class="b-mon">
+          <div class="b-screen" aria-live="polite"><span class="k" id="bK">Intro</span><span class="tc" id="bTc">00:00</span><h2 id="bT">No Ceiling</h2><p id="bP">Mehr Aufmerksamkeit. Mehr Wachstum.</p><span class="cta" id="bCta" hidden><a class="b-btn" href="#p-b" onclick="return false">Projekt besprechen</a></span></div>
+          <div class="b-info"><b>So funktioniert die Seite</b><span>Ziehe den Abspielkopf durch die Timeline oder drücke Abspielen. Mit der Tastatur: Pfeiltasten, Pos1, Ende. Alle Inhalte stehen auch unten als Liste.</span><ul><li>Videoschnitt</li><li>Motion Design</li><li>Fotografie</li></ul><span class="ph" title="Platzhalter">Platzhalter: Showreel hier später als echtes Video</span></div>
+        </div>
+        <div class="b-ctl"><button class="b-btn ghost" id="bPlay" type="button" aria-pressed="false">▶ Abspielen</button><span>Position <span id="bPos">00:00</span> von 00:30</span></div>
+        <div class="b-tl" id="bTl" tabindex="0" role="slider" aria-label="Abspielkopf der Timeline" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0" aria-valuetext="00:00, Intro">
+          <div class="b-ruler" id="bRuler"></div>
+          <div class="b-trk"><span class="lab">V1</span><span id="bClips"></span></div>
+          <div class="b-trk s"><span class="lab">T1</span><span id="bTitles"></span></div>
+          <div class="b-trk s"><span class="lab">A1</span><span class="b-wave" id="bWave"></span></div>
+          <div class="b-play" id="bHead"></div>
+        </div>
+        <div class="b-all" id="bAll"></div>
+        <div class="b-foot"><span>Impressum, Datenschutz: [Angaben folgen]</span><span>© <span data-bind="brand">No Ceiling Media</span></span></div>
+      </div>
+    </section>
+
+    <!-- C -->
+    <section class="panel" id="p-c" role="tabpanel" aria-labelledby="t-c" hidden>
+      <div class="site c" aria-label="Entwurf C, Kontaktbogen">
+        <header class="c-nav"><span class="c-logo" data-bind="brand">No Ceiling Media</span><nav aria-label="Beispielnavigation"><span>Arbeiten</span><span>Leistungen</span><span>Kontakt</span></nav></header>
+        <div class="c-hero">
+          <div><h2>Mehr Aufmerksamkeit. <em>Mehr Wachstum.</em></h2><p>Videoschnitt, Motion Design und Fotografie für Creator und Marken. Wir zeigen Ergebnisse, keine Behauptungen.</p><a class="c-btn" href="#p-c" onclick="return false">Projekt besprechen</a></div>
+          <div class="c-coll" aria-hidden="true"><div class="ph-box p1">Platzhalter · Event</div><div class="ph-box p2">Platzhalter · Porträt</div><div class="ph-box p3">Platzhalter · Reel</div><div class="ph-box p4">Platzhalter · Produkt</div></div>
+        </div>
+        <div class="c-sheet">
+          <div class="c-head"><h3>Arbeiten, Kontaktbogen</h3><div class="c-chips" role="group" aria-label="Filter"><button type="button" aria-pressed="true" data-f="all">Alle</button><button type="button" aria-pressed="false" data-f="video">Video</button><button type="button" aria-pressed="false" data-f="foto">Foto</button><button type="button" aria-pressed="false" data-f="motion">Motion</button></div></div>
+          <div class="c-grid" id="cGrid"></div>
+          <div class="c-prev"><div class="view" id="cView"></div><div><h4 id="cT"></h4><p id="cP"></p><div class="nv"><button class="c-btn line" id="cPrev" type="button">Zurück</button><button class="c-btn line" id="cNext" type="button">Weiter</button></div></div></div>
+        </div>
+        <div class="c-svc">
+          <div class="c-row"><h4>Videoschnitt</h4><p>Aus Rohmaterial wird ein Video, das Aufmerksamkeit hält. Für YouTube, Reels und Kampagnen.</p></div>
+          <div class="c-row"><h4>Motion Design</h4><p>Titel, Animationen und UI-Mockups, passend zur Marke.</p></div>
+          <div class="c-row"><h4>Fotografie</h4><p>Events, Porträts und Produkte in einer durchgehenden Bildsprache.</p></div>
+          <div class="c-row"><h4>Branding-Details</h4><p>Visitenkarten und kleine Auftritte, die den Look weitertragen.</p></div>
+        </div>
+        <ol class="c-steps" aria-label="Ablauf (Beispiel)"><li>Briefing</li><li>Material</li><li>Schnitt</li><li>Feedback</li><li>Lieferung</li></ol>
+        <div class="c-end"><h3>Schreib uns.</h3><div><p>Per Direktnachricht: <span class="ph" title="Öffentliches Profil, bitte bestätigen">@_noceilingmedia</span><br>E-Mail: <span class="ph" title="Platzhalter">[E-Mail folgt]</span></p><a class="c-btn" href="#p-c" onclick="return false">Projekt besprechen</a></div></div>
+        <footer class="c-foot"><span>Impressum, Datenschutz: [Angaben folgen]</span><span>© <span data-bind="brand">No Ceiling Media</span></span></footer>
+      </div>
+    </section>
+
+    <section class="panel" id="p-q" role="tabpanel" aria-labelledby="t-q" hidden>
+      <p class="note">Offene Punkte für das Gespräch mit dem Kunden. Alles wird nur in diesem Browser gespeichert.</p>
+      <div class="call" id="callRoot">
+        <details open><summary>Angebot und Ziel</summary><ul>
+          <li><label><input type="checkbox" data-key="q1"> Welche Leistungen sollen auf die Seite? Was ist das Hauptangebot (Schnitt, Motion, Foto)?</label></li>
+          <li><label><input type="checkbox" data-key="q2"> Für wen? Creator, Marken, Events? Region?</label></li>
+          <li><label><input type="checkbox" data-key="q3"> Hauptaktion: Anfrage per Formular, DM, E-Mail oder Termin?</label></li>
+          <li><label><input type="checkbox" data-key="q4"> Preise oder Pakete zeigen, ja oder nein?</label></li>
+        </ul></details>
+        <details open><summary>Material und Marke</summary><ul>
+          <li><label><input type="checkbox" data-key="m1"> Logo in Vektorform, Farben und Schriften? Gibt es eine Markenrichtlinie?</label></li>
+          <li><label><input type="checkbox" data-key="m2"> Welche Arbeiten dürfen gezeigt werden? Freigabe der Kunden für Bilder und Videos?</label></li>
+          <li><label><input type="checkbox" data-key="m3"> Showreel oder Einzelvideos in welchem Format? Wo liegen sie (nicht auf Instagram eingebettet)?</label></li>
+          <li><label><input type="checkbox" data-key="m4"> Echte Zahlen oder Zitate von Kunden, die wir zeigen dürfen?</label></li>
+        </ul></details>
+        <details open><summary>Recht und Organisation</summary><ul>
+          <li><label><input type="checkbox" data-key="r1"> Impressum: Name, Anschrift, Kontakt, Rechtsform. Wer ist verantwortlich?</label></li>
+          <li><label><input type="checkbox" data-key="r2"> Musik, Bilder und Schriften: sind die Nutzungsrechte geklärt?</label></li>
+          <li><label><input type="checkbox" data-key="r3"> Domain und Hosting vorhanden? Zeitplan, Budget, Wartung?</label></li>
+          <li><label><input type="checkbox" data-key="r4"> Datenschutz: Kontaktformular, Einbettung externer Videos, Einwilligungen.</label></li>
+        </ul></details>
+        <details open><summary>Welche Richtung?</summary><textarea aria-label="Notizen zur Richtung" placeholder="A, B, C oder Mischung? Was gefällt, was nicht?" data-key="notes"></textarea></details>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Markenname live */
+  var bn = $('#bn'); bn.value = store.get('nc.brand') || '';
+  function applyBrand() {
+    var n = bn.value.trim() || 'No Ceiling Media';
+    $$('[data-bind="brand"]').forEach(function (e) { e.textContent = n; });
+    store.set('nc.brand', bn.value);
+  }
+  bn.addEventListener('input', applyBrand);
+
+  /* Tabs */
+  var tabs = $$('.tabs [role="tab"]'), panels = $$('.panel');
+  function show(id, top) {
+    tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.tab === id)); t.tabIndex = t.dataset.tab === id ? 0 : -1; });
+    panels.forEach(function (p) { p.hidden = p.id !== 'p-' + id; });
+    try { history.replaceState(null, '', '#' + id); } catch (e) {}
+    if (id === 'a') fitA();
+    if (id === 'b') layoutB();
+    if (top) window.scrollTo({ top: 0 });
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { show(t.dataset.tab, true); });
+    t.addEventListener('keydown', function (e) {
+      var n = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : null;
+      if (n === null) return; n = (n + tabs.length) % tabs.length; tabs[n].focus(); show(tabs[n].dataset.tab);
+    });
+  });
+  $$('[data-go]').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.go, true); }); });
+
+  /* A: große Wörter einpassen, Vorher/Nachher */
+  function fitA() {
+    var box = $('#aBig'); if (!box || box.offsetParent === null) return;
+    var top = box.parentElement, cs = getComputedStyle(top);
+    var avail = top.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight); if (avail <= 0) return;
+    var w2 = $('.w2', box), w1 = $('.w1', box);
+    w2.style.fontSize = '100px';
+    var size = Math.min(380, 100 * avail / (w2.getBoundingClientRect().width || 1));
+    box.style.fontSize = size + 'px'; w2.style.fontSize = ''; w1.style.fontSize = '';
+  }
+  var baBox = $('#baBox'), baRange = $('#baRange');
+  function setP(v) { v = Math.max(0, Math.min(100, v)); baBox.style.setProperty('--p', v); baRange.value = v; }
+  baRange.addEventListener('input', function () { setP(+baRange.value); });
+  var drag = false;
+  function fromX(e) { var r = baBox.getBoundingClientRect(); setP(100 * (e.clientX - r.left) / r.width); }
+  baBox.addEventListener('pointerdown', function (e) { drag = true; try { baBox.setPointerCapture(e.pointerId); } catch (x) {} fromX(e); });
+  baBox.addEventListener('pointermove', function (e) { if (drag) fromX(e); });
+  baBox.addEventListener('pointerup', function () { drag = false; });
+  baBox.addEventListener('pointercancel', function () { drag = false; });
+  $('#aSend').addEventListener('click', function () { $('#aMsg').textContent = 'Beispiel: Es wurde nichts gesendet. Das Formular ist ein Platzhalter.'; });
+  window.addEventListener('resize', function () { fitA(); layoutB(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fitA(); layoutB(); });
+
+  /* B: Timeline */
+  var CLIPS = [
+    { s: 0, e: 4, k: 'Intro', t: 'No Ceiling', p: 'Mehr Aufmerksamkeit. Mehr Wachstum.', c: '#7C8A78' },
+    { s: 4, e: 10, k: 'Videoschnitt', t: 'Videoschnitt', p: 'Aus Rohmaterial wird ein Video, das Aufmerksamkeit hält. Für YouTube, Reels und Kampagnen.', c: '#A9B8A4' },
+    { s: 10, e: 16, k: 'Motion Design', t: 'Motion Design', p: 'Titel, Animationen und UI-Mockups, die zur Marke passen.', c: '#8D9C88' },
+    { s: 16, e: 22, k: 'Fotografie', t: 'Fotografie', p: 'Events, Porträts und Produkte in einer durchgehenden Bildsprache.', c: '#B4BBB1' },
+    { s: 22, e: 27, k: 'Ablauf', t: 'Ablauf', p: 'Briefing, Material, Schnitt, Feedback, Lieferung. Jeder Schritt wird vorher besprochen.', c: '#99A394' },
+    { s: 27, e: 30, k: 'Anfragen', t: 'Schreib uns', p: 'Per Direktnachricht auf Instagram oder per E-Mail. Wir melden uns mit einem Vorschlag.', c: '#C7CEC3', cta: true }
+  ];
+  var DUR = 30, tNow = 0, playing = false, last = 0, raf = 0, built = false;
+  function fmt(t) { t = Math.floor(t); return '00:' + (t < 10 ? '0' : '') + t; }
+  function clipAt(t) { for (var i = 0; i < CLIPS.length; i++) if (t >= CLIPS[i].s && t < CLIPS[i].e) return CLIPS[i]; return CLIPS[CLIPS.length - 1]; }
+  function buildB() {
+    if (built) return; built = true;
+    var ruler = $('#bRuler'), clips = $('#bClips'), titles = $('#bTitles'), wave = $('#bWave'), all = $('#bAll');
+    for (var s = 0; s <= DUR; s += 5) { var tick = document.createElement('i'); tick.style.left = (s / DUR * 100) + '%'; tick.textContent = fmt(s); ruler.appendChild(tick); }
+    CLIPS.forEach(function (c) {
+      var d = document.createElement('div'); d.className = 'b-clip'; d.style.left = (c.s / DUR * 100) + '%'; d.style.width = ((c.e - c.s) / DUR * 100) + '%'; d.style.background = c.c; d.textContent = c.k; d.dataset.k = c.k; clips.appendChild(d);
+      var a = document.createElement('div'); a.innerHTML = '<b></b><span></span>'; $('b', a).textContent = c.t; $('span', a).textContent = c.p; all.appendChild(a);
+    });
+    [[1, 3.2, 'No Ceiling'], [11, 14, 'Motion'], [17, 20, 'Foto'], [27.5, 29.5, 'Kontakt']].forEach(function (x) {
+      var d = document.createElement('div'); d.className = 'b-clip'; d.style.top = '4px'; d.style.bottom = '4px'; d.style.padding = '8px 6px 0'; d.style.left = (x[0] / DUR * 100) + '%'; d.style.width = ((x[1] - x[0]) / DUR * 100) + '%'; d.style.background = '#D8DDD4'; d.textContent = x[2]; titles.appendChild(d);
+    });
+    var seed = 7, n = 96;
+    for (var i = 0; i < n; i++) { seed = (seed * 9301 + 49297) % 233280; var r = seed / 233280; var b = document.createElement('i'); b.style.height = (18 + r * 70 * (0.5 + 0.5 * Math.sin(i / 6))) + '%'; wave.appendChild(b); }
+  }
+  function layoutB() {
+    var tl = $('#bTl'); if (!tl || tl.offsetParent === null) return;
+    buildB(); renderB(false);
+  }
+  var lastClip = null;
+  function renderB(fromUser) {
+    var tl = $('#bTl'), head = $('#bHead'); if (!tl) return;
+    var trk = $('.b-trk', tl).getBoundingClientRect(), tlr = tl.getBoundingClientRect();
+    var left = (trk.left - tlr.left - tl.clientLeft) + (tNow / DUR) * trk.width;
+    head.style.left = left + 'px'; head.style.transform = 'translateX(-1px)';
+    var c = clipAt(tNow);
+    $$('.b-clip', $('#bClips')).forEach(function (el) { el.classList.toggle('on', el.dataset.k === c.k); });
+    $('#bTc').textContent = fmt(tNow); $('#bPos').textContent = fmt(tNow);
+    tl.setAttribute('aria-valuenow', String(Math.floor(tNow))); tl.setAttribute('aria-valuetext', fmt(tNow) + ', ' + c.k);
+    if (lastClip !== c.k) {
+      lastClip = c.k;
+      $('#bK').textContent = c.k; $('#bT').textContent = c.t; $('#bP').textContent = c.p; $('#bCta').hidden = !c.cta;
+    }
+  }
+  function setT(t) { tNow = Math.max(0, Math.min(DUR - 0.01, t)); renderB(true); }
+  var tlEl = $('#bTl'), scrub = false;
+  function tFromX(e) { var tr = $('.b-trk', tlEl).getBoundingClientRect(); return (e.clientX - tr.left) / tr.width * DUR; }
+  tlEl.addEventListener('pointerdown', function (e) { scrub = true; playing = false; syncPlay(); try { tlEl.setPointerCapture(e.pointerId); } catch (x) {} setT(tFromX(e)); });
+  tlEl.addEventListener('pointermove', function (e) { if (scrub) setT(tFromX(e)); });
+  tlEl.addEventListener('pointerup', function () { scrub = false; });
+  tlEl.addEventListener('pointercancel', function () { scrub = false; });
+  tlEl.addEventListener('keydown', function (e) {
+    var d = null;
+    if (e.key === 'ArrowRight') d = e.shiftKey ? 5 : 1; else if (e.key === 'ArrowLeft') d = e.shiftKey ? -5 : -1;
+    if (d !== null) { e.preventDefault(); setT(tNow + d); }
+    else if (e.key === 'Home') { e.preventDefault(); setT(0); } else if (e.key === 'End') { e.preventDefault(); setT(DUR); }
+  });
+  function syncPlay() { var b = $('#bPlay'); b.setAttribute('aria-pressed', String(playing)); b.textContent = playing ? 'Pause' : '▶ Abspielen'; }
+  function loop(ts) {
+    if (!playing) return;
+    if (!last) last = ts; var dt = (ts - last) / 1000; last = ts;
+    tNow += dt * 1.5; if (tNow >= DUR) { tNow = 0; playing = false; syncPlay(); renderB(true); return; }
+    renderB(true); raf = requestAnimationFrame(loop);
+  }
+  $('#bPlay').addEventListener('click', function () {
+    playing = !playing; syncPlay(); last = 0;
+    if (playing) { if (tNow >= DUR - 0.1) tNow = 0; raf = requestAnimationFrame(loop); }
+  });
+
+  /* C: Kontaktbogen */
+  var FR = [
+    ['video', 'Event-Reel', 'Videoschnitt', 'Schnitt eines Event-Reels in kurzen Einstellungen. Platzhalter für ein echtes Projekt.', 'linear-gradient(135deg,#2B2F2C,#0D0E10)'],
+    ['foto', 'Porträt im Studio', 'Fotografie', 'Studioporträt in Schwarzweiß mit einem Lichtformer. Platzhalter für ein echtes Projekt.', 'linear-gradient(160deg,#6A6C6A,#1C1D1E)'],
+    ['motion', 'Titelanimation', 'Motion Design', 'Titel und Mockups, die in das Video hineinwachsen. Platzhalter für ein echtes Projekt.', 'linear-gradient(135deg,#6D7867,#262B25)'],
+    ['foto', 'Event-Collage', 'Fotografie', 'Mehrere Eventfotos in unterschiedlicher Größe auf weißem Grund. Platzhalter.', 'linear-gradient(120deg,#D9D9D5,#9C9E99)'],
+    ['video', 'Produktclip', 'Videoschnitt', 'Nahaufnahmen eines Produkts, rhythmisch geschnitten. Platzhalter.', 'linear-gradient(135deg,#3D2F2F,#0D0E10)'],
+    ['motion', 'UI-Mockup', 'Motion Design', 'Ein Social-Post als Karte im Video, abgerundet und animiert. Platzhalter.', 'linear-gradient(160deg,#9AA394,#4C5549)'],
+    ['foto', 'Produktfoto', 'Fotografie', 'Produkt auf dunklem Grund mit klarer Lichtkante. Platzhalter.', 'linear-gradient(135deg,#202224,#050506)'],
+    ['video', 'Kurzfilm', 'Videoschnitt', 'Erzählender Kurzfilm im breiten Format. Platzhalter.', 'linear-gradient(135deg,#59605A,#1A1C1B)'],
+    ['motion', 'Wortanimation', 'Motion Design', 'Ein großes Wort wird vor dem Motiv aufgebaut. Platzhalter.', 'linear-gradient(160deg,#C9CBC6,#7B7E79)'],
+    ['foto', 'Porträt draußen', 'Fotografie', 'Natürliches Licht, enger Ausschnitt. Platzhalter.', 'linear-gradient(135deg,#7B8A74,#2F382D)'],
+    ['video', 'Gründer-Reel', 'Videoschnitt', 'Freigestellter Sprecher vor grafischen Ebenen. Platzhalter.', 'linear-gradient(135deg,#444846,#0D0E10)'],
+    ['motion', 'Chat-Animation', 'Motion Design', 'Blaue Blasen, gestaffelt auf Weiß. Platzhalter.', 'linear-gradient(160deg,#EDEDEA,#B7B9B3)']
+  ];
+  var cGrid = $('#cGrid'), cSel = 0, cFilter = 'all';
+  FR.forEach(function (f, i) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'c-fr'; b.dataset.i = i; b.dataset.cat = f[0]; b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', f[1] + ', ' + f[2]); if ([3, 5, 8, 11].indexOf(i) > -1) b.classList.add('lt');
+    b.innerHTML = '<span class="g"></span><span class="n"></span><span class="k"></span>';
+    $('.g', b).style.background = f[4]; $('.n', b).textContent = (i + 1 < 10 ? '0' : '') + (i + 1) + 'A'; $('.k', b).textContent = f[0];
+    b.addEventListener('click', function () { cSelect(i); });
+    cGrid.appendChild(b);
+  });
+  function visible() { return $$('.c-fr', cGrid).filter(function (b) { return !b.hidden; }).map(function (b) { return +b.dataset.i; }); }
+  function cSelect(i) {
+    cSel = i;
+    $$('.c-fr', cGrid).forEach(function (b) { b.setAttribute('aria-pressed', String(+b.dataset.i === i)); });
+    var f = FR[i];
+    $('#cView').innerHTML = '<div class="ph-box"></div>'; $('#cView .ph-box').style.background = f[4]; $('#cView .ph-box').textContent = 'Platzhalter · ' + f[1];
+    $('#cT').textContent = f[1] + ' · ' + f[2]; $('#cP').textContent = f[3];
+  }
+  function step(d) { var v = visible(); if (!v.length) return; var k = v.indexOf(cSel); k = (k + d + v.length) % v.length; cSelect(v[k]); }
+  $('#cPrev').addEventListener('click', function () { step(-1); });
+  $('#cNext').addEventListener('click', function () { step(1); });
+  $$('.c-chips button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      cFilter = b.dataset.f;
+      $$('.c-chips button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      $$('.c-fr', cGrid).forEach(function (fr) { fr.hidden = !(cFilter === 'all' || fr.dataset.cat === cFilter); });
+      var v = visible(); if (v.length && v.indexOf(cSel) < 0) cSelect(v[0]);
+    });
+  });
+  cSelect(0);
+
+  /* Fragen speichern */
+  var els = $$('#callRoot [data-key]'), saved = {}; try { saved = JSON.parse(store.get('nc.call') || '{}'); } catch (e) {}
+  els.forEach(function (el) {
+    var k = el.dataset.key;
+    if (el.type === 'checkbox') el.checked = !!saved[k]; else if (saved[k]) el.value = saved[k];
+    el.addEventListener('input', function () {
+      var o = {}; els.forEach(function (x) { o[x.dataset.key] = x.type === 'checkbox' ? x.checked : x.value; });
+      store.set('nc.call', JSON.stringify(o));
+    });
+  });
+
+  applyBrand();
+  var h = (location.hash || '').replace('#', '');
+  show(['over', 'a', 'b', 'c', 'q'].indexOf(h) > -1 ? h : 'over');
+})();
+</script>

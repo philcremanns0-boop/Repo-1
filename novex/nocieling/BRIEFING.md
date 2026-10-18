@@ -1,6 +1,6 @@
 # Nocieling Media: Briefing für die Website
 
-Status: noch nicht gebaut. Ich habe im Web nichts zu "Nocieling Media" gefunden, auch nicht unter ähnlichen Schreibweisen. Ohne zu wissen, was die Firma macht und wie ihr Auftritt aussieht, würde ich raten. Das wäre Verschwendung von Tokens und Zeit. Mit den folgenden Angaben baue ich die Seite in der nächsten Sitzung innerhalb weniger Stunden.
+Status: Entwurf mit drei Richtungen gebaut (Artifact "No Ceiling Stilrichtungen", `stilrichtungen.html`, `DESIGN.md`). Grundlage war die Instagram-Analyse in `research/11`. Für die Fertigstellung fehlen die Angaben unten. Die Seite braucht vor dem Livegang ein vollständiges Impressum und freigegebene Arbeiten.
 
 ## Was ich brauche (aus deiner Sicht reichen 10 Minuten)
 1. Instagram-Name oder Link der Firma, dazu drei bis sechs Screenshots, die das Grafikdesign zeigen, das dir gefällt. Alternativ der Link zu einer vorhandenen Website.

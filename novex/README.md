@@ -6,7 +6,7 @@ Jeder deiner Punkte, mit Status und Fundort. Status: **fertig** (nutzbar), **Ent
 |---|---|---|---|
 | 1 | Zahnarzt-Website, Call morgen 20:00 | **Entwurf** | Artifact "Zahnarzt Stilrichtungen" (privater Link in der Antwort), `zahnarzt/stilrichtungen.html`, `zahnarzt/DESIGN.md` |
 | 2 | Autofabrik-Website | **online (laut Phil)** | Porsche-Modell-Lizenz laut Phil in Ordnung. Weitere Änderungen nur, wenn Dateien in einer Sitzung liegen |
-| 3 | Nocieling Media: Website | **braucht dich** | `nocieling/BRIEFING.md` (zehn Minuten Angaben, dann baue ich) |
+| 3 | Nocieling Media: Website | **Entwurf** | Artifact "No Ceiling Stilrichtungen" (drei Richtungen), `nocieling/stilrichtungen.html`, `nocieling/DESIGN.md`. Offene Fragen im Tab "Fragen an den Kunden" |
 | 4 | Neue Kunden gewinnen | **pausiert (Phil, 18.10.)** | `outreach/Outreach-System.xlsx`, `prompts/chatgpt-lead-recherche.md` |
 | 5 | NOVEX als Marke, Referenzen (Duolingo gratis, Brünette) | **Entwurf** | `research/02-content-plan-higgsfield.md`. Referenzen-Sektion braucht Links von dir |
 | 6 | Awwwards-Niveau im ersten Wurf | **Entwurf** | `research/09-website-qualitaet-awwwards.md`, `research/04-token-effizienz.md` (CLAUDE.md-Vorlage) |
@@ -40,7 +40,7 @@ Jeder deiner Punkte, mit Status und Fundort. Status: **fertig** (nutzbar), **Ent
 | Jarvis über Claude statt API-Schlüssel, Telegram | **erklärt** | `ANLEITUNGEN.md` Punkt 2 und 3 (BotFather-Anleitung) |
 | Recherche-Ergebnisse in Skills und CLAUDE.md | **fertig** | `CLAUDE.md`, `.claude/skills/` (drei Skills) |
 | Gesperrte Seiten und Instagram über ChatGPT Work | **Prompts fertig** | `prompts/chatgpt-work-referenzen.md` |
-| Ergebnis von ChatGPT Work ausgewertet (18.10.) | **fertig** | `research/10-chatgpt-ergebnisse.md`, nächste Prompts in `prompts/chatgpt-naechste-schritte.md` |
+| Ergebnis von ChatGPT Work ausgewertet (18.10.) | **fertig** | `research/10-chatgpt-ergebnisse.md`, `research/11-chatgpt-ergebnisse-teil2.md`, nächste Prompts in `prompts/chatgpt-naechste-schritte.md` |
 | Video-Test Supermarkt, erste Messung | **fertig** | `prompts/video-supermarkt-ruhe.md` (Version 4) |
 | Hyperrealismus-Test Supermarkt mit Gemini | **Prompt fertig, Test braucht dich** | `prompts/video-supermarkt-ruhe.md` |
 | Netzwerkfreigabe, Sketchfab, Branch erklärt | **erklärt** | `ANLEITUNGEN.md` Punkt 4 bis 6 |

@@ -3,14 +3,32 @@
 Stand 18.10.2026, nach Test 1 und Test 2 der Supermarkt-Szene. Die Modellangaben zu Higgsfield stammen aus dem Modellkatalog des Higgsfield-Zugangs (Parameter und Rollen), Preise stehen dort nicht. Zu Flow stützen sich die Angaben auf Googles Veo-3.1-Berichte: Frames to Video (Start- und Endbild), Ingredients to Video und Ton in allen Modi.
 
 ## Die Arbeitsteilung
-| | Google Flow (gratis, unbegrenzt) | Higgsfield (Credits) |
+| | Google Flow (tägliche Gratis-Credits) | Higgsfield (Credits) |
 |---|---|---|
-| Aufgabe | Standbilder (Nano Banana), Ablauf und Idee testen | nur das beste Endergebnis |
+| Aufgabe | Ablauf und Idee testen, solange die Credits reichen | Tests und Endergebnis (Credits pro Lauf sind niedrig, siehe unten) |
 | Eingabe | Text, Startbild, Endbild | Startbild und Endbild, die du in Flow gratis erzeugt hast |
 | Prompt | lang und beschreibend (Veo versteht Zeitleisten) | kurz, nur Bewegung (das Bild liefert den Look) |
 | Ton | im Prompt verlangen, aber später ersetzen | nach Möglichkeit "aus" und in der Nachbearbeitung vertonen |
 
 Wichtigste Regel: **Der Look kommt aus den Bildern, die Bewegung aus dem Prompt.** Alles, was im Video später da sein oder fehlen soll (Kopfhörer am Hals, leerer Hals danach), legst du mit Start- und Endbild fest, nicht mit Text.
+
+## Fakten aus der Gegenrecherche (ChatGPT, Abruf 18.10.2026, von mir nicht geprüft)
+**Google Flow.** "Kostenlos unbegrenzt" stimmt laut ChatGPT nicht. Ohne Abo gibt es 50 Credits pro Tag. Veo 3.1 Lite kostet 10 Credits pro Video (5 Videos pro Tag), Fast 20, Quality 100. Gemini Omni Flash kostet bei 720p und 8 s 12 Credits, bei 360p 6 Credits. Nicht abonnierte Nutzer können zwischen etwa 14 und 17 Uhr UTC eingeschränkt sein. Dein Zähler in Flow zeigt, was bei dir wirklich gilt. Start- und Endbild gibt es bei allen Veo-3.1-Modellen und Omni Flash, in 9:16, 4, 6 oder 8 Sekunden (Omni auch 10). Ingredients to Video: laut Google-Leitfaden bis zu 3 Referenzbilder. **In den Projekteinstellungen gibt es "Return silent videos"**, dann sind alle Videos stumm. Ein getrennter Ton-Export ist nicht belegt.
+
+**Higgsfield (Preflight-Kosten laut ChatGPT, 9:16, 1 Ergebnis, Unlimited aus):**
+| Modell | Dauer | Ton an | Ton aus |
+|---|---|---|---|
+| Kling v3.0 std | 5 s | 8,75 | 6,25 |
+| Kling v3.0 std | 10 s | 17,5 | 12,5 |
+| Kling v3.0 pro | 5 s | 10 | 7,5 |
+| Kling v3.0 pro | 10 s | 20 | 15 |
+| Seedance 2.0 Mini (720p) | 5 s | 5 | 5 |
+| Seedance 2.0 Mini (720p) | 10 s | 10 | 10 |
+| Seedance 2.0 std (720p) | 5 s | 22,5 | 22,5 |
+| Gemini Omni Flash 1.1 (720p) | 8 s | 24 | nicht erfasst |
+Die Higgsfield-Oberfläche zeigt vor dem Start den Preis, nimm diesen als Maßstab. Mit deinem Stand von 840,75 Credits wären das rund 134 Kling-std-Läufe zu 5 s ohne Ton oder rund 168 Seedance-Mini-Läufe zu 5 s. **Das ist deutlich günstiger, als ich angenommen hatte.** Iterieren bei Higgsfield ist also vernünftig, wenn du dort Start- und Endbild nutzt. Unlimited-Angebote: laut ChatGPT Kling 3.0 nur 7 Tage auf bestimmten Jahrestarifen, Seedance 2.0 für Team-Tarife, Mini unklar, Omni Flash 1.1 keine Zusage. Bei deinem Konto war Unlimited beim Abruf nicht verfügbar.
+
+**Bildmodelle bei Higgsfield (aus dem Modellkatalog):** Higgsfield Soul 2.0 ("realistic UGC, fashion editorial and character generation", mit Soul-ID und genau einem Referenzbild), Nano Banana Pro (Bild-zu-Bild mit Referenzbildern), Kling O1 Image, GPT Image 2 (OpenAI, mit Bearbeitung). Für realistische Menschen ist Soul 2.0 am ehesten gebaut. Für das Endbild (Startbild als Referenz, ein Gegenstand ändert sich) passt Nano Banana Pro besser, weil es mehrere Referenzbilder nimmt. Bildpreise stehen im Katalog nicht.
 
 ## Warum "Prompt V4" nicht der richtige Higgsfield-Prompt ist
 V4 ist ein langer Text-zu-Video-Prompt im Veo-Stil. Er hatte außerdem einen Denkfehler: "Kopfhörer hängen um den Hals, von Anfang an sichtbar" plus "sie hebt sie vom Hals". Das Modell hält den Satz über den Hals für einen dauerhaften Zustand und zeichnet nach dem Aufsetzen ein neues Paar. Auf Higgsfield nimmst du stattdessen Bild-zu-Video mit Start- und Endbild. Der Prompt dort ist kurz.
@@ -97,7 +115,7 @@ Style: photorealistic documentary look, natural skin texture with visible pores,
 | Seedance 2.0 | ja | an oder aus | 4 bis 15 s | Höhere Qualität, bis 4k im Standardmodus |
 | Gemini Omni Flash 1.1 | ja | nativer Ton | 3 bis 10 s | Google-Modell (vermutlich das, was du "Gemini Video Flash" nennst), 9:16 |
 | Seedance 1.5 Pro | ja | an oder aus | 4, 8, 12 s | Zuverlässige Bewegung |
-Preise stehen im Katalog nicht. Mein Vorschlag: Zuerst ein Durchlauf mit dem günstigsten Modell (Seedance 2.0 Mini), Ton aus. Wenn Ablauf und Gesicht stimmen, den Endlauf mit Kling v3.0 im Pro-Modus. Notiere den Creditverbrauch jedes Laufs.
+Preise stehen weiter oben (laut ChatGPT). Vorschlag: Tests mit Seedance 2.0 Mini (5 Credits für 5 s) oder Kling v3.0 std ohne Ton (6,25 Credits für 5 s), den Endlauf mit Kling v3.0 pro. Notiere den Creditverbrauch jedes Laufs.
 
 ### H1: Prompt für Higgsfield (Startbild F1 und Endbild F2 hochladen)
 ```
@@ -111,7 +129,7 @@ Besser: Ton aus und in der Nachbearbeitung vertonen (siehe unten).
 
 ## Ton in der Nachbearbeitung (der sichere Weg)
 Kein Videomodell hält "Stille bis auf den Atem" zuverlässig ein. Es geht in der Nachbearbeitung:
-1. Video erzeugen (Ton egal oder aus).
+1. Video erzeugen, am besten stumm: in Flow Projekteinstellungen "Return silent videos", bei Higgsfield Ton aus.
 2. Video in den Chat hochladen und die Sekunde nennen, in der die Ohrmuscheln die Ohren berühren.
 3. Ich liefere zurück: Lärm bis zu dieser Sekunde, harter Abfall, dann Stille und zwei tiefe Atemzüge. Der Atem ist synthetisch, die Lautstärke lässt sich ändern.
 Bei Test 2 funktionierte das: Lärm um -20 bis -24 dB, ab 3,25 s Stille unter -70 dB, Atemspitzen bei -29 bis -38 dB (Messwerte, nicht gehört). Wenn du echten Atem willst, nimm ihn mit dem Handy auf (ruhiger Raum, 10 Sekunden) und gib ihn mir.
