@@ -1,0 +1,324 @@
+<title>Prompt-Bibliothek</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: schmale Leseliste, Gruppen als Abschnitte, jeder Prompt ein Block mit Kopieren-Button. */
+:root {
+  --bg:#F4F4F0; --fg:#171B1A; --muted:#5C6662; --line:#D8DBD5; --surface:#FFFFFF; --code:#F0F2EC;
+  --accent:#2F5D50; --accent-fg:#FFFFFF; --ok:#1F7A4D; --focus:#1F4FD8;
+  --ui:'Hanken Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif; --mono:'DM Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#0F1413; --fg:#E9EEEB; --muted:#9AA5A0; --line:#27302D; --surface:#161D1B; --code:#101715; --accent:#86BFAA; --accent-fg:#0B120F; --ok:#6FD6A0; --focus:#8FB0FF; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg:#0F1413; --fg:#E9EEEB; --muted:#9AA5A0; --line:#27302D; --surface:#161D1B; --code:#101715; --accent:#86BFAA; --accent-fg:#0B120F; --ok:#6FD6A0; --focus:#8FB0FF; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:400 16px/1.55 var(--ui);
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); padding-block:0 64px; }
+body::before { content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); background:var(--bg); z-index:30; }
+:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
+.wrap { max-width:820px; margin-inline:auto; }
+.top { position:sticky; top:env(safe-area-inset-top,0px); z-index:20; background:var(--bg); padding-block:14px 12px; border-bottom:1px solid var(--line); }
+.top h1 { margin:0 0 2px; font-size:1.2rem; letter-spacing:.005em; }
+.top p { margin:0 0 10px; color:var(--muted); font-size:.9rem; }
+.top input { width:100%; font:inherit; color:var(--fg); background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:11px 14px; min-height:44px; }
+.how { margin:18px 0 6px; padding:12px 14px; background:var(--surface); border:1px solid var(--line); border-radius:10px; font-size:.92rem; color:var(--muted); }
+.how b { color:var(--fg); }
+.grp { margin-top:30px; }
+.grp h2 { display:inline; margin:0; font-size:1.05rem; }
+.tool { margin-left:10px; font:500 .72rem var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:2px 9px; vertical-align:2px; }
+.p { margin-top:14px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; }
+.p[hidden] { display:none; }
+.p header { display:flex; flex-wrap:wrap; gap:4px 12px; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
+.p h3 { margin:0; font-size:.98rem; min-width:0; flex:1 1 200px; }
+.meta { font:400 .75rem var(--mono); color:var(--muted); }
+pre { margin:0 0 12px; padding:12px; background:var(--code); border-radius:8px; font:400 .82rem/1.55 var(--mono); white-space:pre-wrap; overflow-wrap:anywhere; max-height:260px; overflow:auto; }
+.copy { font:inherit; font-weight:600; background:var(--accent); color:var(--accent-fg); border:0; border-radius:999px; min-height:46px; padding:0 22px; cursor:pointer; width:100%; }
+.copy.done { background:var(--ok); color:#fff; }
+.empty { margin-top:24px; color:var(--muted); }
+@media (min-width:560px) { .copy { width:auto; } }
+</style>
+<div class="wrap">
+  <div class="top">
+    <h1>Prompt-Bibliothek</h1>
+    <p>18 Prompts, jeder mit Kopieren-Button. Tippe auf "Kopieren" und füge in ChatGPT oder Gemini ein.</p>
+    <label class="sr" for="q" style="position:absolute;left:-9999px">Suchen</label>
+    <input id="q" type="search" placeholder="Suchen, zum Beispiel Supermarkt, Instagram, Leads" autocomplete="off">
+  </div>
+  <div class="how"><b>Hinweis:</b> Eckige Klammern wie [Stadt] vor dem Absenden ersetzen. Funktioniert "Kopieren" bei dir nicht, tippe lange in den Textblock, wähle "Alles auswählen" und "Kopieren".</div>
+  <section class="grp"><h2>Video-Test Supermarkt (Gemini Veo)</h2><span class="tool">Gemini</span><article class="p" data-search="video-test supermarkt (gemini veo) version 3 (final, veo-stil, 8 sekunden) vertical 9:16, handheld smartphone footage, 8 seconds, one continuous take, 28mm equivalent, camera at chest height with slight natural sway.
+
+a woman in her early 30s with a loose low ponytail and a few flyaway strands, light freckles, no visible makeup, wearing a beige quilted jacket and a canvas tote bag on her shoulder, stands in a busy supermarket aisle under flat white fluorescent light. around her: shoppers pushing carts, a toddler in a cart seat crying, stacked boxes in the background with blurred, unreadable packaging, hanging price signs out of focus. no readable text anywhere in the frame.
+
+0 to 3 seconds: the aisle is overwhelming. audio: dense supermarket noise at full volume, rattling cart wheels, overlapping unintelligible voices, a toddler wailing, rhythmic scanner beeps, a distorted pa chime. she stands tense, jaw tight, eyes darting, shoulders raised, one hand gripping the cart handle.
+
+3 to 5 seconds: with both hands she lifts a pair of silver over-ear headphones with a knit mesh headband and aluminium ear cups from around her neck, settles them over her ears and adjusts the left cup once. audio: the noise stays loud, with one soft click as the cups seal.
+
+at 5 seconds: audio: all ambient sound drops abruptly into a muffled, distant low rumble, as if heard through noise cancelling. the wailing and beeps are barely audible.
+
+5 to 8 seconds: her shoulders drop, she exhales slowly through her nose, her eyes close for a moment and reopen with a faint, relieved half-smile. behind her, shoppers keep moving and the toddler keeps crying, but we only hear the soft muffled rumble and her slow breath. the camera drifts slightly closer.
+
+style: photorealistic documentary look, natural skin texture with visible pores, slight facial asymmetry, mild handheld imperfection, soft white-green fluorescent colour cast, no colour grading, no slow motion. no music, no subtitles, no text overlays, nobody speaks intelligibly."><header><h3>Version 3 (final, Veo-Stil, 8 Sekunden)</h3><span class="meta">315 Wörter</span></header><pre id="p1" tabindex="0">Vertical 9:16, handheld smartphone footage, 8 seconds, one continuous take, 28mm equivalent, camera at chest height with slight natural sway.
+
+A woman in her early 30s with a loose low ponytail and a few flyaway strands, light freckles, no visible makeup, wearing a beige quilted jacket and a canvas tote bag on her shoulder, stands in a busy supermarket aisle under flat white fluorescent light. Around her: shoppers pushing carts, a toddler in a cart seat crying, stacked boxes in the background with blurred, unreadable packaging, hanging price signs out of focus. No readable text anywhere in the frame.
+
+0 to 3 seconds: The aisle is overwhelming. Audio: dense supermarket noise at full volume, rattling cart wheels, overlapping unintelligible voices, a toddler wailing, rhythmic scanner beeps, a distorted PA chime. She stands tense, jaw tight, eyes darting, shoulders raised, one hand gripping the cart handle.
+
+3 to 5 seconds: With both hands she lifts a pair of silver over-ear headphones with a knit mesh headband and aluminium ear cups from around her neck, settles them over her ears and adjusts the left cup once. Audio: the noise stays loud, with one soft click as the cups seal.
+
+At 5 seconds: Audio: all ambient sound drops abruptly into a muffled, distant low rumble, as if heard through noise cancelling. The wailing and beeps are barely audible.
+
+5 to 8 seconds: Her shoulders drop, she exhales slowly through her nose, her eyes close for a moment and reopen with a faint, relieved half-smile. Behind her, shoppers keep moving and the toddler keeps crying, but we only hear the soft muffled rumble and her slow breath. The camera drifts slightly closer.
+
+Style: photorealistic documentary look, natural skin texture with visible pores, slight facial asymmetry, mild handheld imperfection, soft white-green fluorescent colour cast, no colour grading, no slow motion. No music, no subtitles, no text overlays, nobody speaks intelligibly.</pre><button type="button" class="copy" data-target="p1">Kopieren</button></article><article class="p" data-search="video-test supermarkt (gemini veo) version 3 kompakt (falls das tool lange prompts schlecht verarbeitet, etwa 150 wörter) vertical handheld smartphone video, 8 seconds, one take. a woman in her early 30s, loose ponytail with flyaway strands, light freckles, beige quilted jacket, stands in a crowded supermarket aisle under flat fluorescent light; a toddler cries in a cart, carts rattle, scanners beep, voices overlap (loud ambient audio). she looks tense, shoulders raised. at 3 seconds she lifts silver over-ear headphones with a mesh headband from her neck onto her ears with both hands. at 5 seconds all sound drops abruptly to a muffled low rumble, as if noise cancelling. her shoulders drop, she exhales slowly, eyes close, then open with a faint relieved smile, while shoppers keep moving silently behind her. natural skin texture with pores, no retouching, soft handheld drift, no readable text in frame, no music, no speech."><header><h3>Version 3 kompakt (falls das Tool lange Prompts schlecht verarbeitet, etwa 150 Wörter)</h3><span class="meta">132 Wörter</span></header><pre id="p2" tabindex="0">Vertical handheld smartphone video, 8 seconds, one take. A woman in her early 30s, loose ponytail with flyaway strands, light freckles, beige quilted jacket, stands in a crowded supermarket aisle under flat fluorescent light; a toddler cries in a cart, carts rattle, scanners beep, voices overlap (loud ambient audio). She looks tense, shoulders raised. At 3 seconds she lifts silver over-ear headphones with a mesh headband from her neck onto her ears with both hands. At 5 seconds all sound drops abruptly to a muffled low rumble, as if noise cancelling. Her shoulders drop, she exhales slowly, eyes close, then open with a faint relieved smile, while shoppers keep moving silently behind her. Natural skin texture with pores, no retouching, soft handheld drift, no readable text in frame, no music, no speech.</pre><button type="button" class="copy" data-target="p2">Kopieren</button></article><article class="p" data-search="video-test supermarkt (gemini veo) variante in-ear (airpods pro stil) 3 to 5 seconds: she takes a small white wireless earbud with a short stem from her jacket pocket, presses it gently into her right ear with one finger, then the left. audio: the noise stays loud, with one soft chime as the earbuds connect."><header><h3>Variante In-Ear (AirPods Pro Stil)</h3><span class="meta">45 Wörter</span></header><pre id="p3" tabindex="0">3 to 5 seconds: She takes a small white wireless earbud with a short stem from her jacket pocket, presses it gently into her right ear with one finger, then the left. Audio: the noise stays loud, with one soft chime as the earbuds connect.</pre><button type="button" class="copy" data-target="p3">Kopieren</button></article></section><section class="grp"><h2>ChatGPT Work: Referenzen und Nocieling</h2><span class="tool">ChatGPT</span><article class="p" data-search="chatgpt work: referenzen und nocieling prompt 1: normal is boring und awwwards-eintrag analysieren öffne im browser https://www.awwwards.com/sites/normal-is-boring und https://normalisboring.es.
+analysiere die seite wie ein art director und frontend-entwickler und liefere einen bericht mit diesen abschnitten. beschreibe nur, was du wirklich siehst oder im quelltext findest. wenn du etwas nicht sicher weißt, schreibe &quot;nicht sicher&quot;.
+
+1. awwwards: auszeichnung, bewertungen (design, usability, kreativität, inhalt), agentur oder designer, genannte technik, tags.
+2. typografie: schriftfamilien (aus dem css oder netzwerk-tab: font-family, @font-face), größen der hauptüberschrift, gewichte, groß- und kleinschreibung, zeilenabstand, besondere effekte.
+3. farben: hex-werte der hintergründe, texte, akzente (aus dem css oder per farbwähler).
+4. layout: raster, abstände, aufbau der startseite von oben nach unten (jeder abschnitt mit einem satz), navigation.
+5. bildsprache: fotografie oder illustration, seitenverhältnisse, umgang mit text auf bildern.
+6. bewegung: ladeanimation, scrollverhalten, hover-effekte, seitenübergänge. nenne bibliotheken (gsap, lenis, three.js, andere), falls im quelltext erkennbar.
+7. besonderheit: welche eine idee macht die seite unverwechselbar? wie lässt sie sich erleben?
+8. inhalt und ton: beispielsätze der überschriften, tonalität, sprache.
+9. was würdest du nicht kopieren, weil es nur zu diesem kunden passt?
+10. mobile ansicht: was ändert sich?
+
+ausgabe: ein markdown-bericht, den ich ohne änderung in eine andere sitzung einfügen kann. keine bilder erfinden. mache zusätzlich je zwei screenshots (desktop und handy) und beschreibe sie."><header><h3>Prompt 1: Normal is Boring und Awwwards-Eintrag analysieren</h3><span class="meta">201 Wörter</span></header><pre id="p4" tabindex="0">Öffne im Browser https://www.awwwards.com/sites/normal-is-boring und https://normalisboring.es.
+Analysiere die Seite wie ein Art Director und Frontend-Entwickler und liefere einen Bericht mit diesen Abschnitten. Beschreibe nur, was du wirklich siehst oder im Quelltext findest. Wenn du etwas nicht sicher weißt, schreibe &quot;nicht sicher&quot;.
+
+1. Awwwards: Auszeichnung, Bewertungen (Design, Usability, Kreativität, Inhalt), Agentur oder Designer, genannte Technik, Tags.
+2. Typografie: Schriftfamilien (aus dem CSS oder Netzwerk-Tab: font-family, @font-face), Größen der Hauptüberschrift, Gewichte, Groß- und Kleinschreibung, Zeilenabstand, besondere Effekte.
+3. Farben: Hex-Werte der Hintergründe, Texte, Akzente (aus dem CSS oder per Farbwähler).
+4. Layout: Raster, Abstände, Aufbau der Startseite von oben nach unten (jeder Abschnitt mit einem Satz), Navigation.
+5. Bildsprache: Fotografie oder Illustration, Seitenverhältnisse, Umgang mit Text auf Bildern.
+6. Bewegung: Ladeanimation, Scrollverhalten, Hover-Effekte, Seitenübergänge. Nenne Bibliotheken (GSAP, Lenis, Three.js, andere), falls im Quelltext erkennbar.
+7. Besonderheit: Welche eine Idee macht die Seite unverwechselbar? Wie lässt sie sich erleben?
+8. Inhalt und Ton: Beispielsätze der Überschriften, Tonalität, Sprache.
+9. Was würdest du NICHT kopieren, weil es nur zu diesem Kunden passt?
+10. Mobile Ansicht: Was ändert sich?
+
+Ausgabe: ein Markdown-Bericht, den ich ohne Änderung in eine andere Sitzung einfügen kann. Keine Bilder erfinden. Mache zusätzlich je zwei Screenshots (Desktop und Handy) und beschreibe sie.</pre><button type="button" class="copy" data-target="p4">Kopieren</button></article><article class="p" data-search="chatgpt work: referenzen und nocieling prompt 2: nocieling media auf instagram suche auf instagram nach dem konto einer medienagentur mit dem namen &quot;nocieling media&quot; und probiere diese schreibweisen: _nocieling.media, _nocieling_media, nocieling.media, nocielingmedia, _nocieling, nocieling_. prüfe auch varianten mit &quot;nociling&quot; und &quot;nocielling&quot;. wenn mehrere treffer passen, nenne sie mit follower-zahl und biografie und frage mich, welches das richtige ist, bevor du weitermachst.
+
+wenn du das konto gefunden hast, erstelle einen bericht (nur lesen, nichts liken, folgen oder kommentieren):
+1. biografie, link, kontaktangaben, standort, follower und beitragsanzahl.
+2. was bietet die firma an (leistungen)? für wen (branchen, kunden)? welche kunden oder projekte werden gezeigt?
+3. grafikdesign: farbpalette (ungefähre hex-werte), schriftcharakter, raster und layout der beiträge, bildsprache, wiederkehrende elemente, umgang mit text auf bildern, highlights-cover, profilbild.
+4. tonalität der texte (du oder sie, locker oder seriös, sprache).
+5. welche beiträge funktionieren am besten (anzahl likes, kommentare)? welche formate dominieren (reels, karussells, fotos)?
+6. hat die firma eine website? wenn ja, die adresse und eine kurze beschreibung.
+7. fünf prinzipien aus dem design, die man für eine eigene marke übernehmen könnte, ohne zu kopieren.
+ausgabe: ein markdown-bericht auf deutsch, den ich in eine andere sitzung einfügen kann. beschreibe sechs typische beiträge einzeln mit format, motiv und gestaltung. wenn dich instagram zur anmeldung zwingt oder ein captcha zeigt, stoppe und frage mich."><header><h3>Prompt 2: Nocieling Media auf Instagram</h3><span class="meta">206 Wörter</span></header><pre id="p5" tabindex="0">Suche auf Instagram nach dem Konto einer Medienagentur mit dem Namen &quot;Nocieling Media&quot; und probiere diese Schreibweisen: _nocieling.media, _nocieling_media, nocieling.media, nocielingmedia, _nocieling, nocieling_. Prüfe auch Varianten mit &quot;Nociling&quot; und &quot;Nocielling&quot;. Wenn mehrere Treffer passen, nenne sie mit Follower-Zahl und Biografie und frage mich, welches das richtige ist, bevor du weitermachst.
+
+Wenn du das Konto gefunden hast, erstelle einen Bericht (nur lesen, nichts liken, folgen oder kommentieren):
+1. Biografie, Link, Kontaktangaben, Standort, Follower und Beitragsanzahl.
+2. Was bietet die Firma an (Leistungen)? Für wen (Branchen, Kunden)? Welche Kunden oder Projekte werden gezeigt?
+3. Grafikdesign: Farbpalette (ungefähre Hex-Werte), Schriftcharakter, Raster und Layout der Beiträge, Bildsprache, wiederkehrende Elemente, Umgang mit Text auf Bildern, Highlights-Cover, Profilbild.
+4. Tonalität der Texte (Du oder Sie, locker oder seriös, Sprache).
+5. Welche Beiträge funktionieren am besten (Anzahl Likes, Kommentare)? Welche Formate dominieren (Reels, Karussells, Fotos)?
+6. Hat die Firma eine Website? Wenn ja, die Adresse und eine kurze Beschreibung.
+7. Fünf Prinzipien aus dem Design, die man für eine eigene Marke übernehmen könnte, ohne zu kopieren.
+Ausgabe: ein Markdown-Bericht auf Deutsch, den ich in eine andere Sitzung einfügen kann. Beschreibe sechs typische Beiträge einzeln mit Format, Motiv und Gestaltung. Wenn dich Instagram zur Anmeldung zwingt oder ein Captcha zeigt, stoppe und frage mich.</pre><button type="button" class="copy" data-target="p5">Kopieren</button></article></section><section class="grp"><h2>ChatGPT Work: gespeicherte Instagram-Videos</h2><span class="tool">ChatGPT</span><article class="p" data-search="chatgpt work: gespeicherte instagram-videos chatgpt: gespeicherte instagram-videos auswerten (work-funktion) du bist mein recherche-assistent. aufgabe: meine in instagram gespeicherten videos und reels auswerten und daraus eine nutzbare wissens- und aufgabenliste machen.
+
+zugang
+ich bin im browser angemeldet [mein privates konto / zweitkonto]. du arbeitest im browser. du gibst keine zugangsdaten weiter und speicherst sie nirgends.
+
+phase 1: inventar (nur lesen)
+1. öffne meine gespeicherten beiträge (sammlungen eingeschlossen).
+2. gehe sie in gruppen zu je 20 durch. pro beitrag notiere: link, ersteller, datum falls sichtbar, sprache, dauer, thema in einem satz.
+3. lies die beschreibung, eingeblendeten text, hashtags, kommentare des erstellers und, soweit verfügbar, untertitel. rate nicht, was im video gesagt wird, wenn du es nicht erfassen kannst. schreibe dann &quot;inhalt nicht erfassbar&quot;.
+4. liefere eine tabelle (csv-fähig): nr | link | ersteller | thema | kategorie | lernen (klavier, ki-werkzeuge, webdesign, business, sonstiges) | priorität (hoch, mittel, niedrig, mit begründung in einem satz).
+arbeite in etappen und melde dich nach jeder gruppe mit einem zwischenstand. wenn eine anmeldeaufforderung, ein captcha oder eine sicherheitsabfrage erscheint, stoppe und frage mich.
+
+phase 2: aktionen finden (nur lesen)
+für jeden beitrag prüfe:
+a) wird ein werkzeug, skill, repository oder befehl genannt? falls ja: nenne genau den namen und die quelle (link in der beschreibung oder im video genannt). erfinde keine befehle. wenn nur der name genannt wird, suche im web die offizielle seite, gib den link an und markiere die sicherheit: sicher (offizielle quelle gefunden), unsicher (mehrere treffer), nicht gefunden.
+b) steht im video &quot;kommentiere x, um y zu bekommen&quot;? notiere das stichwort x, was y sein soll, und ob das stichwort aus dem kontext eindeutig ist. wenn y öffentlich auffindbar ist (google, repository, website), gib den link an, damit ich nicht kommentieren muss.
+c) muss ich folgen, abonnieren oder eine nachricht senden, um etwas zu erhalten? nenne es.
+ergebnis: zweite tabelle: nr | aktion (befehl installieren, link ansehen, kommentieren, folgen) | genaue angabe | quelle | sicherheit | risiko (z. b. unbekannte quelle).
+
+phase 3: ausführen (nur nach meiner freigabe pro liste)
+erstelle eine liste mit vorschlägen für kommentare, jeweils: beitrag, genauer kommentartext (nur das verlangte stichwort, kein zusatz), begründung. warte auf meine freigabe. nach freigabe: poste langsam, höchstens wenige aktionen pro stunde, mit zufälligen pausen, und stoppe sofort bei warnungen von instagram. danach lies eingehende nachrichten und links (zum beispiel google sheets, dokumente) und fasse sie zusammen. öffne keine links zu downloads oder anmeldeseiten ohne meine zustimmung.
+
+regeln
+- keine befehle, passwörter oder zahlungen ausführen. befehle nur als text an mich liefern, ich führe sie aus.
+- alles, was nach betrug, fake-gewinnspiel oder phishing aussieht, markieren und überspringen.
+- auf deutsch antworten. ergebnisse als tabelle und zusätzlich als csv-block, damit ich sie weitergeben kann.
+- wenn du bei einem beitrag unsicher bist, schreibe das hin, statt zu raten.
+
+beginne mit phase 1 und der ersten gruppe von 20."><header><h3>ChatGPT: gespeicherte Instagram-Videos auswerten (Work-Funktion)</h3><span class="meta">466 Wörter</span></header><pre id="p6" tabindex="0">Du bist mein Recherche-Assistent. Aufgabe: Meine in Instagram gespeicherten Videos und Reels auswerten und daraus eine nutzbare Wissens- und Aufgabenliste machen.
+
+ZUGANG
+Ich bin im Browser angemeldet [mein privates Konto / Zweitkonto]. Du arbeitest im Browser. Du gibst keine Zugangsdaten weiter und speicherst sie nirgends.
+
+PHASE 1: INVENTAR (nur lesen)
+1. Öffne meine gespeicherten Beiträge (Sammlungen eingeschlossen).
+2. Gehe sie in Gruppen zu je 20 durch. Pro Beitrag notiere: Link, Ersteller, Datum falls sichtbar, Sprache, Dauer, Thema in einem Satz.
+3. Lies die Beschreibung, eingeblendeten Text, Hashtags, Kommentare des Erstellers und, soweit verfügbar, Untertitel. Rate nicht, was im Video gesagt wird, wenn du es nicht erfassen kannst. Schreibe dann &quot;Inhalt nicht erfassbar&quot;.
+4. Liefere eine Tabelle (CSV-fähig): Nr | Link | Ersteller | Thema | Kategorie | Lernen (Klavier, KI-Werkzeuge, Webdesign, Business, Sonstiges) | Priorität (hoch, mittel, niedrig, mit Begründung in einem Satz).
+Arbeite in Etappen und melde dich nach jeder Gruppe mit einem Zwischenstand. Wenn eine Anmeldeaufforderung, ein Captcha oder eine Sicherheitsabfrage erscheint, stoppe und frage mich.
+
+PHASE 2: AKTIONEN FINDEN (nur lesen)
+Für jeden Beitrag prüfe:
+a) Wird ein Werkzeug, Skill, Repository oder Befehl genannt? Falls ja: nenne genau den Namen und die Quelle (Link in der Beschreibung oder im Video genannt). Erfinde keine Befehle. Wenn nur der Name genannt wird, suche im Web die offizielle Seite, gib den Link an und markiere die Sicherheit: sicher (offizielle Quelle gefunden), unsicher (mehrere Treffer), nicht gefunden.
+b) Steht im Video &quot;Kommentiere X, um Y zu bekommen&quot;? Notiere das Stichwort X, was Y sein soll, und ob das Stichwort aus dem Kontext eindeutig ist. Wenn Y öffentlich auffindbar ist (Google, Repository, Website), gib den Link an, damit ich nicht kommentieren muss.
+c) Muss ich folgen, abonnieren oder eine Nachricht senden, um etwas zu erhalten? Nenne es.
+Ergebnis: zweite Tabelle: Nr | Aktion (Befehl installieren, Link ansehen, kommentieren, folgen) | genaue Angabe | Quelle | Sicherheit | Risiko (z. B. unbekannte Quelle).
+
+PHASE 3: AUSFÜHREN (nur nach meiner Freigabe pro Liste)
+Erstelle eine Liste mit Vorschlägen für Kommentare, jeweils: Beitrag, genauer Kommentartext (nur das verlangte Stichwort, kein Zusatz), Begründung. Warte auf meine Freigabe. Nach Freigabe: poste langsam, höchstens wenige Aktionen pro Stunde, mit zufälligen Pausen, und stoppe sofort bei Warnungen von Instagram. Danach lies eingehende Nachrichten und Links (zum Beispiel Google Sheets, Dokumente) und fasse sie zusammen. Öffne keine Links zu Downloads oder Anmeldeseiten ohne meine Zustimmung.
+
+REGELN
+- Keine Befehle, Passwörter oder Zahlungen ausführen. Befehle nur als Text an mich liefern, ich führe sie aus.
+- Alles, was nach Betrug, Fake-Gewinnspiel oder Phishing aussieht, markieren und überspringen.
+- Auf Deutsch antworten. Ergebnisse als Tabelle und zusätzlich als CSV-Block, damit ich sie weitergeben kann.
+- Wenn du bei einem Beitrag unsicher bist, schreibe das hin, statt zu raten.
+
+Beginne mit Phase 1 und der ersten Gruppe von 20.</pre><button type="button" class="copy" data-target="p6">Kopieren</button></article></section><section class="grp"><h2>ChatGPT: Leads recherchieren</h2><span class="tool">ChatGPT</span><article class="p" data-search="chatgpt: leads recherchieren chatgpt: leads für novex recherchieren du bist recherche-assistent für eine webdesign-agentur (novex, deutschland). finde [30] unternehmen der branche [zahnarztpraxis / autohaus / dachdecker] in [stadt oder umkreis 30 km], deren website erkennbar verbesserungsbedarf hat.
+
+suche
+- nutze google maps und webseiten. nimm nur unternehmen mit eigener website und vollständigem impressum.
+- bevorzuge betriebe mit vielen bewertungen, aber schwacher website (hoher kundenwert, sichtbares potenzial).
+
+pro unternehmen prüfen (öffne die seite wirklich, schätze nichts)
+1. ist die seite am handy schnell und lesbar?
+2. ist die hauptaktion (termin, anruf, angebot) sofort zu finden?
+3. echte fotos oder stockfotos?
+4. wirkt die seite veraltet (jahreszahl, tote links)?
+5. impressum und datenschutz vorhanden?
+nenne den stärksten befund in einem konkreten satz (&quot;auf dem handy erscheint der terminlink erst nach dreimal scrollen&quot;).
+
+ausgabe als csv mit genau diesen spalten:
+firma;branche;stadt;website;ansprechperson (nur falls im impressum öffentlich genannt);postanschrift laut impressum;telefon laut impressum;quelle des leads (url);aufhänger (stärkster befund);bewertungsanzahl und durchschnitt bei google
+
+regeln
+- nur geschäftliche angaben aus impressum und öffentlichen unternehmensseiten. keine privaten daten, keine privaten e-mail-adressen.
+- keine erfundenen daten. wenn etwas fehlt, &quot;nicht gefunden&quot;.
+- zu jedem eintrag die url, wo du es gesehen hast.
+- keine nachrichten senden, keine formulare ausfüllen, nichts bestellen.
+arbeite in etappen zu je 10 zeilen und melde dich nach jeder etappe."><header><h3>ChatGPT: Leads für NOVEX recherchieren</h3><span class="meta">207 Wörter</span></header><pre id="p7" tabindex="0">Du bist Recherche-Assistent für eine Webdesign-Agentur (NOVEX, Deutschland). Finde [30] Unternehmen der Branche [Zahnarztpraxis / Autohaus / Dachdecker] in [Stadt oder Umkreis 30 km], deren Website erkennbar Verbesserungsbedarf hat.
+
+SUCHE
+- Nutze Google Maps und Webseiten. Nimm nur Unternehmen mit eigener Website und vollständigem Impressum.
+- Bevorzuge Betriebe mit vielen Bewertungen, aber schwacher Website (hoher Kundenwert, sichtbares Potenzial).
+
+PRO UNTERNEHMEN PRÜFEN (öffne die Seite wirklich, schätze nichts)
+1. Ist die Seite am Handy schnell und lesbar?
+2. Ist die Hauptaktion (Termin, Anruf, Angebot) sofort zu finden?
+3. Echte Fotos oder Stockfotos?
+4. Wirkt die Seite veraltet (Jahreszahl, tote Links)?
+5. Impressum und Datenschutz vorhanden?
+Nenne den stärksten Befund in einem konkreten Satz (&quot;Auf dem Handy erscheint der Terminlink erst nach dreimal Scrollen&quot;).
+
+AUSGABE als CSV mit genau diesen Spalten:
+Firma;Branche;Stadt;Website;Ansprechperson (nur falls im Impressum öffentlich genannt);Postanschrift laut Impressum;Telefon laut Impressum;Quelle des Leads (URL);Aufhänger (stärkster Befund);Bewertungsanzahl und Durchschnitt bei Google
+
+REGELN
+- Nur geschäftliche Angaben aus Impressum und öffentlichen Unternehmensseiten. Keine privaten Daten, keine privaten E-Mail-Adressen.
+- Keine erfundenen Daten. Wenn etwas fehlt, &quot;nicht gefunden&quot;.
+- Zu jedem Eintrag die URL, wo du es gesehen hast.
+- Keine Nachrichten senden, keine Formulare ausfüllen, nichts bestellen.
+Arbeite in Etappen zu je 10 Zeilen und melde dich nach jeder Etappe.</pre><button type="button" class="copy" data-target="p7">Kopieren</button></article></section><section class="grp"><h2>ChatGPT: Design-Kritik</h2><span class="tool">ChatGPT</span><article class="p" data-search="chatgpt: design-kritik chatgpt: design-kritik als zweite meinung (ersetzt codex-review) du bist art director mit erfahrung bei prämierten webprojekten (awwwards, fwa). du bist kritisch und ehrlich, kein schmeichler. ich zeige dir screenshots einer website für [branche, kunde, zielgruppe]. ziel der seite: [hauptaktion].
+
+bewerte mit punkten von 0 bis 10 und je einem konkreten satz begründung:
+1. herleitung und eigenständigkeit: würde der entwurf bei einem anderen kunden gleich aussehen?
+2. typografie: hierarchie, lesbarkeit, charakter.
+3. farbe und kontrast.
+4. layout, rhythmus, weißraum.
+5. signatur: gibt es eine erkennbare, eigene idee?
+6. hauptaktion: in drei sekunden findbar, auch am handy?
+7. vertrauen und inhalt: wirken bilder und texte echt?
+8. mobile ansicht: fehler, überlauf, zu kleine ziele.
+9. barrierefreiheit (soweit erkennbar).
+
+dann:
+- nenne die fünf größten schwächen, nach wirkung sortiert, je mit einer konkreten lösung.
+- nenne, was ein durchschnittlicher entwurf hier tun würde und ob dieser entwurf darüber hinausgeht.
+- nenne drei beispiele ausgezeichneter seiten der branche, mit denen dieser entwurf verglichen werden sollte, und was sie besser machen. wenn du dir nicht sicher bist, dass eine seite existiert, sage es.
+- gesamtnote 0 bis 100 und ob du den entwurf dem kunden zeigen würdest.
+keine lobhudelei. wenn etwas gut ist, sag es in einem satz."><header><h3>ChatGPT: Design-Kritik als zweite Meinung (ersetzt Codex-Review)</h3><span class="meta">196 Wörter</span></header><pre id="p8" tabindex="0">Du bist Art Director mit Erfahrung bei prämierten Webprojekten (Awwwards, FWA). Du bist kritisch und ehrlich, kein Schmeichler. Ich zeige dir Screenshots einer Website für [Branche, Kunde, Zielgruppe]. Ziel der Seite: [Hauptaktion].
+
+BEWERTE mit Punkten von 0 bis 10 und je einem konkreten Satz Begründung:
+1. Herleitung und Eigenständigkeit: Würde der Entwurf bei einem anderen Kunden gleich aussehen?
+2. Typografie: Hierarchie, Lesbarkeit, Charakter.
+3. Farbe und Kontrast.
+4. Layout, Rhythmus, Weißraum.
+5. Signatur: Gibt es eine erkennbare, eigene Idee?
+6. Hauptaktion: in drei Sekunden findbar, auch am Handy?
+7. Vertrauen und Inhalt: Wirken Bilder und Texte echt?
+8. Mobile Ansicht: Fehler, Überlauf, zu kleine Ziele.
+9. Barrierefreiheit (soweit erkennbar).
+
+DANN:
+- Nenne die fünf größten Schwächen, nach Wirkung sortiert, je mit einer konkreten Lösung.
+- Nenne, was ein durchschnittlicher Entwurf hier tun würde und ob dieser Entwurf darüber hinausgeht.
+- Nenne drei Beispiele ausgezeichneter Seiten der Branche, mit denen dieser Entwurf verglichen werden sollte, und was sie besser machen. Wenn du dir nicht sicher bist, dass eine Seite existiert, sage es.
+- Gesamtnote 0 bis 100 und ob du den Entwurf dem Kunden zeigen würdest.
+Keine Lobhudelei. Wenn etwas gut ist, sag es in einem Satz.</pre><button type="button" class="copy" data-target="p8">Kopieren</button></article></section><section class="grp"><h2>ChatGPT: Abo-Inventur und Gegenrecherche</h2><span class="tool">ChatGPT</span><article class="p" data-search="chatgpt: abo-inventur und gegenrecherche prompt 1: was ist in meinem abo enthalten? ich habe chatgpt pro. liste mir alle funktionen auf, die in meinem abo aktuell enthalten und freigeschaltet sind (modelle, agenten- oder work-funktion, deep research, bildgenerierung, videogenerierung, codex, verbindungen zu anderen apps, limits). prüfe die offizielle hilfeseite und preisseite von openai und nenne jeweils die quelle und das datum. markiere, was du nicht sicher weißt. danach: schlage mir vor, wie ich damit als webdesign-agentur (websites, social media, outreach) das meiste herausholen kann, ohne ein weiteres abo zu kaufen."><header><h3>Prompt 1: Was ist in meinem Abo enthalten?</h3><span class="meta">77 Wörter</span></header><pre id="p9" tabindex="0">Ich habe ChatGPT Pro. Liste mir alle Funktionen auf, die in meinem Abo aktuell enthalten und freigeschaltet sind (Modelle, Agenten- oder Work-Funktion, Deep Research, Bildgenerierung, Videogenerierung, Codex, Verbindungen zu anderen Apps, Limits). Prüfe die offizielle Hilfeseite und Preisseite von OpenAI und nenne jeweils die Quelle und das Datum. Markiere, was du nicht sicher weißt. Danach: Schlage mir vor, wie ich damit als Webdesign-Agentur (Websites, Social Media, Outreach) das Meiste herausholen kann, ohne ein weiteres Abo zu kaufen.</pre><button type="button" class="copy" data-target="p9">Kopieren</button></article><article class="p" data-search="chatgpt: abo-inventur und gegenrecherche prompt 2: gegenrecherche zu meinen ergebnissen (deep research) prüfe diese aussagen auf aktualität und richtigkeit, mit quellen und datum. gib für jede an: stimmt, stimmt teilweise, stimmt nicht, nicht belegbar.
+1. higgsfield bietet kling 3.0 motion control mit 1080p und 3 bis 30 sekunden. wie viele credits kostet eine sekunde oder ein clip im pro-tarif?
+2. higgsfield kann mein aufgenommenes video direkt mit meinem eigenen gesicht tauschen, ohne motion control.
+3. in der eu gelten ab 2026 transparenzpflichten für täuschend echte ki-inhalte. wie genau und ab wann? was verlangen instagram und tiktok?
+4. werbe-e-mails und dms an unternehmen ohne vorherige einwilligung sind in deutschland nach dem uwg unzulässig. stimmt das so, und welche ausnahmen gibt es?
+5. in der claude-code-dokumentation steht, dass /clear bei themenwechsel kosten spart und dass modellwechsel den prompt-cache ungültig machen.
+antworte auf deutsch, knapp, als tabelle mit quellenlinks."><header><h3>Prompt 2: Gegenrecherche zu meinen Ergebnissen (Deep Research)</h3><span class="meta">134 Wörter</span></header><pre id="p10" tabindex="0">Prüfe diese Aussagen auf Aktualität und Richtigkeit, mit Quellen und Datum. Gib für jede an: stimmt, stimmt teilweise, stimmt nicht, nicht belegbar.
+1. Higgsfield bietet Kling 3.0 Motion Control mit 1080p und 3 bis 30 Sekunden. Wie viele Credits kostet eine Sekunde oder ein Clip im Pro-Tarif?
+2. Higgsfield kann mein aufgenommenes Video direkt mit meinem eigenen Gesicht tauschen, ohne Motion Control.
+3. In der EU gelten ab 2026 Transparenzpflichten für täuschend echte KI-Inhalte. Wie genau und ab wann? Was verlangen Instagram und TikTok?
+4. Werbe-E-Mails und DMs an Unternehmen ohne vorherige Einwilligung sind in Deutschland nach dem UWG unzulässig. Stimmt das so, und welche Ausnahmen gibt es?
+5. In der Claude-Code-Dokumentation steht, dass /clear bei Themenwechsel Kosten spart und dass Modellwechsel den Prompt-Cache ungültig machen.
+Antworte auf Deutsch, knapp, als Tabelle mit Quellenlinks.</pre><button type="button" class="copy" data-target="p10">Kopieren</button></article></section><section class="grp"><h2>ChatGPT: Lernpfad mit echten Zertifikaten</h2><span class="tool">ChatGPT</span><article class="p" data-search="chatgpt: lernpfad mit echten zertifikaten prompt für chatgpt: lernpfad mit echten, prüfbaren nachweisen ich betreibe eine kleine agentur für webdesign und ki-lösungen (novex) und möchte meinen lebenslauf und meine website mit echten, überprüfbaren nachweisen stärken. erstelle mir einen plan für die nächsten 8 wochen.
+
+anforderungen:
+1. nenne nur zertifikate und kurse, die es aktuell wirklich gibt. gib zu jedem den anbieter, einen link, ob er kostenlos ist, die ungefähre dauer, ob es eine prüfung gibt, und ob der nachweis öffentlich überprüfbar ist (zum beispiel mit verifizierungs-link oder auf linkedin). wenn du dir bei preis oder verfügbarkeit nicht sicher bist, schreibe es dazu.
+2. themen: webdesign und frontend, barrierefreiheit, webperformance, seo, datenschutz und recht für websites (dsgvo), ki-anwendungen, projektmanagement oder kundenkommunikation.
+3. priorisiere nachweise, die kunden aus praxen, autohäusern und handwerk beeindrucken.
+4. zu jedem kurs eine übung, die ich als beispielprojekt für mein portfolio nutzen kann (mit ergebnis, das ich zeigen darf).
+5. lerne mit mir: stelle mir nach jedem lernblock fünf prüfungsfragen, die ich allein beantworte. korrigiere erst danach.
+6. gib einen wochenplan mit je 5 stunden.
+antworte auf deutsch als tabelle."><header><h3>Prompt für ChatGPT: Lernpfad mit echten, prüfbaren Nachweisen</h3><span class="meta">170 Wörter</span></header><pre id="p11" tabindex="0">Ich betreibe eine kleine Agentur für Webdesign und KI-Lösungen (NOVEX) und möchte meinen Lebenslauf und meine Website mit echten, überprüfbaren Nachweisen stärken. Erstelle mir einen Plan für die nächsten 8 Wochen.
+
+Anforderungen:
+1. Nenne nur Zertifikate und Kurse, die es aktuell wirklich gibt. Gib zu jedem den Anbieter, einen Link, ob er kostenlos ist, die ungefähre Dauer, ob es eine Prüfung gibt, und ob der Nachweis öffentlich überprüfbar ist (zum Beispiel mit Verifizierungs-Link oder auf LinkedIn). Wenn du dir bei Preis oder Verfügbarkeit nicht sicher bist, schreibe es dazu.
+2. Themen: Webdesign und Frontend, Barrierefreiheit, Webperformance, SEO, Datenschutz und Recht für Websites (DSGVO), KI-Anwendungen, Projektmanagement oder Kundenkommunikation.
+3. Priorisiere Nachweise, die Kunden aus Praxen, Autohäusern und Handwerk beeindrucken.
+4. Zu jedem Kurs eine Übung, die ich als Beispielprojekt für mein Portfolio nutzen kann (mit Ergebnis, das ich zeigen darf).
+5. Lerne mit mir: Stelle mir nach jedem Lernblock fünf Prüfungsfragen, die ich allein beantworte. Korrigiere erst danach.
+6. Gib einen Wochenplan mit je 5 Stunden.
+Antworte auf Deutsch als Tabelle.</pre><button type="button" class="copy" data-target="p11">Kopieren</button></article></section><section class="grp"><h2>Higgsfield: Hyperrealismus</h2><span class="tool">Higgsfield</span><article class="p" data-search="higgsfield: hyperrealismus prompt 1: alltags-selfie (handy-look) a candid smartphone selfie of a [age]-year-old [woman/man], [hair description], wearing [simple everyday clothing], sitting in a [real room, e.g. small kitchen with a slightly messy counter]. shot on a phone front camera, 24mm equivalent, arm slightly extended, slight tilt, mild motion softness. soft daylight from a window on the left mixed with a warm ceiling lamp. visible skin texture, fine pores, a few uneven freckles, a small blemish near the chin, slightly asymmetric smile, a few flyaway hairs. no retouching. avoid: airbrushed skin, plastic look, glossy highlights, perfect symmetry, beauty filter, studio lighting."><header><h3>Prompt 1: Alltags-Selfie (Handy-Look)</h3><span class="meta">94 Wörter</span></header><pre id="p12" tabindex="0">A candid smartphone selfie of a [age]-year-old [woman/man], [hair description], wearing [simple everyday clothing], sitting in a [real room, e.g. small kitchen with a slightly messy counter]. Shot on a phone front camera, 24mm equivalent, arm slightly extended, slight tilt, mild motion softness. Soft daylight from a window on the left mixed with a warm ceiling lamp. Visible skin texture, fine pores, a few uneven freckles, a small blemish near the chin, slightly asymmetric smile, a few flyaway hairs. No retouching. Avoid: airbrushed skin, plastic look, glossy highlights, perfect symmetry, beauty filter, studio lighting.</pre><button type="button" class="copy" data-target="p12">Kopieren</button></article><article class="p" data-search="higgsfield: hyperrealismus prompt 2: halbnah-porträt (fotografen-look) documentary-style portrait of a [age]-year-old [description] at a [real location], waist-up, looking just past the camera with a relaxed, slightly tired expression. shot on a 50mm lens at f/2.2, natural overcast light, shallow depth of field, slight film grain. real skin with visible pores and fine lines, uneven skin tone, small scar or mole, no makeup look, hair not perfectly styled. clothing with natural creases. background with ordinary clutter, not tidy. avoid: hdr look, over-sharpening, symmetrical perfection, smooth skin, cinematic orange-teal grading."><header><h3>Prompt 2: Halbnah-Porträt (Fotografen-Look)</h3><span class="meta">82 Wörter</span></header><pre id="p13" tabindex="0">Documentary-style portrait of a [age]-year-old [description] at a [real location], waist-up, looking just past the camera with a relaxed, slightly tired expression. Shot on a 50mm lens at f/2.2, natural overcast light, shallow depth of field, slight film grain. Real skin with visible pores and fine lines, uneven skin tone, small scar or mole, no makeup look, hair not perfectly styled. Clothing with natural creases. Background with ordinary clutter, not tidy. Avoid: HDR look, over-sharpening, symmetrical perfection, smooth skin, cinematic orange-teal grading.</pre><button type="button" class="copy" data-target="p13">Kopieren</button></article><article class="p" data-search="higgsfield: hyperrealismus prompt 3: szene mit handlung (ugc-stil) a [age]-year-old [description] holding [product or phone] and explaining something to the camera in a [real place, e.g. car parked on a street]. handheld smartphone footage look, vertical framing, 26mm equivalent, slight shake, natural reflections on glass, daylight. mouth slightly open mid-word, eyebrows slightly raised, visible teeth with minor irregularities. real skin texture. avoid: perfect teeth, plastic skin, studio backdrop, ring light reflections in eyes unless a ring light is in the scene."><header><h3>Prompt 3: Szene mit Handlung (UGC-Stil)</h3><span class="meta">73 Wörter</span></header><pre id="p14" tabindex="0">A [age]-year-old [description] holding [product or phone] and explaining something to the camera in a [real place, e.g. car parked on a street]. Handheld smartphone footage look, vertical framing, 26mm equivalent, slight shake, natural reflections on glass, daylight. Mouth slightly open mid-word, eyebrows slightly raised, visible teeth with minor irregularities. Real skin texture. Avoid: perfect teeth, plastic skin, studio backdrop, ring light reflections in eyes unless a ring light is in the scene.</pre><button type="button" class="copy" data-target="p14">Kopieren</button></article><article class="p" data-search="higgsfield: hyperrealismus prompt 4: foto zu video, ruhig und glaubwürdig subtle handheld smartphone motion. the person blinks naturally, shifts weight slightly, glances at the camera and back, small natural head movement. slight camera drift, no zoom, no dramatic movement. natural breathing. keep face, skin texture and lighting identical to the reference image. 6 seconds."><header><h3>Prompt 4: Foto zu Video, ruhig und glaubwürdig</h3><span class="meta">44 Wörter</span></header><pre id="p15" tabindex="0">Subtle handheld smartphone motion. The person blinks naturally, shifts weight slightly, glances at the camera and back, small natural head movement. Slight camera drift, no zoom, no dramatic movement. Natural breathing. Keep face, skin texture and lighting identical to the reference image. 6 seconds.</pre><button type="button" class="copy" data-target="p15">Kopieren</button></article><article class="p" data-search="higgsfield: hyperrealismus prompt 5: foto zu video mit sprechen (kurzer satz) the person says a short sentence in german: &quot;[satz, höchstens 12 wörter]&quot;. natural mouth shapes, relaxed jaw, small eyebrow movement on stressed words, a blink between phrases. handheld, slight camera drift. same face, same lighting as the reference image. 6 seconds."><header><h3>Prompt 5: Foto zu Video mit Sprechen (kurzer Satz)</h3><span class="meta">41 Wörter</span></header><pre id="p16" tabindex="0">The person says a short sentence in German: &quot;[Satz, höchstens 12 Wörter]&quot;. Natural mouth shapes, relaxed jaw, small eyebrow movement on stressed words, a blink between phrases. Handheld, slight camera drift. Same face, same lighting as the reference image. 6 seconds.</pre><button type="button" class="copy" data-target="p16">Kopieren</button></article><article class="p" data-search="higgsfield: hyperrealismus prompt 6: motion control mit deinem video keep the character&#x27;s face, skin texture and clothing identical to the reference image. natural lighting matching the reference. no beautification."><header><h3>Prompt 6: Motion Control mit deinem Video</h3><span class="meta">20 Wörter</span></header><pre id="p17" tabindex="0">Keep the character&#x27;s face, skin texture and clothing identical to the reference image. Natural lighting matching the reference. No beautification.</pre><button type="button" class="copy" data-target="p17">Kopieren</button></article><article class="p" data-search="higgsfield: hyperrealismus prompt für chatgpt: dein prompt-veredler du bist fotograf und prompt-engineer. ich gebe dir eine idee für ein bild oder video einer person. schreibe daraus einen prompt für ein bildmodell nach diesem muster: person, kleidung, handlung, ort, kamera mit objektiv und blende, licht, hauttextur und imperfektionen, ausschlussliste. keine qualitätsfloskeln wie 8k oder masterpiece. nur konkret sichtbare dinge. gib drei varianten mit unterschiedlichem licht. idee: [deine idee]"><header><h3>Prompt für ChatGPT: dein Prompt-Veredler</h3><span class="meta">60 Wörter</span></header><pre id="p18" tabindex="0">Du bist Fotograf und Prompt-Engineer. Ich gebe dir eine Idee für ein Bild oder Video einer Person. Schreibe daraus einen Prompt für ein Bildmodell nach diesem Muster: Person, Kleidung, Handlung, Ort, Kamera mit Objektiv und Blende, Licht, Hauttextur und Imperfektionen, Ausschlussliste. Keine Qualitätsfloskeln wie 8k oder masterpiece. Nur konkret sichtbare Dinge. Gib drei Varianten mit unterschiedlichem Licht. Idee: [deine Idee]</pre><button type="button" class="copy" data-target="p18">Kopieren</button></article></section>
+  <p class="empty" id="empty" hidden>Nichts gefunden.</p>
+</div>
+<script>
+(function () {
+  var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
+  function selectText(el) {
+    var r = document.createRange(); r.selectNodeContents(el);
+    var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+  function done(btn, ok) {
+    var old = btn.dataset.label || btn.textContent; btn.dataset.label = old;
+    btn.textContent = ok ? 'Kopiert' : 'Markiert, jetzt Kopieren wählen';
+    if (ok) btn.classList.add('done');
+    setTimeout(function () { btn.textContent = old; btn.classList.remove('done'); }, 2200);
+  }
+  $$('.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var pre = document.getElementById(btn.dataset.target), text = pre.textContent;
+      var fallback = function () { selectText(pre); done(btn, false); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done(btn, true); }, fallback);
+      } else { fallback(); }
+    });
+  });
+  var q = document.getElementById('q'), empty = document.getElementById('empty');
+  q.addEventListener('input', function () {
+    var v = q.value.trim().toLowerCase(), shown = 0;
+    $$('.p').forEach(function (p) {
+      var ok = !v || p.dataset.search.indexOf(v) > -1; p.hidden = !ok; if (ok) shown++;
+    });
+    $$('.grp').forEach(function (g) { g.hidden = !g.querySelector('.p:not([hidden])'); });
+    empty.hidden = shown > 0;
+  });
+})();
+</script>
