@@ -2,20 +2,32 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import * as T from './textures.js';
 import { CONFIG } from './config.js';
+import { pick, t as tr } from './i18n.js';
 
-export const HALL = { minX: -14, maxX: 14, minZ: -10, maxZ: 12, h: 4.4 };
-export const BOUNDS = { minX: -13.55, maxX: 13.55, minZ: -9.55, maxZ: 11.55 };
+/*  Grundriss (Draufsicht, x → rechts, z → zum Betrachter)
 
-const _m = new THREE.Matrix4();
+      z=-9  ┌──────────┬────────────────┬──────────┐
+            │  About   │    Moments     │  Words   │
+            │   us     │  (Screen, Bank,│ (Bücher, │
+            │          │   schwarze     │  Lesepulte│
+            │          │   Wand)        │  Teppich)│
+      z= 3  ├───┬──────┴──┬──────────┬──┴──────┬───┤
+            │        Eingangshalle  (Bank, Hero)  ├─ Exit →
+      z=11  └─────────────────────────────────────┘
+        x=-12                                     x=12                */
+
+const H = 4.2;
+export const HALL = { minX: -12, maxX: 12, minZ: -9, maxZ: 11, h: H };
+const MARGIN = 0.32;
+const ALCOVE = { minX: 12, maxX: 14.4, minZ: 6.65, maxZ: 8.55 };
+
+const _p = new THREE.Vector3();
 const _q = new THREE.Quaternion();
 const _e = new THREE.Euler();
-const _p = new THREE.Vector3();
 const _s = new THREE.Vector3(1, 1, 1);
 const M4 = (x, y, z, ry = 0, rx = 0, rz = 0) =>
   new THREE.Matrix4().compose(_p.set(x, y, z), _q.setFromEuler(_e.set(rx, ry, rz, 'YXZ')), _s);
 
-/* Sammelt statische Geometrie pro Material und baut daraus wenige große Meshes
-   → minimale Draw-Calls. */
 class Batch {
   constructor() { this.map = new Map(); }
   add(geo, mat, matrix) {
@@ -38,144 +50,156 @@ class Batch {
 
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const plane = (w, h) => new THREE.PlaneGeometry(w, h);
+const rng = (seed) => () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
 
-export function buildWorld({ photos, screen }) {
+export function buildWorld({ photos, screen, books }) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x14161d);
   const batch = new Batch();
   const textures = [];
   const colliders = [];
   const frames = [];
+  const bookViews = [];
   const benches = [];
-  const track = (t) => { textures.push(t); return t; };
+  const redrawers = [];
+  const track = (x) => { textures.push(x); return x; };
 
   /* ───── Licht ───── */
-  const hemi = new THREE.HemisphereLight(0xffffff, 0xeceae6, 2.9);
-  const sun = new THREE.DirectionalLight(0xfff4e6, 1.1);
-  sun.position.set(-6, 12, 8);
-  const fill = new THREE.DirectionalLight(0xe8efff, 0.75);
-  fill.position.set(7, 7, -9);
-  scene.add(hemi, sun, fill);
+  const key = new THREE.DirectionalLight(0xfff1e0, 1.05); key.position.set(-6, 12, 8);
+  const fill = new THREE.DirectionalLight(0xe6edff, 0.7); fill.position.set(7, 7, -9);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xece8e2, 2.8), key, fill);
 
   /* ───── Materialien ───── */
   const wallTex = track(T.wallTexture());
-  const wallMat = (len) => {
-    const t = wallTex.clone();
-    t.repeat.set(Math.max(1, len / 3), 1);
-    t.needsUpdate = true;
-    return new THREE.MeshLambertMaterial({ map: t });
+  const repMat = (tex, len, div, cls) => {
+    const c = tex.clone(); c.repeat.set(Math.max(1, len / div), 1); c.needsUpdate = true;
+    return new cls({ map: c });
   };
   const blackTex = track(T.blackWallTexture());
-  const blackWallMat = (len) => {
-    const t = blackTex.clone();
-    t.repeat.set(Math.max(1, len / 4), 1);
-    t.needsUpdate = true;
-    return new THREE.MeshLambertMaterial({ map: t });
-  };
   const M = {
-    white: new THREE.MeshLambertMaterial({ color: 0xf1f0ed }),
+    white: new THREE.MeshLambertMaterial({ color: 0xf0efeb }),
     black: new THREE.MeshLambertMaterial({ color: 0x15171b }),
-    frame: new THREE.MeshLambertMaterial({ color: 0x0f1013 }),
-    mat: new THREE.MeshLambertMaterial({ color: 0xf6f4f0 }),
-    wood: new THREE.MeshLambertMaterial({ color: 0xd9c8a9 }),
-    card: new THREE.MeshLambertMaterial({ color: 0xe9e8e4 }),
-    glass: new THREE.MeshLambertMaterial({ color: 0xcfe3ee, transparent: true, opacity: 0.16, depthWrite: false }),
-    wash: new THREE.MeshBasicMaterial({ map: track(T.washTexture()), transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
+    frame: new THREE.MeshLambertMaterial({ color: 0x101114 }),
+    mat: new THREE.MeshLambertMaterial({ color: 0xf5f3ee }),
+    wood: new THREE.MeshLambertMaterial({ color: 0xd6c4a4 }),
+    walnut: new THREE.MeshLambertMaterial({ color: 0x6d4a33 }),
+    paper: new THREE.MeshLambertMaterial({ color: 0xf3eee0 }),
+    base: new THREE.MeshLambertMaterial({ color: 0xb4b5b9 }),
+    glass: new THREE.MeshLambertMaterial({ color: 0xcfe3ee, transparent: true, opacity: 0.14, depthWrite: false }),
+    pot: new THREE.MeshLambertMaterial({ color: 0xc9b9a3 }),
+    leaf: new THREE.MeshLambertMaterial({ color: 0x4f6b45 }),
+    leaf2: new THREE.MeshLambertMaterial({ color: 0x6b8a58 }),
+    wash: new THREE.MeshBasicMaterial({ map: track(T.washTexture()), transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
     shadow: new THREE.MeshBasicMaterial({ map: track(T.boxShadowTexture()), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
-    heart: new THREE.MeshBasicMaterial({ color: 0xff7a8a }),
+    heart: new THREE.MeshBasicMaterial({ color: 0xe77c88 }),
   };
+  const spineMats = [0x7a2f2a, 0x2f4a5c, 0x5b6b3a, 0xc9a35b, 0x3b3b44, 0x8a5a3a, 0xa8b3a0, 0x6b3e5a, 0xd8cfc0, 0x24382f].map((c) => new THREE.MeshLambertMaterial({ color: c }));
 
-  /* ───── Hülle ───── */
-  const W = HALL.maxX - HALL.minX, D = HALL.maxZ - HALL.minZ, cx = 0, cz = (HALL.minZ + HALL.maxZ) / 2;
-
+  /* ───── Boden, Decke ───── */
+  const W = HALL.maxX - HALL.minX, D = HALL.maxZ - HALL.minZ, cz = (HALL.minZ + HALL.maxZ) / 2;
   const floorTex = track(T.floorTexture());
   floorTex.repeat.set(W / 4, D / 4);
-  const floor = new THREE.Mesh(plane(W, D), new THREE.MeshLambertMaterial({ map: floorTex }));
-  floor.rotation.x = -Math.PI / 2; floor.position.set(cx, 0, cz);
+  const floorMat = new THREE.MeshLambertMaterial({ map: floorTex });
+  const floor = new THREE.Mesh(plane(W, D), floorMat);
+  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, cz);
   scene.add(floor);
-
   const ceilTex = track(T.ceilingTexture());
   ceilTex.repeat.set(W / 0.9, D / 0.9);
   const ceil = new THREE.Mesh(plane(W, D), new THREE.MeshLambertMaterial({ map: ceilTex }));
-  ceil.rotation.x = Math.PI / 2; ceil.position.set(cx, HALL.h, cz);
+  ceil.rotation.x = Math.PI / 2; ceil.position.set(0, H, cz);
   scene.add(ceil);
 
-  const wallBox = (len, thick, x, z, rotY) => {
-    const m = new THREE.Mesh(box(len, HALL.h, thick), wallMat(len));
-    m.position.set(x, HALL.h / 2, z); m.rotation.y = rotY;
+  /* ───── Wände ───── */
+  const addWallBox = (len, h, thick, cx, y0, cz2, alongX, black) => {
+    const mat = black ? repMat(blackTex, len, 4, THREE.MeshLambertMaterial) : repMat(wallTex, len, 3, THREE.MeshLambertMaterial);
+    const m = new THREE.Mesh(alongX ? box(len, h, thick) : box(thick, h, len), mat);
+    m.position.set(cx, y0 + h / 2, cz2);
     scene.add(m);
   };
-  wallBox(W + 0.6, 0.3, 0, HALL.minZ - 0.15, 0);                         // hinten
-  wallBox(W + 0.6, 0.3, 0, HALL.maxZ + 0.15, 0);                         // vorn
-  wallBox(D, 0.3, HALL.minX - 0.15, cz, Math.PI / 2);                    // links
-  wallBox(D, 0.3, HALL.maxX + 0.15, cz, Math.PI / 2);                    // rechts
+  /* Wand entlang einer Achse mit Türöffnungen. fixed = feste Koordinate, a..b = Verlauf, gaps = [[von,bis],…] */
+  const wall = (alongX, fixed, a, b, gaps = [], o = {}) => {
+    const thick = o.thick ?? 0.22, headerY = o.headerY ?? 3.0, collide = o.collide ?? true, black = o.black;
+    const cuts = [a];
+    gaps.forEach(([g0, g1]) => { cuts.push(g0, g1); });
+    cuts.push(b);
+    const place = (s, e, y0, h, solid) => {
+      const len = e - s, mid = (s + e) / 2;
+      if (len < 0.01) return;
+      addWallBox(len, h, thick, alongX ? mid : fixed, y0, alongX ? fixed : mid, alongX, black);
+      if (y0 === 0 && !black) {
+        for (const side of [-1, 1]) {
+          const off = side * (thick / 2 + 0.008);
+          batch.add(box(alongX ? len : 0.016, 0.1, alongX ? 0.016 : len), M.base, M4(alongX ? mid : fixed + off, 0.05, alongX ? fixed + off : mid));
+        }
+      }
+      if (solid && collide) colliders.push(alongX
+        ? { minX: s, maxX: e, minZ: fixed - thick / 2, maxZ: fixed + thick / 2, tall: true }
+        : { minX: fixed - thick / 2, maxX: fixed + thick / 2, minZ: s, maxZ: e, tall: true });
+    };
+    for (let i = 0; i < cuts.length; i += 2) place(cuts[i], cuts[i + 1], 0, H, true);
+    gaps.forEach(([g0, g1]) => place(g0, g1, headerY, H - headerY, false));
+  };
 
-  /* ───── Podest unter der freistehenden schwarzen Wand ───── */
-  const PL = { minX: -5.5, maxX: 5.5, minZ: -6.4, maxZ: -3.0, h: 0.2 };
-  batch.add(box(PL.maxX - PL.minX, PL.h, PL.maxZ - PL.minZ), M.white, M4((PL.minX + PL.maxX) / 2, PL.h / 2, (PL.minZ + PL.maxZ) / 2));
-  batch.add(plane(PL.maxX - PL.minX + 1.6, PL.maxZ - PL.minZ + 1.6), M.shadow, M4((PL.minX + PL.maxX) / 2, 0.006, (PL.minZ + PL.maxZ) / 2, 0, -Math.PI / 2));
+  // Außenwände (Innenkante genau auf HALL-Grenze)
+  wall(true, HALL.minZ - 0.15, HALL.minX - 0.3, HALL.maxX + 0.3, [], { thick: 0.3, collide: false });
+  wall(true, HALL.maxZ + 0.15, HALL.minX - 0.3, HALL.maxX + 0.3, [], { thick: 0.3, collide: false });
+  wall(false, HALL.minX - 0.15, HALL.minZ, HALL.maxZ, [], { thick: 0.3, collide: false });
+  wall(false, HALL.maxX + 0.15, HALL.minZ, HALL.maxZ, [[ALCOVE.minZ, ALCOVE.maxZ]], { thick: 0.3, collide: false, headerY: 3.0 });
+  // Trennwand zur Eingangshalle mit drei Türen
+  const DOORS = [-8.5, 0, 8.5];
+  wall(true, 3.0, HALL.minX, HALL.maxX, DOORS.map((x) => [x - 1.4, x + 1.4]));
+  // Raumtrenner mit Durchgang
+  for (const x of [-5, 5]) wall(false, x, HALL.minZ, 3.0, [[-5.3, -2.7]]);
 
-  // schwarze freistehende Wand
-  const FW = { x: 0, z: -5.6, w: 8.4, h: 3.9, d: 0.28 };
-  const fwMesh = new THREE.Mesh(box(FW.w, FW.h, FW.d), blackWallMat(FW.w));
-  fwMesh.position.set(FW.x, PL.h + FW.h / 2, FW.z);
-  scene.add(fwMesh);
-  colliders.push({ minX: FW.x - FW.w / 2, maxX: FW.x + FW.w / 2, minZ: FW.z - FW.d / 2, maxZ: FW.z + FW.d / 2, tall: true });
-
-  // schwarzes Paneel an der Rückwand rechts
-  const BP = { x: 9, w: 9, h: HALL.h };
-  const bpMesh = new THREE.Mesh(box(BP.w, BP.h, 0.12), blackWallMat(BP.w));
-  bpMesh.position.set(BP.x, BP.h / 2, HALL.minZ + 0.06);
-  scene.add(bpMesh);
-
-  // Trennwand links (weiß)
-  const PW = { x: -8, z: -3.5, w: 5.2, h: 3.9, d: 0.22 };
-  const pwMesh = new THREE.Mesh(box(PW.w, PW.h, PW.d), wallMat(PW.w));
-  pwMesh.position.set(PW.x, PW.h / 2, PW.z);
-  scene.add(pwMesh);
-  colliders.push({ minX: PW.x - PW.w / 2, maxX: PW.x + PW.w / 2, minZ: PW.z - PW.d / 2, maxZ: PW.z + PW.d / 2, tall: true });
-  batch.add(plane(PW.w + 1.4, PW.d + 1.4), M.shadow, M4(PW.x, 0.006, PW.z, 0, -Math.PI / 2));
-
-  /* ───── Sockel mit Schild („For Emma“) ───── */
-  const PED = { x: 9, z: -8.85, w: 3.2, h: 0.62, d: 1.0 };
-  batch.add(box(PED.w, PED.h, PED.d), M.white, M4(PED.x, PED.h / 2, PED.z));
-  batch.add(plane(PED.w + 1.2, PED.d + 1.2), M.shadow, M4(PED.x, 0.006, PED.z, 0, -Math.PI / 2));
-  colliders.push({ minX: PED.x - PED.w / 2, maxX: PED.x + PED.w / 2, minZ: PED.z - PED.d / 2, maxZ: PED.z + PED.d / 2, tall: false });
+  /* ───── Exit-Nische ───── */
   {
-    const pt = track(T.plaqueTexture(CONFIG.plaque));
-    const pm = new THREE.Mesh(plane(1.5, 0.82), new THREE.MeshBasicMaterial({ map: pt, toneMapped: false }));
-    pm.position.set(PED.x - 0.9, PED.h + 0.41 + 0.02, PED.z + 0.15);
-    pm.rotation.x = -0.42;
-    pm.position.y += 0.02;
-    scene.add(pm);
-    batch.add(box(1.54, 0.86, 0.05), M.black, M4(pm.position.x, pm.position.y, pm.position.z - 0.03, 0, -0.42));
+    const a = ALCOVE, len = a.maxX - a.minX, w = a.maxZ - a.minZ;
+    const fl = new THREE.Mesh(plane(len, w), floorMat);
+    fl.rotation.x = -Math.PI / 2; fl.position.set((a.minX + a.maxX) / 2, 0.002, (a.minZ + a.maxZ) / 2);
+    scene.add(fl);
+    batch.add(box(len, 0.1, w), M.black, M4((a.minX + a.maxX) / 2, 3.0 + 0.05, (a.minZ + a.maxZ) / 2));
+    for (const z of [a.minZ - 0.1, a.maxZ + 0.1]) batch.add(box(len, 3.0, 0.2), M.white, M4((a.minX + a.maxX) / 2, 1.5, z));
+    const glow = new THREE.Mesh(plane(w, 3.0), new THREE.MeshBasicMaterial({ map: track(T.doorLightTexture()), toneMapped: false }));
+    glow.position.set(a.maxX - 0.01, 1.5, (a.minZ + a.maxZ) / 2); glow.rotation.y = -Math.PI / 2;
+    scene.add(glow);
+    const fg = new THREE.Mesh(plane(2.6, 2.6), new THREE.MeshBasicMaterial({ map: track(T.floorGlowTexture()), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+    fg.rotation.x = -Math.PI / 2; fg.position.set(a.maxX - 0.2, 0.006, (a.minZ + a.maxZ) / 2); fg.rotation.z = Math.PI;
+    scene.add(fg);
+    const sign = T.canvasTex(512, 160, (g, w2, h2) => T.drawExitSign(g, w2, h2, tr('exit')));
+    redrawers.push(sign.redraw); track(sign.texture);
+    const sm = new THREE.Mesh(plane(1.5, 0.47), new THREE.MeshBasicMaterial({ map: sign.texture, toneMapped: false }));
+    sm.position.set(HALL.maxX - 0.12, 3.6, (a.minZ + a.maxZ) / 2); sm.rotation.y = -Math.PI / 2;
+    scene.add(sm);
   }
 
-  /* ───── Glasvitrine ───── */
-  {
-    const gx = -1.6, gz = -9.0;
-    batch.add(box(0.62, 1.0, 0.62), M.white, M4(gx, 0.5, gz));
-    batch.add(plane(1.8, 1.8), M.shadow, M4(gx, 0.006, gz, 0, -Math.PI / 2));
-    batch.add(box(0.5, 0.5, 0.5), M.glass, M4(gx, 1.27, gz));
-    const heart = new THREE.Mesh(new THREE.SphereGeometry(0.1, 18, 12), M.heart);
-    heart.position.set(gx, 1.27, gz);
-    heart.userData.bob = true;
-    scene.add(heart);
-    colliders.push({ minX: gx - 0.31, maxX: gx + 0.31, minZ: gz - 0.31, maxZ: gz + 0.31, tall: false });
-    var heartMesh = heart;
-  }
+  /* ───── Schildchen-Atlas ───── */
+  const labelDefs = [];
+  const atlas = T.canvasTex(1024, 1024, (g, w, h) => T.drawLabels(g, w, h, labelDefs, pick, tr('no')));
+  track(atlas.texture);
+  const labelMat = new THREE.MeshLambertMaterial({ map: atlas.texture });
+  const addLabel = (def, matrix, wd = 0.25) => {
+    const id = labelDefs.push(def) - 1;
+    const g = plane(wd, wd / 2);
+    const uv = g.attributes.uv, c = id % T.LABEL_COLS, r = Math.floor(id / T.LABEL_COLS);
+    for (let i = 0; i < uv.count; i++) {
+      uv.setXY(i, (c + uv.getX(i)) / T.LABEL_COLS, 1 - (r + 1 - uv.getY(i)) / T.LABEL_ROWS);
+    }
+    batch.add(g, labelMat, matrix);
+  };
 
   /* ───── Rahmen ───── */
   const photoMats = new Map();
-  const photoMat = (i) => {
-    if (!photoMats.has(i)) photoMats.set(i, new THREE.MeshBasicMaterial({ map: photos[i].texture, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
-    return photoMats.get(i);
+  const photoMat = (tx) => {
+    if (!photoMats.has(tx)) photoMats.set(tx, new THREE.MeshBasicMaterial({ map: tx, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
+    return photoMats.get(tx);
   };
-  const wallSpots = []; // für Lichtkegel
-
-  const addFrame = (spec, idx) => {
-    const pi = idx % photos.length;
-    const asp = photos[pi].aspect;
+  const wallSpots = [];
+  const counters = { us: 0, moments: 0, hero: 0 };
+  const addFrame = (section, spec) => {
+    const list = photos[section];
+    const n = counters[section]++;
+    const ph = list[n % list.length];
+    const asp = ph.aspect;
     const w = Math.min(spec.w, spec.h * asp), h = w / asp;
     const mat = 0.07, bd = 0.028;
     const ow = w + 2 * (mat + bd), oh = h + 2 * (mat + bd);
@@ -185,121 +209,222 @@ export function buildWorld({ photos, screen }) {
     batch.add(box(ow, oh, 0.05), M.frame, local(0, 0, 0.025));
     batch.add(box(w + 2 * mat, h + 2 * mat, 0.056), M.mat, local(0, 0, 0.028));
     const nx = Math.sin(spec.ry), nz = Math.cos(spec.ry);
-    batch.add(plane(w, h), photoMat(pi), M4(x + nx * 0.0585, y, z + nz * 0.0585, spec.ry));
-    // Beschriftungskarte
+    batch.add(plane(w, h), photoMat(ph.texture), M4(x + nx * 0.0585, y, z + nz * 0.0585, spec.ry));
     const rx = Math.cos(spec.ry), rz = -Math.sin(spec.ry);
     const off = ow / 2 + 0.2;
-    batch.add(box(0.15, 0.09, 0.012), M.card, M4(x + rx * off + nx * 0.006, y - oh / 2 + 0.16, z + rz * off + nz * 0.006, spec.ry));
-
+    const cap = (CONFIG.captions[section] || [])[n] || {};
+    if (!spec.noLabel) addLabel(
+      { title: cap.title, meta: cap.meta, place: spec.place, n: n + 1 },
+      M4(x + rx * off + nx * 0.006, y - oh / 2 + 0.17, z + rz * off + nz * 0.006, spec.ry),
+    );
     const center = new THREE.Vector3(x + nx * 0.06, y, z + nz * 0.06);
-    const normal = new THREE.Vector3(nx, 0, nz);
     frames.push({
-      index: frames.length,
-      center,
-      normal,
-      w: ow,
-      h: oh,
+      kind: 'frame', index: frames.length, center, normal: new THREE.Vector3(nx, 0, nz), w: ow, h: oh,
       top: center.clone().add(new THREE.Vector3(0, oh / 2 + 0.16, 0)),
       stand: new THREE.Vector3(x + nx * (spec.stand ?? 1.7), 0, z + nz * (spec.stand ?? 1.7)),
     });
-    if (!spec.noSpot) wallSpots.push({ x, z, nx, nz, y });
+    if (!spec.noSpot) wallSpots.push({ x, z, nx, nz });
   };
 
-  const S = { w: 1.1, h: 1.45 }, B = { w: 1.35, h: 1.8 };
-  const zc = FW.z + FW.d / 2 + 0.0, zb = FW.z - FW.d / 2;
-  const specs = [
-    // Rückwand rechts (großes Bild über dem Sockel)
-    { pos: [BP.x, 2.2, HALL.minZ + 0.12], ry: 0, w: 1.55, h: 2.05, stand: 2.2 },
-    // freistehende schwarze Wand – Vorderseite
-    { pos: [-1.9, PL.h + 1.85, zc], ry: 0, ...B, stand: 2.2 },
-    { pos: [1.9, PL.h + 1.85, zc], ry: 0, ...B, stand: 2.2 },
-    // linke Wand
-    { pos: [HALL.minX, 1.7, -6.5], ry: Math.PI / 2, ...S },
-    { pos: [HALL.minX, 1.7, -2.2], ry: Math.PI / 2, ...S },
-    { pos: [HALL.minX, 1.7, 2.2], ry: Math.PI / 2, ...S },
-    { pos: [HALL.minX, 1.7, 6.5], ry: Math.PI / 2, ...S },
-    // Rückwand links
-    { pos: [-11, 1.7, HALL.minZ], ry: 0, ...S },
-    { pos: [-5, 1.7, HALL.minZ], ry: 0, ...S },
-    { pos: [3.2, 1.7, HALL.minZ], ry: 0, ...S },
-    // Trennwand
-    { pos: [-9.3, 1.7, PW.z + PW.d / 2], ry: 0, ...S },
-    { pos: [-6.7, 1.7, PW.z + PW.d / 2], ry: 0, ...S },
-    { pos: [-9.3, 1.7, PW.z - PW.d / 2], ry: Math.PI, ...S },
-    { pos: [-6.7, 1.7, PW.z - PW.d / 2], ry: Math.PI, ...S },
-    // freistehende Wand – Rückseite
-    { pos: [-1.9, PL.h + 1.85, zb], ry: Math.PI, ...B },
-    { pos: [1.9, PL.h + 1.85, zb], ry: Math.PI, ...B },
-    // rechte Wand
-    { pos: [HALL.maxX, 1.7, -7], ry: -Math.PI / 2, ...S },
-    { pos: [HALL.maxX, 1.7, 5], ry: -Math.PI / 2, ...S },
-    { pos: [HALL.maxX, 1.7, 9], ry: -Math.PI / 2, ...S },
-  ];
-  specs.forEach((s, i) => addFrame(s, i));
+  const PI = Math.PI;
+  const placeUs = { en: 'About us' }, placeMo = { en: 'Moments' };
+  placeUs.es = CONFIG.sections.us.title.es; placeUs.en = CONFIG.sections.us.title.en;
+  placeMo.es = CONFIG.sections.moments.title.es; placeMo.en = CONFIG.sections.moments.title.en;
+  const S = { w: 1.0, h: 1.5 }, S2 = { w: 1.1, h: 1.45 };
 
-  /* ───── Lichtkegel an den Wänden + Schienenstrahler ───── */
-  const up = new THREE.Vector3(0, 1, 0);
-  const rail = (x, z, w, d) => batch.add(box(w, 0.05, d), M.black, M4(x, HALL.h - 0.03, z));
-  rail(0, HALL.minZ + 1.0, W - 1, 0.05);
-  rail(HALL.minX + 1.0, 0, 0.05, D - 1);
-  rail(HALL.maxX - 1.0, 0, 0.05, D - 1);
-  rail(0, -4.6, 8, 0.05);
-  const spotted = new Set();
-  const spotKey = (s) => `${Math.round(s.x * 0.5)}|${Math.round(s.z * 0.5)}|${s.nx.toFixed(1)}|${s.nz.toFixed(1)}`;
-  for (const s of wallSpots) {
-    const k = spotKey(s);
-    if (spotted.has(k)) continue; spotted.add(k);
-    batch.add(plane(2.7, 2.9), M.wash, M4(s.x + s.nx * 0.014, 2.75, s.z + s.nz * 0.014, Math.atan2(s.nx, s.nz)));
-    const fx = s.x + s.nx * 0.85, fz = s.z + s.nz * 0.85, fy = HALL.h - 0.3;
-    const dir = new THREE.Vector3(s.x - fx, 2.5 - fy, s.z - fz).normalize();
-    const q = new THREE.Quaternion().setFromUnitVectors(up, dir);
-    batch.add(new THREE.CylinderGeometry(0.055, 0.07, 0.24, 10), M.black, new THREE.Matrix4().compose(new THREE.Vector3(fx, fy, fz), q, _s));
-    batch.add(new THREE.CylinderGeometry(0.012, 0.012, 0.3, 4), M.black, M4(fx, HALL.h - 0.15, fz));
+  /* Eingangshalle: schwarzes Paneel, Hero-Foto, Sockel mit Schild */
+  {
+    const bp = new THREE.Mesh(box(7.6, H, 0.12), repMat(blackTex, 7.6, 4, THREE.MeshLambertMaterial));
+    bp.position.set(0, H / 2, HALL.maxZ - 0.06); scene.add(bp);
+    addFrame('hero', { pos: [0, 2.1, HALL.maxZ - 0.12], ry: PI, w: 1.6, h: 2.1, stand: 2.6, noLabel: true });
+    const px = 0, pz = HALL.maxZ - 0.62;
+    batch.add(box(3.4, 0.56, 1.0), M.white, M4(px, 0.28, pz));
+    batch.add(plane(4.6, 2.2), M.shadow, M4(px, 0.006, pz, 0, -PI / 2));
+    colliders.push({ minX: -1.7, maxX: 1.7, minZ: pz - 0.5, maxZ: pz + 0.5, tall: false });
+    const pq = T.canvasTex(1024, 560, (g, w, h) => T.drawPlaque(g, w, h, pick(CONFIG.plaque)));
+    redrawers.push(pq.redraw); track(pq.texture);
+    const pm = new THREE.Mesh(plane(1.5, 0.82), new THREE.MeshBasicMaterial({ map: pq.texture, toneMapped: false }));
+    pm.position.set(px + 0.95, 0.56 + 0.43, pz - 0.2); pm.rotation.set(-0.42, PI, 0, 'YXZ');
+    scene.add(pm);
+    batch.add(box(1.54, 0.86, 0.05), M.black, M4(pm.position.x, pm.position.y, pm.position.z + 0.03, PI, -0.42));
   }
 
-  /* ───── Bänke ───── */
-  const addBench = (x, z, yaw, len = 2.2) => {
+  /* About us (links) */
+  {
+    const left = [-7.2, -4.4, -1.6, 1.1];
+    left.forEach((z) => addFrame('us', { pos: [HALL.minX, 1.62, z], ry: PI / 2, ...S, place: placeUs }));
+    [-7.2, 0.5].forEach((z) => addFrame('us', { pos: [-5 - 0.11, 1.62, z], ry: -PI / 2, ...S, place: placeUs }));
+    addFrame('us', { pos: [-8.5, 1.42, HALL.minZ], ry: 0, ...S, place: placeUs });
+    const wt = T.canvasTex(1024, 256, (g, w, h) => T.drawWallText(g, w, h, pick(CONFIG.sections.us.title), pick(CONFIG.sections.us.sub)));
+    redrawers.push(wt.redraw); track(wt.texture);
+    const m = new THREE.Mesh(plane(3.6, 0.9), new THREE.MeshBasicMaterial({ map: wt.texture, transparent: true, depthWrite: false, toneMapped: false }));
+    m.position.set(-8.5, 3.0, HALL.minZ + 0.012); scene.add(m);
+    plant(-11.2, 2.0);
+  }
+
+  /* Moments (Mitte) */
+  {
+    const PL = { minX: -2.9, maxX: 2.9, minZ: -2.6, maxZ: -0.2, h: 0.2 };
+    var plinth = PL;
+    batch.add(box(PL.maxX - PL.minX, PL.h, PL.maxZ - PL.minZ), M.white, M4(0, PL.h / 2, (PL.minZ + PL.maxZ) / 2));
+    batch.add(plane(PL.maxX - PL.minX + 1.6, PL.maxZ - PL.minZ + 1.6), M.shadow, M4(0, 0.006, (PL.minZ + PL.maxZ) / 2, 0, -PI / 2));
+    const FW = { z: -1.45, w: 4.8, h: 3.7, d: 0.26 };
+    const fw = new THREE.Mesh(box(FW.w, FW.h, FW.d), repMat(blackTex, FW.w, 4, THREE.MeshLambertMaterial));
+    fw.position.set(0, PL.h + FW.h / 2, FW.z); scene.add(fw);
+    colliders.push({ minX: -FW.w / 2, maxX: FW.w / 2, minZ: FW.z - FW.d / 2, maxZ: FW.z + FW.d / 2, tall: true });
+    [-1.2, 1.2].forEach((x) => addFrame('moments', { pos: [x, PL.h + 1.75, FW.z + FW.d / 2], ry: 0, ...S2, stand: 2.2, place: placeMo }));
+    [-7.2, 0.5].forEach((z) => {
+      addFrame('moments', { pos: [-5 + 0.11, 1.62, z], ry: PI / 2, ...S2, place: placeMo });
+      addFrame('moments', { pos: [5 - 0.11, 1.62, z], ry: -PI / 2, ...S2, place: placeMo });
+    });
+    // Screen an der Rückwand
+    const sx = 0, sy = 2.0, sz = HALL.minZ + 0.05;
+    batch.add(box(3.9, 2.3, 0.1), M.black, M4(sx, sy, sz));
+    const sm = new THREE.Mesh(plane(3.6, 2.025), new THREE.MeshBasicMaterial({ map: screen.texture, toneMapped: false }));
+    sm.position.set(sx, sy, sz + 0.055); scene.add(sm);
+    addBench(0, -5.4, PI);
+    plant(4.2, 1.9);
+  }
+
+  /* Words (rechts) */
+  {
+    bookcase(8.7, HALL.minZ + 0.02, 0, 6.4, 3.1);
+    bookcase(HALL.maxX - 0.02, -3.6, -PI / 2, 6.6, 2.7);
+    const rug = new THREE.Mesh(plane(4.3, 5.9), new THREE.MeshLambertMaterial({ map: track(T.rugTexture()) }));
+    rug.rotation.x = -PI / 2; rug.position.set(8.5, 0.008, -3.3); rug.rotation.z = 0;
+    scene.add(rug);
+    const spots = [[7.2, -0.8, 0.35], [9.8, -2.5, -0.4], [7.2, -4.3, 0.3], [9.8, -6.0, -0.3], [7.2, -6.9, 0.2], [10.2, 0.2, -0.5]];
+    const covers = [0x5a1f26, 0x1f3a4a, 0x2d4a33, 0x4a3a1f, 0x3a2a4a, 0x1d1d22];
+    books.slice(0, spots.length).forEach((b, i) => lectern(spots[i], b, covers[i % covers.length]));
+    plant(11.0, 2.0);
+  }
+
+  /* Lobby */
+  addBench(0, 7.4, 0);
+  plant(-11.0, 10.0); plant(11.0, 10.2); plant(-3.6, 3.7);
+
+  /* ───── Türschilder ───── */
+  [['us', -8.5], ['moments', 0], ['words', 8.5]].forEach(([k, x], i) => {
+    const sec = CONFIG.sections[k];
+    const tx = T.canvasTex(1024, 300, (g, w, h) => T.drawSign(g, w, h, pick(sec.title), pick(sec.sub), `0${i + 1}`));
+    redrawers.push(tx.redraw); track(tx.texture);
+    const m = new THREE.Mesh(plane(1.9, 0.557), new THREE.MeshBasicMaterial({ map: tx.texture, toneMapped: false }));
+    m.position.set(x, 3.58, 3.0 + 0.115); scene.add(m);
+  });
+
+  /* ───── Schienen, Strahler, Lichtkegel ───── */
+  const up = new THREE.Vector3(0, 1, 0);
+  const rail = (x, z, w, d) => batch.add(box(w, 0.05, d), M.black, M4(x, H - 0.03, z));
+  rail(0, HALL.minZ + 1.1, W - 1, 0.05);
+  rail(HALL.minX + 1.1, -3, 0.05, 11);
+  rail(HALL.maxX - 1.1, -3, 0.05, 11);
+  rail(0, 9.9, 9, 0.05);
+  const seen = new Set();
+  for (const s of wallSpots) {
+    const k = `${Math.round(s.x * 0.5)}|${Math.round(s.z * 0.5)}|${s.nx.toFixed(1)}|${s.nz.toFixed(1)}`;
+    if (seen.has(k)) continue; seen.add(k);
+    batch.add(plane(3.2, 3.0), M.wash, M4(s.x + s.nx * 0.014, 2.7, s.z + s.nz * 0.014, Math.atan2(s.nx, s.nz)));
+    const fx = s.x + s.nx * 0.85, fz = s.z + s.nz * 0.85, fy = H - 0.3;
+    const dir = new THREE.Vector3(s.x - fx, 2.4 - fy, s.z - fz).normalize();
+    const q = new THREE.Quaternion().setFromUnitVectors(up, dir);
+    batch.add(new THREE.CylinderGeometry(0.055, 0.07, 0.24, 10), M.black, new THREE.Matrix4().compose(new THREE.Vector3(fx, fy, fz), q, _s));
+    batch.add(new THREE.CylinderGeometry(0.012, 0.012, 0.3, 4), M.black, M4(fx, H - 0.15, fz));
+  }
+
+  /* ───── Bauteile ───── */
+  function addBench(x, z, yaw, len = 2.2) {
     batch.add(box(len, 0.06, 0.46), M.wood, M4(x, 0.44, z, yaw));
     const rx = Math.cos(yaw), rz = -Math.sin(yaw);
     for (const sgn of [-1, 1]) batch.add(box(0.05, 0.41, 0.36), M.black, M4(x + rx * sgn * (len / 2 - 0.2), 0.205, z + rz * sgn * (len / 2 - 0.2), yaw));
-    batch.add(plane(len + 0.9, 1.5), M.shadow, M4(x, 0.006, z, yaw, -Math.PI / 2));
-    colliders.push({ minX: x - (Math.abs(rx) * len + Math.abs(rz) * 0.46) / 2, maxX: x + (Math.abs(rx) * len + Math.abs(rz) * 0.46) / 2, minZ: z - (Math.abs(rz) * len + Math.abs(rx) * 0.46) / 2, maxZ: z + (Math.abs(rz) * len + Math.abs(rx) * 0.46) / 2, tall: false });
+    batch.add(plane(len + 0.9, 1.5), M.shadow, M4(x, 0.006, z, yaw, -PI / 2));
+    const ex = (Math.abs(rx) * len + Math.abs(rz) * 0.46) / 2, ez = (Math.abs(rz) * len + Math.abs(rx) * 0.46) / 2;
+    colliders.push({ minX: x - ex, maxX: x + ex, minZ: z - ez, maxZ: z + ez, tall: false });
     const seats = [-0.5, 0.5].map((o) => ({ x: x + rx * o, z: z + rz * o, y: 0.47 }));
     benches.push({ index: benches.length, x, z, yaw, seats, seatBase: benches.length * 2 });
-  };
-  addBench(0, -1.9, Math.PI);          // vor der schwarzen Wand
-  addBench(10.9, -1, Math.PI / 2);     // vor dem Screen
+  }
 
-  /* ───── Wand-Screen ───── */
-  {
-    const sx = HALL.maxX - 0.07, sy = 1.95, sz = -1;
-    batch.add(box(0.1, 2.2, 3.9), M.black, M4(sx, sy, sz));
-    const sm = new THREE.Mesh(plane(3.6, 2.025), new THREE.MeshBasicMaterial({ map: screen.texture, toneMapped: false }));
-    sm.position.set(sx - 0.055, sy, sz);
-    sm.rotation.y = -Math.PI / 2;
-    scene.add(sm);
-    screen.mesh = sm;
+  function plant(x, z) {
+    batch.add(new THREE.CylinderGeometry(0.2, 0.15, 0.4, 14), M.pot, M4(x, 0.2, z));
+    batch.add(plane(1.1, 1.1), M.shadow, M4(x, 0.006, z, 0, -PI / 2));
+    const r = rng(Math.floor(x * 7 + z * 13 + 100));
+    for (let i = 0; i < 9; i++) {
+      const a = r() * PI * 2, d = r() * 0.12, h = 0.55 + r() * 0.75;
+      const geo = new THREE.SphereGeometry(0.15 + r() * 0.08, 8, 6);
+      geo.scale(0.9, 1.5, 0.55);
+      batch.add(geo, i % 2 ? M.leaf : M.leaf2, M4(x + Math.cos(a) * d, 0.4 + h / 2, z + Math.sin(a) * d, a, 0, (r() - 0.5) * 0.7));
+    }
+    colliders.push({ minX: x - 0.2, maxX: x + 0.2, minZ: z - 0.2, maxZ: z + 0.2, tall: false });
+  }
+
+  function bookcase(cx, cz0, ry, w, h) {
+    const base = M4(cx, 0, cz0, ry);
+    const L = (lx, ly, lz) => base.clone().multiply(M4(lx, ly, lz));
+    batch.add(box(w, h, 0.03), M.walnut, L(0, h / 2, 0.015));
+    for (const s of [-1, 1]) batch.add(box(0.04, h, 0.36), M.walnut, L(s * (w / 2 - 0.02), h / 2, 0.18));
+    const rows = 5, gap = (h - 0.06) / rows, r = rng(Math.floor(w * 31 + h * 17));
+    for (let i = 0; i <= rows; i++) batch.add(box(w - 0.08, 0.035, 0.34), M.walnut, L(0, 0.03 + i * gap, 0.18));
+    for (let i = 0; i < rows; i++) {
+      let x = -w / 2 + 0.08;
+      const y0 = 0.05 + i * gap + 0.0175;
+      while (x < w / 2 - 0.1) {
+        if (r() < 0.07) { x += 0.12 + r() * 0.2; continue; }
+        const bw = 0.028 + r() * 0.035, bh = Math.min(gap - 0.05, 0.22 + r() * 0.2), lean = r() < 0.06 ? 0.2 : 0;
+        batch.add(box(bw, bh, 0.22), spineMats[Math.floor(r() * spineMats.length)], L(x + bw / 2, y0 + bh / 2, 0.16).multiply(M4(0, 0, 0, 0, 0, lean)));
+        x += bw + 0.004 + (lean ? 0.06 : 0);
+      }
+    }
+    batch.add(plane(w + 0.9, 1.0), M.shadow, L(0, 0.006, 0.45).multiply(M4(0, 0, 0, 0, -PI / 2)));
+  }
+
+  function lectern([x, z, ry], book, cover) {
+    const base = M4(x, 0, z, ry);
+    const L = (lx, ly, lz, rx = 0, rz2 = 0) => base.clone().multiply(M4(lx, ly, lz, 0, rx, rz2));
+    batch.add(box(0.36, 0.84, 0.28), M.walnut, L(0, 0.42, 0));
+    batch.add(box(0.62, 0.04, 0.44), M.walnut, L(0, 0.88, 0.02, -0.38));
+    const coverMat = new THREE.MeshLambertMaterial({ color: cover });
+    batch.add(box(0.58, 0.02, 0.4), coverMat, L(0, 0.915, 0.02, -0.38));
+    batch.add(box(0.27, 0.025, 0.37), M.paper, L(-0.135, 0.935, 0.02, -0.38, 0.05));
+    batch.add(box(0.27, 0.025, 0.37), M.paper, L(0.135, 0.935, 0.02, -0.38, -0.05));
+    batch.add(plane(1.3, 1.1), M.shadow, L(0, 0.006, 0.0).multiply(M4(0, 0, 0, 0, -PI / 2)));
+    addLabel({ title: { en: book.en.title, es: book.es.title }, meta: () => tr('read'), n: 0 }, L(0, 0.55, 0.146), 0.3);
+    const nx = Math.sin(ry), nz = Math.cos(ry);
+    const center = new THREE.Vector3(x + nx * 0.1, 0.95, z + nz * 0.1);
+    colliders.push({ minX: x - 0.28, maxX: x + 0.28, minZ: z - 0.28, maxZ: z + 0.28, tall: false });
+    bookViews.push({
+      kind: 'book', book, index: frames.length + bookViews.length, center,
+      normal: new THREE.Vector3(nx, 0, nz), top: new THREE.Vector3(x, 1.5, z),
+      stand: new THREE.Vector3(x + nx * 1.0, 0, z + nz * 1.0), w: 0.6, h: 0.6,
+    });
   }
 
   batch.build(scene);
+  atlas.redraw();
 
-  /* ───── Boden-Höhe & Spawn ───── */
+  /* ───── Boden-Höhe, Begrenzung ───── */
   const groundY = (x, z) => {
-    const dx = Math.max(PL.minX - x, 0, x - PL.maxX), dz = Math.max(PL.minZ - z, 0, z - PL.maxZ);
-    return PL.h * Math.max(0, 1 - Math.hypot(dx, dz) / 0.3);
+    const P = plinth;
+    const dx = Math.max(P.minX - x, 0, x - P.maxX), dz = Math.max(P.minZ - z, 0, z - P.maxZ);
+    return P.h * Math.max(0, 1 - Math.hypot(dx, dz) / 0.3);
   };
-  const spawns = [[-0.8, 8.2], [0.8, 8.2], [-2.4, 8.6], [2.4, 8.6], [-0.8, 10], [0.8, 10]];
+  const clamp = (p) => {
+    const inAlcove = p.x > HALL.maxX - 0.2 && p.z > ALCOVE.minZ + 0.32 && p.z < ALCOVE.maxZ - 0.32;
+    p.z = Math.max(HALL.minZ + MARGIN, Math.min(HALL.maxZ - MARGIN, p.z));
+    if (inAlcove) {
+      p.z = Math.max(ALCOVE.minZ + MARGIN, Math.min(ALCOVE.maxZ - MARGIN, p.z));
+      p.x = Math.max(HALL.minX + MARGIN, Math.min(ALCOVE.maxX - MARGIN, p.x));
+    } else {
+      p.x = Math.max(HALL.minX + MARGIN, Math.min(HALL.maxX - MARGIN, p.x));
+    }
+  };
+  const views = [...frames, ...bookViews];
+  const spawns = [[-0.8, 5.0], [0.8, 5.0], [-2.4, 5.6], [2.4, 5.6], [-0.8, 6.0], [0.8, 6.0]];
 
+  const heartMesh = null;
   return {
-    scene,
-    textures,
-    colliders,
-    frames,
-    benches,
-    groundY,
-    spawns,
-    update(t) {
-      if (heartMesh) heartMesh.position.y = 1.27 + Math.sin(t * 1.6) * 0.03;
-    },
+    scene, textures, colliders, frames, books: bookViews, views, benches, groundY, clamp, spawns,
+    bounds: { minX: HALL.minX, maxX: HALL.maxX + 0.25, minZ: HALL.minZ, maxZ: HALL.maxZ },
+    exitZone: { minX: ALCOVE.minX + 1.1, maxX: ALCOVE.maxX, minZ: ALCOVE.minZ, maxZ: ALCOVE.maxZ },
+    relocalize() { atlas.redraw(); redrawers.forEach((f) => f()); },
+    update() { /* statisch */ },
   };
 }

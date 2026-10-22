@@ -8,17 +8,17 @@ export class NameTag {
     this.sprite = new THREE.Sprite(this.mat);
     this.sprite.renderOrder = 20;
     this.name = name;
-    this.mode = '';
-    this.set('name');
+    this.key = '';
   }
-  set(mode) {
-    if (mode === this.mode) return;
-    this.mode = mode;
-    const l = mode === 'viewing' ? labelTexture(this._viewing || 'Viewing', { dot: false }) : labelTexture(this.name, { dot: true });
+  /* text === null → Name mit Punkt, sonst Hinweis-Pille („Viewing“, „Reading“) */
+  set(text) {
+    const key = text === null ? `n|${this.name}` : `v|${text}`;
+    if (key === this.key) return;
+    this.key = key;
+    const l = text === null ? labelTexture(this.name, { dot: true }) : labelTexture(text, { dot: false });
     this.mat.map = l.texture; this.mat.needsUpdate = true;
     this.sprite.scale.set(0.15 * l.aspect, 0.15, 1);
   }
-  setViewingText(t) { this._viewing = t; }
 }
 
 /* Sprechblase mit Auto-Ablauf. */

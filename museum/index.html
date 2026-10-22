@@ -12,6 +12,7 @@
 <canvas id="gl" aria-label="Our Museum"></canvas>
 
 <div id="ui">
+  <div id="lang" role="group" aria-label="Language"><button type="button" data-lang="en">EN</button><button type="button" data-lang="es">ES</button></div>
   <!-- Start / lobby -->
   <section id="start" class="screen">
     <div class="start-inner">
@@ -23,10 +24,7 @@
           <span data-t="yourName"></span>
           <input id="name" type="text" maxlength="16" autocomplete="off" autocapitalize="words" spellcheck="false">
         </label>
-        <div class="looks" role="radiogroup">
-          <button type="button" class="look" data-look="boy" aria-pressed="true"><b class="swatch boy"></b><span data-look-name="boy"></span></button>
-          <button type="button" class="look" data-look="girl" aria-pressed="false"><b class="swatch girl"></b><span data-look-name="girl"></span></button>
-        </div>
+        <p class="playas"><span data-t="playingAs"></span> <b id="char-name">Seb</b><button id="char-switch" type="button" class="link" data-t="switchChar"></button></p>
       </div>
 
       <div id="panel-main" class="panel sub">
@@ -69,6 +67,7 @@
     </div>
     <button id="btn-leave" type="button" data-t="leave"></button>
     <div id="hints"></div>
+    <div id="music" hidden></div>
     <form id="chat" autocomplete="off" hidden>
       <input id="chat-input" type="text" maxlength="140" autocomplete="off" data-ph="chatPlaceholder">
     </form>
@@ -82,6 +81,19 @@
       </div>
     </div>
   </div>
+</div>
+
+<div id="reader" hidden>
+  <article class="page" role="dialog" aria-modal="true">
+    <button id="reader-close" type="button" aria-label="Close">×</button>
+    <p class="kicker" id="reader-kicker"></p>
+    <h2 id="reader-title"></h2>
+    <div id="reader-body"></div>
+  </article>
+</div>
+<div id="exit-screen" hidden>
+  <p id="exit-text"></p>
+  <button id="exit-back" type="button" class="link"></button>
 </div>
 
 <script type="module" src="/src/main.js"></script>

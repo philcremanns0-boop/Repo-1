@@ -1,7 +1,10 @@
 import './style.css';
 import * as THREE from 'three';
-import { CONFIG, PHOTO_URLS, VIDEO_URL } from './config.js';
-import { t } from './i18n.js';
+import { CONFIG, PHOTO_URLS, VIDEO_URL, BOOKS } from './config.js';
+import { t, pick, getLang, setLang, onLang } from './i18n.js';
+import { guessLook } from './gender.js';
+import { CHARACTERS } from './avatar.js';
+import { MusicPlayer } from './music.js';
 import * as UI from './ui.js';
 import * as T from './textures.js';
 import { buildWorld } from './world.js';
@@ -85,37 +88,45 @@ async function loadVideo(url) {
   return { texture: tex, video: v, draw: null };
 }
 
+const music = new MusicPlayer();
+
 const assetsPromise = (async () => {
   const fontJobs = [
     '400 40px "Instrument Serif"', 'italic 400 40px "Instrument Serif"',
     '500 14px "Inter Variable"', '600 14px "Inter Variable"',
   ].map((f) => document.fonts.load(f).catch(() => {}));
   await Promise.all(fontJobs);
-  prog.assets = 0.08;
+  prog.assets = 0.05;
 
-  const photos = [];
-  if (PHOTO_URLS.length) {
-    let done = 0;
-    const queue = PHOTO_URLS.map((u, i) => [u, i]);
-    const results = new Array(PHOTO_URLS.length);
-    const worker = async () => {
-      while (queue.length) {
-        const [u, i] = queue.shift();
-        try { results[i] = await decodePhoto(u); } catch (e) { console.warn('photo failed', u, e); }
-        done++; prog.assets = 0.08 + 0.72 * (done / PHOTO_URLS.length);
-      }
-    };
-    await Promise.all([worker(), worker(), worker()]);
-    results.filter(Boolean).forEach((r) => photos.push(r));
+  // Fotos je Bereich laden (fehlt ein Bereich → schlichte Platzhalter)
+  const jobs = [];
+  for (const [sec, urls] of Object.entries(PHOTO_URLS)) urls.forEach((u, i) => jobs.push({ sec, u, i }));
+  const results = { hero: [], us: [], moments: [] };
+  let done = 0;
+  const queue = jobs.slice();
+  const worker = async () => {
+    while (queue.length) {
+      const j = queue.shift();
+      try { results[j.sec][j.i] = await decodePhoto(j.u); } catch (e) { console.warn('photo failed', j.u, e); }
+      done++; prog.assets = 0.05 + 0.65 * (done / jobs.length);
+    }
+  };
+  await Promise.all([worker(), worker(), worker()]);
+  const photos = {};
+  const need = { hero: 1, us: 7, moments: 6 };
+  for (const sec of Object.keys(need)) {
+    photos[sec] = results[sec].filter(Boolean);
+    if (!photos[sec].length) {
+      for (let i = 0; i < need[sec]; i++) { const tx = T.emptyPhoto(i); photos[sec].push({ texture: tx, aspect: tx.userData.aspect }); }
+    }
   }
-  if (!photos.length) {
-    for (let i = 0; i < 6; i++) { const tx = T.placeholderPhoto(i); photos.push({ texture: tx, aspect: tx.userData.aspect }); }
-  }
-  prog.assets = 0.82;
+  prog.assets = 0.72;
 
   let screen = null;
   if (VIDEO_URL) screen = await loadVideo(VIDEO_URL);
   if (!screen) { const sc = T.createScreenCanvas(); screen = { texture: sc.texture, draw: sc.draw, video: null }; }
+  prog.assets = 0.85;
+  await music.ready();
   prog.assets = 1;
   return { photos, screen };
 })();
@@ -129,19 +140,15 @@ let mySettings = { name: '', look: 'boy' };
 
 /* ═════════════ Lobby ═════════════ */
 const nameInput = $('#name'), codeInput = $('#code'), status = $('#multi-status');
-let look = 'boy';
-const lookBtns = [...document.querySelectorAll('.look')];
-const defaultName = () => (look === 'boy' ? CONFIG.from : CONFIG.to);
-function setLook(l, prefill = true) {
-  look = l;
-  lookBtns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.look === l)));
-  if (prefill && (!nameInput.value || nameInput.dataset.auto === '1')) { nameInput.value = defaultName(); nameInput.dataset.auto = '1'; }
-}
-nameInput.addEventListener('input', () => { nameInput.dataset.auto = '0'; });
-lookBtns.forEach((b) => b.addEventListener('click', () => setLook(b.dataset.look)));
-setLook('boy');
+let look = 'boy', manualLook = false;
+const charName = $('#char-name');
+const paintLook = () => { charName.textContent = CHARACTERS[look]; };
+const autoLook = () => { if (!manualLook) { look = nameInput.value.trim() ? guessLook(nameInput.value) : 'boy'; paintLook(); } };
+nameInput.addEventListener('input', autoLook);
+$('#char-switch').addEventListener('click', () => { manualLook = true; look = look === 'boy' ? 'girl' : 'boy'; paintLook(); });
+paintLook();
 
-const readName = () => (nameInput.value.trim().slice(0, 16) || defaultName());
+const readName = () => nameInput.value.trim().slice(0, 16) || CHARACTERS[look];
 const showMain = () => { $('#panel-main').hidden = false; $('#panel-multi').hidden = true; status.textContent = ''; };
 const showMulti = () => { $('#panel-main').hidden = true; $('#panel-multi').hidden = false; status.textContent = ''; };
 
@@ -160,13 +167,22 @@ $('#btn-join').addEventListener('click', () => begin('join'));
 // Einladungslink  ?room=ABCDE
 {
   const room = cleanCode(new URLSearchParams(location.search).get('room'));
-  if (room.length === 5) { codeInput.value = room; showMulti(); setLook('girl'); }
+  if (room.length === 5) { codeInput.value = room; showMulti(); }
 }
+
+// Sprache
+document.querySelectorAll('#lang button').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.lang)));
+onLang(() => {
+  UI.initTexts();
+  if (world) { world.relocalize(); refreshHints(); UI.setRoom(net ? net.code : null, net ? net.count : 1); }
+  if (reading) openReader(reading);
+});
 
 async function begin(mode) {
   if (started) return;
   mySettings = { name: readName(), look };
   busy(true);
+  music.play();                       // Klick = Nutzergeste → Musik darf starten
   try {
     if (mode === 'host' || mode === 'join') {
       status.textContent = mode === 'host' ? t('creating') : t('connecting');
@@ -218,17 +234,19 @@ async function boot(mode) {
 
   // Welt bauen
   await nextFrame();
-  world = buildWorld({ photos, screen });
+  world = buildWorld({ photos, screen, books: BOOKS });
   world.screenSource = screen;
   prog.build = 0.5;
   input = new Input(canvas);
   rig = new CameraRig(camera);
+  rig.bounds = world.bounds;
   if (input.touch) $('#touch').hidden = false;
 
   const me = new Actor(world.scene, { id: net ? net.myId : 'me', name: mySettings.name, look: mySettings.look });
-  me.frames = world.frames;
+  me.views = world.views;
   local = new LocalPlayer(me, world, input, rig);
   local.setOthers(() => [...remotes.values()]);
+  local.onRead = openReader; local.onCloseRead = closeReader;
   // spielerspezifischer Spawn
   const idx = net ? Math.max(0, [...net.players.keys()].indexOf(net.myId)) : 0;
   local.spawn(idx);
@@ -242,7 +260,7 @@ async function boot(mode) {
   tmp.bubble.say('♥'); tmp.bubble.update(0.1);
 
   // GPU: alle Texturen hochladen (verteilt auf Frames, damit der Balken weiterläuft)
-  const texs = [...world.textures, ...photos.map((p) => p.texture), screen.texture];
+  const texs = [...world.textures, ...Object.values(photos).flat().map((p) => p.texture), screen.texture];
   world.scene.traverse((o) => {
     const m = o.material; if (m && m.map && !texs.includes(m.map)) texs.push(m.map);
   });
@@ -304,7 +322,7 @@ function syncRemotes() {
   for (const [id, p] of net.players) {
     if (id === net.myId || remotes.has(id)) continue;
     const a = new Actor(world.scene, { id, name: p.name, look: p.look });
-    a.remote = true; a.frames = world.frames;
+    a.remote = true; a.views = world.views;
     const [x, z] = world.spawns[remotes.size + 1] || world.spawns[0];
     a.pos.set(x, 0, z); a.tPos.copy(a.pos); a.heading = a.tHeading = Math.PI;
     remotes.set(id, a);
@@ -319,10 +337,14 @@ let last = 0, netT = 0, netKeep = 0, lastSnap = '';
 let ema = 16.7, okFrames = 0, badFrames = 0;
 const proj = new THREE.Vector3();
 
+function refreshHints() { $('#hints').textContent = input.touch ? t('hintsTouch') : t('hintsDesktop'); }
+
 function enterWorld() {
   ready = true;
   $('#hud').hidden = false;
-  $('#hints').textContent = input.touch ? t('hintsTouch') : t('hintsDesktop');
+  document.body.classList.add('in-game');
+  music.show(true);
+  refreshHints();
   setTimeout(() => $('#hints').classList.add('fade'), 14000);
   last = performance.now();
   requestAnimationFrame(loop);
@@ -338,6 +360,7 @@ function loop(now) {
   local.actor.update(dt);
   local.actor.avatar.root.visible = local.state !== 'viewing';
   world.update(now / 1000);
+  checkExit();
   tickScreen(now);
 
   // Netz: ~15 Hz
@@ -406,6 +429,50 @@ addEventListener('keydown', (e) => {
 $('#t-chat').addEventListener('click', () => (chatOpen ? closeChat() : openChat()));
 $('#t-dance').addEventListener('click', () => input.pressed.add('g'));
 $('#t-act').addEventListener('click', () => local.interactTouch());
+
+/* ═════════════ Lesen ═════════════ */
+const reader = $('#reader');
+let reading = null;
+function openReader(book) {
+  reading = book;
+  const b = getLang() === 'es' ? book.es : book.en;
+  $('#reader-kicker').textContent = pick(CONFIG.sections.words.title);
+  $('#reader-title').textContent = b.title;
+  const body = $('#reader-body');
+  body.replaceChildren(...b.body.split(/\n\s*\n/).map((para) => { const p = document.createElement('p'); p.textContent = para; return p; }));
+  reader.hidden = false;
+  reader.querySelector('.page').scrollTop = 0;
+}
+function closeReader() { reading = null; reader.hidden = true; }
+$('#reader-close').addEventListener('click', () => input.pressed.add('escape'));
+reader.addEventListener('pointerdown', (e) => { if (e.target === reader) input.pressed.add('escape'); });
+
+/* ═════════════ Exit: Fade → schwarz → „I love you / Te quiero“ ═════════════ */
+const exitScreen = $('#exit-screen');
+let exiting = false;
+function checkExit() {
+  if (exiting) return;
+  const z = world.exitZone, p = local.actor.pos;
+  if (local.state === 'free' && p.x > z.minX && p.x < z.maxX && p.z > z.minZ && p.z < z.maxZ) startExit();
+}
+function startExit() {
+  exiting = true; input.enabled = false;
+  $('#exit-text').textContent = pick(CONFIG.exitText);
+  $('#exit-back').textContent = t('backToMuseum');
+  exitScreen.className = ''; exitScreen.hidden = false;
+  void exitScreen.offsetWidth;
+  exitScreen.classList.add('on');
+  setTimeout(() => exitScreen.classList.add('text'), 4300);
+  setTimeout(() => exitScreen.classList.add('btn'), 9500);
+}
+onLang(() => { if (exiting) { $('#exit-text').textContent = pick(CONFIG.exitText); $('#exit-back').textContent = t('backToMuseum'); } });
+$('#exit-back').addEventListener('click', () => {
+  const a = local.actor;
+  a.pos.set(10.6, 0, 7.6); a.heading = -Math.PI / 2; local.vel.set(0, 0);
+  rig.yaw = a.heading + Math.PI; rig.snapNext = true;
+  exitScreen.classList.remove('text', 'btn'); exitScreen.classList.add('out');
+  setTimeout(() => { exitScreen.hidden = true; exiting = false; input.enabled = true; }, 1500);
+});
 
 function leave() {
   if (net) net.close();

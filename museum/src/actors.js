@@ -12,7 +12,6 @@ export class Actor {
     this.id = id; this.name = name; this.lookName = look;
     this.avatar = new Avatar(look);
     this.tag = new NameTag(name);
-    this.tag.setViewingText(t('viewing'));
     this.bubble = new Bubble();
     scene.add(this.avatar.root, this.tag.sprite, this.bubble.sprite);
     this.scene = scene;
@@ -22,7 +21,7 @@ export class Actor {
     this.viewing = -1;   // Rahmen-Index
     this.seat = -1;
     this.speed = 0;
-    this.frames = null;
+    this.views = null;
     // Remote-Ziele
     this.tPos = new THREE.Vector3(); this.tHeading = 0; this.remote = false;
   }
@@ -50,13 +49,14 @@ export class Actor {
     a.root.position.copy(this.pos);
     a.root.rotation.y = this.heading;
     const sitting = this.anim === 'sit';
-    const top = this.pos.y + (sitting ? 1.5 : 1.86) * (this.avatar.body.scale.x);
-    // Namensschild: „Viewing“ über dem Rahmen
-    if (this.viewing >= 0 && this.frames && this.frames[this.viewing]) {
-      this.tag.set('viewing');
-      this.tag.sprite.position.copy(this.frames[this.viewing].top);
+    const top = this.pos.y + (sitting ? 1.0 : 1.72);
+    // Namensschild: „Viewing“/„Reading“ über dem Objekt
+    const v = this.viewing >= 0 && this.views ? this.views[this.viewing] : null;
+    if (v) {
+      this.tag.set(t(v.kind === 'book' ? 'reading' : 'viewing'));
+      this.tag.sprite.position.copy(v.top);
     } else {
-      this.tag.set('name');
+      this.tag.set(null);
       this.tag.sprite.position.set(this.pos.x, top + 0.12, this.pos.z);
     }
     this.bubble.sprite.position.set(this.pos.x, top + 0.3, this.pos.z);

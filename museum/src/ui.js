@@ -1,19 +1,18 @@
 import { CONFIG } from './config.js';
-import { t, LANG } from './i18n.js';
+import { t, getLang } from './i18n.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 export function initTexts() {
-  document.documentElement.lang = LANG;
+  document.documentElement.lang = getLang() === 'es' ? 'es-CL' : 'en';
+  $$('#lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === getLang())));
   document.title = CONFIG.title;
   $$('[data-t]').forEach((el) => { el.textContent = t(el.dataset.t); });
   $$('[data-ph]').forEach((el) => { el.placeholder = t(el.dataset.ph); });
   $$('[data-title]').forEach((el) => { el.textContent = CONFIG.title; });
   $$('[data-from]').forEach((el) => { el.textContent = CONFIG.from; });
   $$('[data-to]').forEach((el) => { el.textContent = CONFIG.to; });
-  $('[data-look-name="boy"]').textContent = CONFIG.from;
-  $('[data-look-name="girl"]').textContent = CONFIG.to;
 }
 
 const barFill = $('#bar-fill'), barPct = $('#bar-pct');

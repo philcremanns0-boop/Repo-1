@@ -299,3 +299,138 @@ export function bubbleTexture(text) {
   shown.forEach((l, i) => g.fillText(l, pad, pad - 1 + i * lh));
   return { texture: toTex(c, { mip: false }), aspect: W / (Hh + tail) };
 }
+
+/* ───────────── Neu: Text-Texturen, die sich bei Sprachwechsel neu zeichnen ───────────── */
+
+export function canvasTex(w, h, draw, { mip = true } = {}) {
+  const [c, g] = mk(w, h);
+  const texture = toTex(c, { mip });
+  const redraw = () => { g.clearRect(0, 0, w, h); draw(g, w, h); texture.needsUpdate = true; };
+  redraw();
+  return { texture, redraw };
+}
+
+const SERIF = '"Instrument Serif", Georgia, serif';
+const SANS = '"Inter Variable", system-ui, sans-serif';
+
+export function drawPlaque(g, w, h, cfg) {
+  g.fillStyle = '#121418'; g.fillRect(0, 0, w, h);
+  g.fillStyle = 'rgba(255,255,255,0.55)';
+  g.font = `600 22px ${SANS}`; g.letterSpacing = '5px';
+  g.fillText(cfg.kicker || '', 64, 88);
+  g.letterSpacing = '0px';
+  g.fillStyle = '#f6f4ef';
+  g.font = `400 132px ${SERIF}`;
+  g.fillText(cfg.title || '', 60, 232);
+  g.fillStyle = 'rgba(255,255,255,0.7)';
+  g.font = `400 30px ${SANS}`;
+  (cfg.text || '').split('\n').forEach((ln, i) => g.fillText(ln, 64, 318 + i * 44));
+  g.fillStyle = 'rgba(255,255,255,0.45)';
+  g.font = `italic 400 34px ${SERIF}`;
+  g.fillText(cfg.signature || '', 64, 496);
+}
+
+export function drawSign(g, w, h, title, sub, n) {
+  g.fillStyle = '#16181d'; g.fillRect(0, 0, w, h);
+  g.fillStyle = 'rgba(255,255,255,0.4)';
+  g.font = `600 26px ${SANS}`; g.letterSpacing = '6px';
+  g.fillText(n, 60, 82);
+  g.letterSpacing = '0px';
+  g.fillStyle = '#f6f4ef';
+  g.font = `400 150px ${SERIF}`;
+  g.fillText(title, 56, 218);
+  g.fillStyle = 'rgba(255,255,255,0.55)';
+  g.font = `italic 400 42px ${SERIF}`;
+  g.fillText(sub, 62, 268);
+}
+
+export function drawWallText(g, w, h, kicker, title) {
+  g.fillStyle = '#4a4d55';
+  g.font = `600 24px ${SANS}`; g.letterSpacing = '7px';
+  g.fillText(kicker.toUpperCase(), 8, 54);
+  g.letterSpacing = '0px';
+  g.fillStyle = '#23252b';
+  g.font = `400 150px ${SERIF}`;
+  g.fillText(title, 4, 196);
+}
+
+export function drawExitSign(g, w, h, word) {
+  g.fillStyle = '#16181d'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#f6f4ef';
+  g.font = `400 96px ${SERIF}`;
+  g.textBaseline = 'middle'; g.textAlign = 'center';
+  g.fillText(word, w / 2, h / 2 + 4);
+  g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  g.fillStyle = '#ffd9a0';
+  g.beginPath(); g.moveTo(w - 70, h / 2 - 16); g.lineTo(w - 38, h / 2); g.lineTo(w - 70, h / 2 + 16); g.closePath(); g.fill();
+}
+
+/* Museums-Schildchen: Atlas 4 × 8 Zellen à 256 × 128 */
+export const LABEL_COLS = 4, LABEL_ROWS = 8;
+export function drawLabels(g, w, h, defs, pick, noWord) {
+  const cw = w / LABEL_COLS, ch = h / LABEL_ROWS;
+  defs.forEach((d, i) => {
+    const x = (i % LABEL_COLS) * cw, y = Math.floor(i / LABEL_COLS) * ch;
+    g.fillStyle = '#f1efea'; g.fillRect(x, y, cw, ch);
+    g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = 2; g.strokeRect(x + 3, y + 3, cw - 6, ch - 6);
+    g.fillStyle = '#1b1c20';
+    g.font = `italic 400 34px ${SERIF}`;
+    const title = d.title ? pick(d.title) : `${noWord} ${String(d.n).padStart(2, '0')}`;
+    g.fillText(title, x + 18, y + 54, cw - 34);
+    g.fillStyle = '#6a6c72';
+    g.font = `500 17px ${SANS}`; g.letterSpacing = '1.5px';
+    const meta = typeof d.meta === 'function' ? d.meta() : d.meta ? pick(d.meta) : '';
+    g.fillText((meta || pick(d.place) || '').toUpperCase(), x + 18, y + 96, cw - 34);
+    g.letterSpacing = '0px';
+  });
+}
+
+/* Neutraler Platzhalter für noch fehlende Fotos – bewusst schlicht. */
+export function emptyPhoto(i) {
+  const w = 600, h = 800;
+  const [c, g] = mk(w, h);
+  g.fillStyle = '#d8d5ce'; g.fillRect(0, 0, w, h);
+  grain(g, w, h, 8);
+  g.strokeStyle = 'rgba(60,58,54,0.35)'; g.lineWidth = 3;
+  g.strokeRect(40, 40, w - 80, h - 80);
+  g.beginPath(); g.moveTo(40, h - 200); g.lineTo(190, h - 340); g.lineTo(290, h - 250); g.lineTo(390, h - 380); g.lineTo(w - 40, h - 220); g.stroke();
+  g.beginPath(); g.arc(w - 150, 170, 34, 0, Math.PI * 2); g.stroke();
+  g.fillStyle = 'rgba(60,58,54,0.55)';
+  g.font = `italic 400 40px ${SERIF}`; g.textAlign = 'center';
+  g.fillText(String(i + 1).padStart(2, '0'), w / 2, h - 96);
+  const t = toTex(c);
+  t.userData = { aspect: w / h };
+  return t;
+}
+
+export function rugTexture() {
+  const w = 512, h = 700;
+  const [c, g] = mk(w, h);
+  g.fillStyle = '#7b3a33'; g.fillRect(0, 0, w, h);
+  g.strokeStyle = '#d4b56f'; g.lineWidth = 6; g.strokeRect(26, 26, w - 52, h - 52);
+  g.strokeStyle = '#d4b56f'; g.lineWidth = 2; g.strokeRect(46, 46, w - 92, h - 92);
+  g.fillStyle = 'rgba(212,181,111,0.55)';
+  for (let y = 80; y < h - 70; y += 44) for (let x = 80; x < w - 70; x += 44) {
+    g.beginPath(); g.moveTo(x, y - 12); g.lineTo(x + 12, y); g.lineTo(x, y + 12); g.lineTo(x - 12, y); g.closePath(); g.fill();
+  }
+  grain(g, w, h, 22);
+  g.fillStyle = '#e8dcc0';
+  for (let x = 0; x < w; x += 7) { g.fillRect(x, 0, 3, 14); g.fillRect(x, h - 14, 3, 14); }
+  return toTex(c);
+}
+
+export function doorLightTexture() {
+  const [c, g] = mk(64, 128);
+  const gr = g.createLinearGradient(0, 0, 0, 128);
+  gr.addColorStop(0, '#fff0d4'); gr.addColorStop(1, '#fffaf0');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 128);
+  return toTex(c, { mip: false });
+}
+
+export function floorGlowTexture() {
+  const [c, g] = mk(128, 128);
+  const gr = g.createRadialGradient(0, 64, 0, 0, 64, 110);
+  gr.addColorStop(0, 'rgba(255,230,180,0.5)'); gr.addColorStop(1, 'rgba(255,230,180,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  return toTex(c, { mip: false });
+}

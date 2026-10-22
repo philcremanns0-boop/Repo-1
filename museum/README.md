@@ -1,12 +1,16 @@
 # Our Museum
 
-Ein kleines 3D-Museum im Browser – nachgebaut nach dem Video: heller Galerieraum mit dunkler Decke,
-freistehende schwarze Wand, Bilderrahmen mit Wandstrahlern, Wand-Screen, Bänke, Schild „For Emma“,
-zwei Figuren mit Namensschildern, Sitzen, Tanzen, Winken, Chat-Blasen und „Viewing“-Modus für Bilder.
+Ein kleines 3D-Museum im Browser (Three.js + Vite) – Single- oder Multiplayer, Musik, zwei Sprachen.
 
-* **Single Player** oder **Multiplayer** (Raum-Code / Einladungslink, direkt Peer-to-Peer, kein eigener Server nötig)
-* Loading Screen mit **echtem Fortschritt** (Schriften, Fotos, Video, GPU-Upload, Shader-Kompilierung) + Mindestdauer
-* Läuft auf Desktop (WASD + Maus) und Handy/Tablet (Joystick + Wischen)
+**Aufbau:** Eingangshalle (Hero-Foto, Schild, Bank) mit drei Türen und einem Exit:
+`About us` (klein) · `Moments` (Erlebnisse, Screen, schwarze Wand) · `Words` (Bücher zum Lesen, Teppich, Regale)
+· **Exit** → Fade zu Schwarz → „I love you“ / „Te quiero“.
+
+* Figuren: Seb & Mia (an La La Land angelehnt). Beim Namen entscheidet ein kleines System (Namenslisten + Endungen),
+  wer man ist – mit „switch“ zum Korrigieren.
+* Musik-Box unten (Zurück / Play-Pause / Weiter / Fortschritt / Lautstärke).
+* Sprache: Englisch (Standard) oder Spanisch (Chile) – Umschalter **EN | ES** oben rechts, alles inkl. Schilder & Bücher.
+* Multiplayer: 5-stelliger Raum-Code oder Einladungslink, direkt Peer-to-Peer (kein eigener Server).
 
 ## Starten
 
@@ -17,37 +21,50 @@ npm run dev        # http://localhost:5173
 npm run build      # → dist/
 ```
 
-## Deine Fotos & dein Video einfügen
+## Inhalte einsetzen
 
-1. Fotos in **`src/photos/`** legen (jpg/png/webp). Sie werden alphabetisch auf die Rahmen verteilt
-   (die ersten landen an den prominentesten Plätzen). Gibt es weniger Fotos als Rahmen, wiederholen sie sich.
-   Das Format (Hoch-/Querformat) wird automatisch erkannt, der Rahmen passt sich an.
-2. Optional vorher verkleinern (empfohlen, spart Ladezeit):
-   `npm run photos -- /pfad/zu/originalen` → schreibt web-optimierte `.webp` nach `src/photos/`.
-3. Video für den Wand-Screen: **`src/media/video.mp4`** (oder `.webm`). Es läuft stumm in Schleife.
-   Ohne Datei läuft ein animierter Sonnenuntergang als Platzhalter.
-4. Namen, Schild-Text, Sprache: **`src/config.js`** (`from`, `to`, `plaque`, `lang`).
+| Was | Wohin | Hinweis |
+|---|---|---|
+| Hero-Foto (Eingangshalle) | `src/photos/hero.webp` (oder jpg/png) | |
+| About us | `src/photos/us/*` | 7 Rahmen, alphabetisch |
+| Moments (Erlebnisse) | `src/photos/moments/*` | 6 Rahmen; leer → schlichte Platzhalter |
+| Video für den Screen | `src/media/video.mp4` (oder `.webm`) | läuft stumm in Schleife, Bereich „Moments“ |
+| Musik | `src/media/music/*.mp3` | alphabetisch; Titel/Künstler in `src/config.js` (`MUSIC_TITLES`) |
+| Bücher | `src/books/*.md` | eine Datei = ein Buch auf einem Lesepult (max. 6) |
+| Namen, Schild, Exit-Text, Bildunterschriften | `src/config.js` | alles zweisprachig `{ en, es }` |
+
+Fotos vorher verkleinern spart Ladezeit: `npm run photos -- /pfad/zu/originalen` (schreibt `.webp` nach `src/photos/`;
+anschließend in den passenden Unterordner verschieben).
+
+**Bücher-Format** (`src/books/01-mein-text.md`):
+
+```
+# Titel
+Text … (Absätze durch Leerzeile trennen)
+=== es
+# Título
+Texto …
+```
+Der Block nach `=== es` ist optional – ohne ihn wird auch im Spanisch-Modus der englische Text gezeigt.
 
 ## Auf Vercel deployen
 
-Das Repo enthält neben dem Museum noch ein anderes Projekt im Wurzelordner. Deshalb in Vercel beim Import:
+Im Repo-Wurzelordner liegt noch ein anderes Projekt. Deshalb in Vercel beim Import:
 
 * **Root Directory:** `museum`
 * Framework: Vite (wird erkannt) · Build `npm run build` · Output `dist`
 
-Fertig – `vercel.json` (Caching, Header) liegt schon im Ordner.
+> Hinweis: Alles in `src/photos`, `src/media` und `src/books` wird mit der Seite öffentlich ausgeliefert.
+> Wer den Link kennt, kann die Fotos sehen. Das GitHub-Repo sollte auf **privat** stehen. Die Songs sind urheberrechtlich
+> geschützt – für ein privates Geschenk an eine Person ok, für eine öffentlich auffindbare Seite eher nicht.
 
-## Multiplayer – wie es funktioniert
+## Multiplayer
 
-* Spieler 1 klickt **Multiplayer → Raum erstellen** und bekommt einen 5-stelligen Code (z. B. `K7QM2`)
-  plus „Link kopieren“ oben links im Spiel.
-* Spieler 2 öffnet die Seite, gibt den Code unter **Join** ein (oder öffnet den Link `…/?room=K7QM2`).
-* Technik: WebRTC über [PeerJS](https://peerjs.com). Der kostenlose PeerJS-Cloud-Broker wird nur für den
-  Verbindungsaufbau gebraucht, danach laufen die Daten direkt zwischen den Browsern (Host verteilt an bis zu 6 Spieler).
-  Es gibt keinen eigenen Server → funktioniert auf Vercel ohne Zusatzkosten.
-* Grenzen: Der Host muss im Raum bleiben. Hinter sehr strikten Firmen-/Mobilfunk-NATs kann WebRTC ohne TURN-Server
-  scheitern; für Zuhause/WLAN/normales LTE klappt es fast immer. Bei Bedarf lässt sich in `src/net.js` ein
-  eigener PeerServer oder TURN-Server eintragen (`peerOptions()`).
+* Spieler 1: **Multiplayer → Raum erstellen** → Code (z. B. `K7QM2`) + „Link kopieren“ oben links.
+* Spieler 2: Code unter **Join** eingeben oder Link `…/?room=K7QM2` öffnen.
+* Technik: WebRTC über [PeerJS](https://peerjs.com); der kostenlose Cloud-Broker wird nur zum Verbindungsaufbau genutzt.
+  Host verteilt an bis zu 6 Spieler. Der Host muss im Raum bleiben. Hinter sehr strikten Firmen-/Mobilfunk-NATs kann
+  WebRTC ohne TURN scheitern (in `src/net.js` → `peerOptions()` lässt sich ein eigener Server/TURN eintragen).
 
 ## Steuerung
 
@@ -55,17 +72,15 @@ Fertig – `vercel.json` (Caching, Header) liegt schon im Ordner.
 |---|---|---|
 | Laufen / Rennen | WASD / Shift | Joystick |
 | Umsehen | Maus ziehen, Pfeil links/rechts, Mausrad = Zoom | Wischen |
-| Bild ansehen / Hinsetzen | E (am Bild bzw. an der Bank) | Button |
+| Bild ansehen / Buch lesen / Hinsetzen | E | Button |
 | Aufstehen | F oder E | Button |
 | Tanzen / Winken | G / H | ♪ |
 | Chat | Enter | 💬 |
 
-## Performance – was dahintersteckt
+## Performance
 
-* **Keine Modelle, keine Texturen-Downloads** für Raum & Figuren: alles prozedural (Bundle ≈ 190 KB gzip inkl. Three.js,
-  Multiplayer-Code wird erst bei Bedarf nachgeladen).
-* Statische Geometrie wird pro Material zu wenigen Meshes zusammengefasst (~70 Draw-Calls, ~23k Dreiecke).
-* Figuren sind Pivot-Hierarchien mit prozeduraler Animation (kein Skinning), Schatten sind Blob-/Kontakt-Decals statt Shadow-Maps.
-* Fotos werden vor dem Start dekodiert, auf max. 1600 px skaliert, mit Mipmaps & Anisotropie auf die GPU geladen.
-  Der Loading Screen wartet, bis **alles** geladen, hochgeladen und kompiliert ist (und mindestens `minLoadingMs`).
-* **Adaptive Auflösung**: fällt die Framerate, senkt das Spiel automatisch die Pixeldichte und erhöht sie wieder, wenn Luft ist.
+* Raum und Figuren sind komplett prozedural – keine Modelle/Texturen zum Herunterladen (Bundle ≈ 190 KB gzip, Multiplayer-Code lädt erst bei Bedarf).
+* Statische Geometrie wird pro Material zusammengefasst (wenige Draw-Calls), Figuren sind Pivot-Hierarchien ohne Skinning, Schatten sind Decals.
+* Fotos werden vor dem Start dekodiert, auf max. 1600 px skaliert, mit Mipmaps hochgeladen. Der Loading Screen wartet auf **alles**
+  (Schriften, Fotos, Video, erster Song, GPU-Upload, Shader) und dauert mindestens `minLoadingMs`.
+* Adaptive Auflösung: sinkt die Framerate, senkt das Spiel die Pixeldichte automatisch.

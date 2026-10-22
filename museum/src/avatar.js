@@ -1,19 +1,10 @@
 import * as THREE from 'three';
 import { blobTexture } from './textures.js';
 
-/* Stilisierte, vollständig prozedurale Figuren (kein Modell-Download).
-   Skelett = Hierarchie aus Pivots, Animation = reine Mathematik → kostet praktisch nichts. */
+/* Zwei Cartoon-Figuren, an Seb & Mia aus „La La Land“ angelehnt (bewusst witzig überzeichnet:
+   große Köpfe, große Hände). Alles prozedural: Pivot-Hierarchie + Mathe-Animation, kein Modell-Download. */
 
-export const LOOKS = {
-  boy: {
-    skin: 0xe6aa88, top: 0x2b7882, vest: 0x2d323b, pants: 0x2b3450, shoes: 0x1c1d21,
-    hair: 0x4a3024, hairStyle: 'curly', scale: 1.0,
-  },
-  girl: {
-    skin: 0xe0a888, top: 0xb52f36, vest: null, pants: 0x2d3039, shoes: 0x33261f,
-    hair: 0x55321f, hairStyle: 'long', scale: 0.955,
-  },
-};
+export const CHARACTERS = { boy: 'Seb', girl: 'Mia' };
 
 const geoCache = new Map();
 const limbGeo = (r, len) => {
@@ -26,140 +17,185 @@ const sphereGeo = () => {
   return geoCache.get('s');
 };
 const capGeo = () => {
-  if (!geoCache.has('cap')) geoCache.set('cap', new THREE.SphereGeometry(1, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.62));
+  if (!geoCache.has('cap')) geoCache.set('cap', new THREE.SphereGeometry(1, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.6));
   return geoCache.get('cap');
 };
+const skirtGeo = () => {
+  if (!geoCache.has('skirt')) geoCache.set('skirt', new THREE.CylinderGeometry(0.15, 0.31, 0.4, 22, 1, true));
+  return geoCache.get('skirt');
+};
+
+// Toon-Shading mit 3 Stufen → wirkt gezeichnet statt „Plastik“
+let gradient;
+const toonGradient = () => {
+  if (!gradient) {
+    gradient = new THREE.DataTexture(new Uint8Array([120, 190, 255]), 3, 1, THREE.RedFormat);
+    gradient.minFilter = gradient.magFilter = THREE.NearestFilter;
+    gradient.generateMipmaps = false;
+    gradient.needsUpdate = true;
+  }
+  return gradient;
+};
 const matCache = new Map();
-const lam = (c) => {
-  if (!matCache.has(c)) matCache.set(c, new THREE.MeshLambertMaterial({ color: c }));
-  return matCache.get(c);
+const toon = (c, side) => {
+  const k = `${c}|${side || 0}`;
+  if (!matCache.has(k)) matCache.set(k, new THREE.MeshToonMaterial({ color: c, gradientMap: toonGradient(), side: side || THREE.FrontSide }));
+  return matCache.get(k);
 };
 let blobMat;
 const blobMaterial = () => blobMat || (blobMat = new THREE.MeshBasicMaterial({ map: blobTexture(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
 
-function ball(mat, sx, sy, sz, x = 0, y = 0, z = 0, parent) {
+function ball(mat, sx, sy, sz, x, y, z, parent) {
   const m = new THREE.Mesh(sphereGeo(), mat);
   m.scale.set(sx, sy, sz); m.position.set(x, y, z);
-  if (parent) parent.add(m);
+  parent.add(m);
   return m;
 }
 const pivot = (parent, x = 0, y = 0, z = 0) => {
   const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g;
 };
+function mulberry(a) {
+  return () => {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
-const HIP_H = 0.9;
-
-// Pose-Kanäle
+const HIP_H = 0.82;
 const K = ['hipsY', 'torsoX', 'torsoY', 'torsoZ', 'headX', 'headY', 'headZ',
-  'aLx', 'aLz', 'aRx', 'aRz', 'eL', 'eR', 'tLx', 'tLz', 'tRx', 'tRz', 'kL', 'kR'];
+  'aLx', 'aLz', 'aRx', 'aRz', 'eL', 'eR', 'tLx', 'tLz', 'tRx', 'tRz', 'kL', 'kR', 'skirt'];
 const KI = Object.fromEntries(K.map((k, i) => [k, i]));
+
+const SKIN = { boy: 0xe9b08e, girl: 0xf0bf9f };
 
 export class Avatar {
   constructor(lookName = 'boy') {
-    const L = LOOKS[lookName] || LOOKS.boy;
-    this.look = lookName;
+    const mia = lookName === 'girl';
+    this.look = mia ? 'girl' : 'boy';
     this.root = new THREE.Group();
     this.anim = 'idle';
     this.phase = 0;
     this.t = Math.random() * 10;
     this.cur = new Float32Array(K.length);
     this.tgt = new Float32Array(K.length);
-    this.cur[KI.hipsY] = HIP_H;
-    this.tgt[KI.hipsY] = HIP_H;
+    this.cur[KI.hipsY] = this.tgt[KI.hipsY] = HIP_H;
 
-    const skin = lam(L.skin), top = lam(L.top), pants = lam(L.pants), shoes = lam(L.shoes), hair = lam(L.hair);
+    const skin = toon(SKIN[this.look]);
+    const white = toon(0xf4f1ea), dark = toon(0x2a1c18);
+    // Seb: grauer Anzug, weißes Hemd, schmale schwarze Krawatte, braune Schuhe. Mia: gelbes Kleid, rotblonde Wellen.
+    const C = mia
+      ? { top: toon(0xf1c232), arm: skin, legs: skin, shoes: toon(0x1d1b1f), hair: toon(0xb5542d), brow: toon(0x8f4020) }
+      : { top: toon(0x5c616c), arm: toon(0x5c616c), legs: toon(0x4a4e58), shoes: toon(0x6b4630), hair: toon(0x6a4a2a), brow: toon(0x4d3420) };
+
     const body = new THREE.Group();
-    body.scale.setScalar(L.scale);
     this.root.add(body);
     this.body = body;
 
-    // Hüfte
+    /* Hüfte & Oberkörper */
     this.hips = pivot(body, 0, HIP_H, 0);
-    ball(pants, 0.165, 0.105, 0.115, 0, 0.0, 0, this.hips);
-
-    // Oberkörper
-    this.torso = pivot(this.hips, 0, 0.04, 0);
-    const chest = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.25, 6, 14), top);
-    chest.scale.set(1.15, 1, 0.76); chest.position.y = 0.27; this.torso.add(chest);
-    if (L.vest) {
-      const vest = new THREE.Mesh(new THREE.CapsuleGeometry(0.146, 0.21, 6, 14), lam(L.vest));
-      vest.scale.set(1.17, 1, 0.84); vest.position.set(0, 0.25, 0.004); this.torso.add(vest);
-      ball(top, 0.075, 0.05, 0.06, 0, 0.54, 0.03, this.torso);   // Hemdkragen
-    }
-    // Hals & Kopf
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.048, 0.1, 10), skin);
-    neck.position.y = 0.58; this.torso.add(neck);
-    this.head = pivot(this.torso, 0, 0.67, 0);
-    ball(skin, 0.122, 0.138, 0.13, 0, 0.075, 0.005, this.head);
-    // Augen & Brauen
-    const eye = lam(0x2a1c18);
-    ball(eye, 0.016, 0.023, 0.01, 0.048, 0.07, 0.122, this.head);
-    ball(eye, 0.016, 0.023, 0.01, -0.048, 0.07, 0.122, this.head);
-    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.007, 0.006), lam(L.hair));
-    const b1 = brow.clone(); b1.position.set(0.05, 0.108, 0.122); b1.rotation.z = -0.1; this.head.add(b1);
-    const b2 = brow.clone(); b2.position.set(-0.05, 0.108, 0.122); b2.rotation.z = 0.1; this.head.add(b2);
-    ball(lam(0xc0705f), 0.018, 0.0065, 0.008, 0, 0.022, 0.126, this.head); // Mund
-    ball(skin, 0.013, 0.016, 0.014, 0, 0.05, 0.133, this.head); // Nase
-    // Haare
-    const cap = new THREE.Mesh(capGeo(), hair);
-    cap.scale.set(0.133, 0.148, 0.14); cap.position.set(0, 0.078, -0.004); cap.rotation.x = -0.62;
-    this.head.add(cap);
-    if (L.hairStyle === 'long') {
-      const back = new THREE.Mesh(limbGeo(0.1, 0.3), hair);
-      back.scale.set(1.2, 1, 0.62); back.position.set(0, 0.12, -0.085); back.rotation.x = 0.06; this.head.add(back);
-      for (const sx of [-1, 1]) {
-        const side = new THREE.Mesh(limbGeo(0.03, 0.27), hair);
-        side.position.set(sx * 0.118, 0.1, 0.02); side.rotation.z = sx * 0.04; this.head.add(side);
-      }
-      // Pony
-      ball(hair, 0.105, 0.04, 0.07, 0.014, 0.185, 0.07, this.head);
+    ball(mia ? C.top : C.legs, 0.155, 0.1, 0.115, 0, 0, 0, this.hips);
+    this.torso = pivot(this.hips, 0, 0.03, 0);
+    const chest = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.19, 6, 14), C.top);
+    chest.scale.set(1.1, 1, 0.82); chest.position.y = 0.23; this.torso.add(chest);
+    if (!mia) {
+      // Hemd-Streifen + Krawatte + Kragen
+      const shirt = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.3, 0.012), white);
+      shirt.position.set(0, 0.27, 0.113); this.torso.add(shirt);
+      const tie = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.24, 0.012), toon(0x16161a));
+      tie.position.set(0, 0.25, 0.121); this.torso.add(tie);
+      ball(white, 0.07, 0.03, 0.07, 0, 0.43, 0.04, this.torso);
     } else {
-      // Locken
-      const rnd = mulberry(7);
-      for (let i = 0; i < 14; i++) {
-        const a = rnd() * Math.PI * 2, e = 0.25 + rnd() * 0.75;
-        const r = 0.12;
-        ball(hair, 0.046, 0.046, 0.046, Math.cos(a) * r * Math.sin(e), 0.085 + r * 1.15 * Math.cos(e), Math.sin(a) * r * Math.sin(e) - 0.015, this.head);
-      }
+      ball(C.top, 0.15, 0.05, 0.1, 0, 0.38, 0, this.torso);
+      this.skirt = pivot(this.hips, 0, 0.03, 0);
+      const sk = new THREE.Mesh(skirtGeo(), toon(0xf5c92f, THREE.DoubleSide));
+      sk.position.y = -0.17; sk.scale.z = 0.94; this.skirt.add(sk);
+    }
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.055, 0.1, 10), skin);
+    neck.position.y = 0.46; this.torso.add(neck);
+
+    /* Kopf (groß, witzig) */
+    this.head = pivot(this.torso, 0, 0.52, 0);
+    ball(skin, 0.185, 0.178, 0.175, 0, 0.11, 0, this.head);
+    ball(skin, 0.032, 0.048, 0.03, 0.18, 0.1, -0.005, this.head);
+    ball(skin, 0.032, 0.048, 0.03, -0.18, 0.1, -0.005, this.head);
+    for (const sx of [-1, 1]) {
+      ball(white, 0.04, 0.05, 0.022, sx * 0.07, 0.125, 0.152, this.head);
+      ball(dark, 0.019, 0.028, 0.012, sx * 0.072, 0.122, 0.168, this.head);
+      ball(white, 0.006, 0.007, 0.004, sx * 0.078, 0.133, 0.178, this.head);
+      const brow = new THREE.Mesh(new THREE.BoxGeometry(mia ? 0.06 : 0.075, mia ? 0.011 : 0.02, 0.012), C.brow);
+      brow.position.set(sx * 0.073, mia ? 0.185 : 0.178, 0.16); brow.rotation.z = sx * (mia ? 0.18 : -0.1); this.head.add(brow);
+    }
+    // Nase (bei Seb markanter) & Lächeln
+    ball(skin, mia ? 0.024 : 0.036, mia ? 0.026 : 0.04, mia ? 0.03 : 0.04, 0, 0.085, 0.178, this.head);
+    const smile = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.0075, 6, 16, Math.PI), toon(0x8a3a3a));
+    smile.rotation.z = Math.PI; smile.position.set(0, 0.062, 0.162); smile.scale.set(1, 0.8, 1); this.head.add(smile);
+    if (mia) {
+      ball(toon(0xf0a08e), 0.032, 0.02, 0.01, 0.105, 0.075, 0.15, this.head);
+      ball(toon(0xf0a08e), 0.032, 0.02, 0.01, -0.105, 0.075, 0.15, this.head);
+    } else {
+      ball(skin, 0.07, 0.04, 0.05, 0, 0.012, 0.13, this.head);               // markantes Kinn
     }
 
-    // Arme
+    /* Haare */
+    const cap = new THREE.Mesh(capGeo(), C.hair);
+    cap.scale.set(0.2, 0.2, 0.195); cap.position.set(0, 0.115, -0.006); cap.rotation.x = -0.58;
+    this.head.add(cap);
+    if (mia) {
+      // Wellen bis zur Schulter, Seitenscheitel, Locken-Enden
+      const back = new THREE.Mesh(limbGeo(0.12, 0.2), C.hair);
+      back.scale.set(1.45, 1, 0.8); back.position.set(0, 0.16, -0.1); this.head.add(back);
+      for (const sx of [-1, 1]) {
+        const side = new THREE.Mesh(limbGeo(0.052, 0.16), C.hair);
+        side.position.set(sx * 0.178, 0.1, 0.0); side.rotation.z = sx * 0.12; this.head.add(side);
+        ball(C.hair, 0.075, 0.075, 0.075, sx * 0.205, -0.1, 0.0, this.head);
+        ball(C.hair, 0.07, 0.07, 0.07, sx * 0.17, -0.12, -0.07, this.head);
+      }
+      ball(C.hair, 0.12, 0.07, 0.085, -0.04, 0.265, 0.1, this.head);      // Seitenscheitel-Welle
+      ball(C.hair, 0.09, 0.05, 0.07, 0.09, 0.245, 0.11, this.head);
+    } else {
+      // zurückgegelte Tolle
+      ball(C.hair, 0.15, 0.1, 0.17, 0, 0.26, 0.05, this.head);
+      ball(C.hair, 0.12, 0.07, 0.12, 0, 0.3, 0.0, this.head);
+      for (const sx of [-1, 1]) ball(C.hair, 0.022, 0.07, 0.03, sx * 0.178, 0.15, 0.04, this.head);   // Koteletten
+      ball(C.hair, 0.16, 0.1, 0.12, 0, 0.13, -0.11, this.head);
+    }
+
+    /* Arme: Seb mit langen Ärmeln & Manschetten, Mia mit kurzen Ärmeln */
     const arm = (side) => {
-      const sh = pivot(this.torso, side * 0.205, 0.5, 0);
-      ball(top, 0.054, 0.054, 0.054, 0, 0, 0, sh);
-      const up = new THREE.Mesh(limbGeo(0.052, 0.19), top); sh.add(up);
-      const el = pivot(sh, 0, -0.29, 0);
-      const lo = new THREE.Mesh(limbGeo(0.046, 0.17), top); el.add(lo);
-      ball(skin, 0.05, 0.058, 0.042, 0, -0.29, 0.005, el);
+      const sh = pivot(this.torso, side * 0.205, 0.38, 0);
+      ball(mia ? C.top : C.arm, 0.062, 0.062, 0.062, 0, 0, 0, sh);
+      const up = new THREE.Mesh(limbGeo(0.056, 0.16), mia ? skin : C.arm); sh.add(up);
+      if (mia) ball(C.top, 0.066, 0.07, 0.066, 0, -0.02, 0, sh);
+      const el = pivot(sh, 0, -0.27, 0);
+      const lo = new THREE.Mesh(limbGeo(0.05, 0.15), C.arm); el.add(lo);
+      if (!mia) ball(white, 0.05, 0.03, 0.05, 0, -0.245, 0, el);
+      ball(skin, 0.058, 0.066, 0.05, 0, -0.29, 0.005, el);
       return { sh, el };
     };
     const aL = arm(1), aR = arm(-1);
     this.shL = aL.sh; this.elL = aL.el; this.shR = aR.sh; this.elR = aR.el;
 
-    // Beine
+    /* Beine */
     const leg = (side) => {
-      const th = pivot(this.hips, side * 0.092, -0.02, 0);
-      const up = new THREE.Mesh(limbGeo(0.08, 0.24), pants); th.add(up);
-      const kn = pivot(th, 0, -0.38, 0);
-      const lo = new THREE.Mesh(limbGeo(0.064, 0.27), pants); kn.add(lo);
-      ball(shoes, 0.072, 0.056, 0.135, 0, -0.4, 0.05, kn);
+      const th = pivot(this.hips, side * 0.088, -0.02, 0);
+      const up = new THREE.Mesh(limbGeo(0.082, 0.22), C.legs); th.add(up);
+      const kn = pivot(th, 0, -0.37, 0);
+      const lo = new THREE.Mesh(limbGeo(0.068, 0.24), C.legs); kn.add(lo);
+      ball(C.shoes, 0.078, 0.058, 0.145, 0, -0.385, 0.05, kn);
       return { th, kn };
     };
     const lL = leg(1), lR = leg(-1);
     this.thL = lL.th; this.knL = lL.kn; this.thR = lR.th; this.knR = lR.kn;
 
-    // Blob-Schatten
     const blob = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.95), blobMaterial());
     blob.rotation.x = -Math.PI / 2; blob.position.y = 0.012; blob.renderOrder = 2;
     this.root.add(blob);
-    this.blob = blob;
-
-    this.root.traverse((o) => { if (o.isMesh && o !== blob) { o.matrixAutoUpdate = true; } });
   }
 
   setAnim(a) { this.anim = a; }
 
-  /* speed: aktuelle Bewegungsgeschwindigkeit (m/s) für Schrittfrequenz */
   update(dt, speed = 0) {
     this.t += dt;
     const t = this.t, tg = this.tgt, a = this.anim;
@@ -174,22 +210,24 @@ export class Avatar {
       tg[KI.tLx] = s * A; tg[KI.tRx] = -s * A;
       tg[KI.kL] = Math.max(0, -c) * (run ? 1.5 : 0.95); tg[KI.kR] = Math.max(0, c) * (run ? 1.5 : 0.95);
       tg[KI.aLx] = -s * (run ? 0.95 : 0.55); tg[KI.aRx] = s * (run ? 0.95 : 0.55);
-      tg[KI.aLz] = 0.06; tg[KI.aRz] = -0.06;
+      tg[KI.aLz] = 0.08; tg[KI.aRz] = -0.08;
       tg[KI.eL] = -(run ? 1.1 : 0.3) - Math.max(0, s) * 0.2; tg[KI.eR] = -(run ? 1.1 : 0.3) - Math.max(0, -s) * 0.2;
-      tg[KI.hipsY] = HIP_H - 0.01 + Math.abs(c) * (run ? 0.045 : 0.025) - 0.02;
+      tg[KI.hipsY] = HIP_H - 0.03 + Math.abs(c) * (run ? 0.045 : 0.025);
       tg[KI.torsoX] = run ? 0.16 : 0.04;
       tg[KI.torsoY] = s * 0.1; tg[KI.headY] = -s * 0.06;
+      tg[KI.skirt] = -0.1 * Math.abs(s) - (run ? 0.12 : 0.04);
     } else if (a === 'sit') {
-      tg[KI.hipsY] = 0.095;
+      tg[KI.hipsY] = 0.09;
       tg[KI.tLx] = tg[KI.tRx] = -1.5; tg[KI.tLz] = 0.05; tg[KI.tRz] = -0.05;
       tg[KI.kL] = tg[KI.kR] = 1.5;
       tg[KI.aLx] = tg[KI.aRx] = -0.5; tg[KI.eL] = tg[KI.eR] = -0.95;
-      tg[KI.aLz] = 0.1; tg[KI.aRz] = -0.1;
+      tg[KI.aLz] = 0.12; tg[KI.aRz] = -0.12;
       tg[KI.torsoX] = -0.02 + breathe * 0.01;
       tg[KI.headY] = Math.sin(t * 0.5) * 0.14; tg[KI.headX] = 0.03;
+      tg[KI.skirt] = -1.25;
     } else if (a === 'dance') {
       const p = t * 5.2, s = Math.sin(p), c = Math.cos(p), s2 = Math.sin(p * 0.5);
-      tg[KI.hipsY] = HIP_H - 0.07 + Math.abs(s) * 0.07;
+      tg[KI.hipsY] = HIP_H - 0.08 + Math.abs(s) * 0.07;
       tg[KI.aLz] = 1.38 + s * 0.08; tg[KI.aRz] = -1.38 + s * 0.08;
       tg[KI.aLx] = c * 0.18; tg[KI.aRx] = -c * 0.18;
       tg[KI.eL] = -0.15 - Math.max(0, s) * 0.3; tg[KI.eR] = -0.15 - Math.max(0, -s) * 0.3;
@@ -198,15 +236,15 @@ export class Avatar {
       tg[KI.kL] = 0.75 + Math.max(0, -s2) * 0.6; tg[KI.kR] = 0.75 + Math.max(0, s2) * 0.6;
       tg[KI.torsoY] = s2 * 0.35; tg[KI.torsoZ] = s * 0.07;
       tg[KI.headZ] = -s * 0.1; tg[KI.headY] = -s2 * 0.2;
+      tg[KI.skirt] = -0.25 + s2 * 0.25;
     } else if (a === 'wave') {
       tg[KI.aRz] = -2.65; tg[KI.aRx] = 0.1;
       tg[KI.eR] = -0.5 + Math.sin(t * 9) * 0.55;
-      tg[KI.aLz] = 0.08; tg[KI.aLx] = Math.sin(t * 1.5) * 0.03;
+      tg[KI.aLz] = 0.1; tg[KI.aLx] = Math.sin(t * 1.5) * 0.03;
       tg[KI.headZ] = 0.1; tg[KI.torsoZ] = 0.03;
       tg[KI.tLz] = 0.03; tg[KI.tRz] = -0.03;
     } else {
-      // idle
-      tg[KI.aLz] = 0.09 + breathe * 0.01; tg[KI.aRz] = -0.09 - breathe * 0.01;
+      tg[KI.aLz] = 0.11 + breathe * 0.01; tg[KI.aRz] = -0.11 - breathe * 0.01;
       tg[KI.aLx] = Math.sin(t * 1.3) * 0.03; tg[KI.aRx] = -Math.sin(t * 1.3) * 0.03;
       tg[KI.eL] = tg[KI.eR] = -0.12;
       tg[KI.torsoX] = breathe * 0.008; tg[KI.hipsY] = HIP_H + breathe * 0.004;
@@ -226,14 +264,6 @@ export class Avatar {
     this.thL.rotation.set(c[KI.tLx], 0, c[KI.tLz]);
     this.thR.rotation.set(c[KI.tRx], 0, c[KI.tRz]);
     this.knL.rotation.x = c[KI.kL]; this.knR.rotation.x = c[KI.kR];
+    if (this.skirt) this.skirt.rotation.x = c[KI.skirt];
   }
-}
-
-function mulberry(a) {
-  return () => {
-    a |= 0; a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
 }

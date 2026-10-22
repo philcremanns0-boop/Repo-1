@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { BOUNDS } from './world.js';
 import { angDiff } from './actors.js';
 import { t } from './i18n.js';
 
@@ -10,11 +9,12 @@ const WALK = 2.5, RUN = 4.4;
 export class CameraRig {
   constructor(camera) {
     this.camera = camera;
-    this.yaw = 0; this.pitch = 0.3; this.dist = 3.9;
+    this.yaw = 0; this.pitch = 0.3; this.dist = 4.4;
     this.pos = new THREE.Vector3(0, 3, 12);
     this.look = new THREE.Vector3(0, 1.4, 8);
     this._d = new THREE.Vector3(); this._t = new THREE.Vector3(); this._l = new THREE.Vector3();
     this.snapNext = true;
+    this.bounds = { minX: -12, maxX: 12, minZ: -9, maxZ: 11 };
   }
 
   /* Sichtfeld-abhängige Distanz, bei der ein Rahmen den Screen füllt. */
@@ -50,11 +50,12 @@ export class CameraRig {
       let d = this.dist;
       d = this._clip(target, want, d, colliders);
       want.multiplyScalar(d).add(target);
-      want.x = Math.max(BOUNDS.minX - 0.25, Math.min(BOUNDS.maxX + 0.25, want.x));
-      want.z = Math.max(BOUNDS.minZ - 0.25, Math.min(BOUNDS.maxZ + 0.25, want.z));
-      want.y = Math.max(0.35, Math.min(4.1, want.y));
+      const B = this.bounds;
+      want.x = Math.max(B.minX + 0.2, Math.min(B.maxX - 0.2, want.x));
+      want.z = Math.max(B.minZ + 0.2, Math.min(B.maxZ - 0.2, want.z));
+      want.y = Math.max(0.35, Math.min(3.9, want.y));
       look.copy(target);
-      rate = mode === 'approach' ? 6 : 24;
+      rate = mode === 'approach' || mode === 'reading' ? 6 : 24;
     }
     if (this.snapNext) { this.pos.copy(want); this.look.copy(look); this.snapNext = false; }
     const k = 1 - Math.exp(-rate * dt);
@@ -90,7 +91,8 @@ export class CameraRig {
 export class LocalPlayer {
   constructor(actor, world, input, rig) {
     this.actor = actor; this.world = world; this.input = input; this.rig = rig;
-    this.state = 'free';           // free | approach | viewing | sitting
+    this.state = 'free';           // free | approach | viewing | reading | sitting
+    this.onRead = () => {}; this.onCloseRead = () => {};
     this.frame = null; this.seatInfo = null;
     this.vel = new THREE.Vector2();
     this.waveT = 0; this.dancing = false;
@@ -128,14 +130,16 @@ export class LocalPlayer {
     return best;
   }
 
-  _nearestFrame() {
+  _nearestView() {
     const p = this.actor.pos;
     let best = null, bd = 2.6;
-    for (const f of this.world.frames) {
-      const rel = p.clone().sub(f.center);
-      if (rel.x * f.normal.x + rel.z * f.normal.z < 0.4) continue; // nur von vorn
+    for (const f of this.world.views) {
+      if (f.kind === 'frame') {
+        const rel = p.clone().sub(f.center);
+        if (rel.x * f.normal.x + rel.z * f.normal.z < 0.4) continue; // nur von vorn
+      }
       const d = Math.hypot(f.stand.x - p.x, f.stand.z - p.z);
-      if (d < bd) { bd = d; best = f; }
+      if (d < (f.kind === 'book' ? 1.7 : bd) && d < bd) { bd = d; best = f; }
     }
     return best;
   }
@@ -156,8 +160,7 @@ export class LocalPlayer {
           p.x += dx * push; p.z += dz * push;
         }
       }
-      p.x = Math.max(BOUNDS.minX, Math.min(BOUNDS.maxX, p.x));
-      p.z = Math.max(BOUNDS.minZ, Math.min(BOUNDS.maxZ, p.z));
+      this.world.clamp(p);
     }
   }
 
@@ -170,9 +173,10 @@ export class LocalPlayer {
       a.pos.y = this.world.groundY(a.pos.x, a.pos.z);
       a.seat = -1;
     }
-    if (this.state === 'viewing' || this.state === 'approach') {
+    if (this.state === 'viewing' || this.state === 'approach' || this.state === 'reading') {
       this.rig.yaw = a.heading + Math.PI;
       a.viewing = -1;
+      if (this.state === 'reading') this.onCloseRead();
     }
     this.state = 'free'; this.frame = null; this.seatInfo = null;
   }
@@ -195,11 +199,12 @@ export class LocalPlayer {
     const interact = took('e') || took('f');
     if (this.state === 'sitting') {
       if (interact || moving || took('escape')) this._exitSpecial();
-    } else if (this.state === 'viewing' || this.state === 'approach') {
-      if (interact || took('escape') || (moving && this.state === 'viewing')) this._exitSpecial();
+    } else if (this.state === 'viewing' || this.state === 'approach' || this.state === 'reading') {
+      if (this.state === 'reading') { /* Lese-Overlay schließt über Escape / E / Button */ if (took('escape') || took('e') || took('f')) this._exitSpecial(); }
+      else if (interact || took('escape') || (moving && this.state === 'viewing')) this._exitSpecial();
     } else if (took('e')) {
       const seat = this._nearestSeat();
-      const fr = this._nearestFrame();
+      const fr = this._nearestView();
       const ds = seat ? Math.hypot(seat.seat.x - a.pos.x, seat.seat.z - a.pos.z) : 9;
       const df = fr ? Math.hypot(fr.stand.x - a.pos.x, fr.stand.z - a.pos.z) : 9;
       if (seat && ds <= df + 0.6) {
@@ -257,7 +262,10 @@ export class LocalPlayer {
         speed = sp; a.anim = sp > 3.2 ? 'run' : 'walk';
         this._collide(a.pos);
       } else {
-        this.state = 'viewing';
+        if (this.state === 'approach') {
+          this.state = f.kind === 'book' ? 'reading' : 'viewing';
+          if (f.kind === 'book') this.onRead(f.book);
+        }
         const face = Math.atan2(-f.normal.x, -f.normal.z);
         a.heading += angDiff(a.heading, face) * (1 - Math.exp(-10 * dt));
         a.anim = 'idle'; speed = 0;
@@ -275,10 +283,11 @@ export class LocalPlayer {
     this.prompt = null;
     if (this.state === 'sitting') this.prompt = { key: 'F', label: t('standUp') };
     else if (this.state === 'viewing') this.prompt = { key: 'E', label: t('back2') };
+    else if (this.state === 'reading') this.prompt = null;
     else if (this.state === 'free') {
       const seat = this._nearestSeat();
       if (seat) this.prompt = { key: 'E', label: t('sit') };
-      else if (this._nearestFrame()) this.prompt = { key: 'E', label: t('view') };
+      else { const v = this._nearestView(); if (v) this.prompt = { key: 'E', label: t(v.kind === 'book' ? 'read' : 'view') }; }
     }
   }
 
