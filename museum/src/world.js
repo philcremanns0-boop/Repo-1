@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import * as T from './textures.js';
-import { CONFIG } from './config.js';
+import { CONFIG, fmtCoords } from './config.js';
 import { pick, t as tr } from './i18n.js';
 
 /*  Grundriss (Draufsicht, x → rechts, z → zum Betrachter)
@@ -201,6 +201,16 @@ export function buildWorld({ photos, screen, books }) {
   const counters = { us: 0, moments: 0, flowers: 0, hero: 0 };
   const PI = Math.PI;
 
+  /* Museums-Schild zu einem der beiden Dates (Titel, Ort, Koordinaten) – zeichnet sich bei Sprachwechsel neu. */
+  const datePlaque = (key, x, y, z, ry, nx, nz) => {
+    const d = CONFIG.dates[key];
+    const tx = T.canvasTex(512, 256, (g, w, h) => T.drawDatePlaque(g, w, h, { title: pick(d.kicker), place: pick(d.place), coords: fmtCoords(d) }));
+    redrawers.push(tx.redraw); track(tx.texture);
+    const m = new THREE.Mesh(plane(0.52, 0.26), new THREE.MeshBasicMaterial({ map: tx.texture, toneMapped: false }));
+    m.position.set(x + nx * 0.012, y, z + nz * 0.012); m.rotation.y = ry;
+    scene.add(m);
+  };
+
   /* Legt den nächsten Foto-Rahmen eines Bereichs an. Gibt es kein Foto mehr, bleibt der Platz leer. */
   const addFrame = (section, spec) => {
     const list = photos[section] || [];
@@ -221,17 +231,14 @@ export function buildWorld({ photos, screen, books }) {
     batch.add(plane(w, h), photoMat(ph.texture), M4(x + nx * 0.0585, y, z + nz * 0.0585, spec.ry));
     const rx = Math.cos(spec.ry), rz = -Math.sin(spec.ry);
     const off = ow / 2 + 0.2;
-    const cap = (CONFIG.captions[section] || [])[n] || {};
-    if (!spec.noLabel && labelDefs.length < T.LABEL_COLS * T.LABEL_ROWS) addLabel(
-      { title: cap.title, meta: cap.meta, place: spec.place, n: n + 1 },
-      M4(x + rx * off + nx * 0.006, y - oh / 2 + 0.17, z + rz * off + nz * 0.006, spec.ry),
-    );
     const center = new THREE.Vector3(x + nx * 0.06, y, z + nz * 0.06);
     frames.push({
       kind: 'frame', index: 0, center, normal: new THREE.Vector3(nx, 0, nz), w: ow, h: oh,
       top: center.clone().add(new THREE.Vector3(0, oh / 2 + 0.16, 0)),
       stand: new THREE.Vector3(x + nx * (spec.stand ?? 1.7), 0, z + nz * (spec.stand ?? 1.7)),
+      caption: spec.caption ? CONFIG.dates[spec.caption] : null,
     });
+    if (spec.caption && spec.plaque !== false) datePlaque(spec.caption, x + rx * 0, y - oh / 2 - 0.2, z + rz * 0, spec.ry, nx, nz);
     if (!spec.noSpot) wallSpots.push({ x, z, nx, nz });
     return true;
   };
@@ -295,12 +302,14 @@ export function buildWorld({ photos, screen, books }) {
     fw.position.set(0, PL.h + FW.h / 2, FW.z); scene.add(fw);
     colliders.push({ minX: -FW.w / 2, maxX: FW.w / 2, minZ: FW.z - FW.d / 2, maxZ: FW.z + FW.d / 2, tall: true });
     const fy = PL.h + 1.82, fzF = FW.z + FW.d / 2, fzB = FW.z - FW.d / 2;
-    const big = (x, y, z, ry, stand = 1.8) => addFrame('moments', { pos: [x, y, z], ry, ...S2, stand, place: placeMo });
+    const big = (x, y, z, ry, stand = 1.8, extra = {}) => addFrame('moments', { pos: [x, y, z], ry, ...S2, stand, place: placeMo, ...extra });
     // Reihenfolge = Reihenfolge der Dateien: Freistehende Wand (Vorderseite) → linke Wand → rechte Wand → Rückseite → Türwand
-    [-0.9, 0.9].forEach((x) => big(x, fy, fzF, 0, 2.2));
+    big(-0.9, fy, fzF, 0, 2.2, { caption: 'first' });                 // Restaurant-Foto = erstes Date
+    big(0.9, fy, fzF, 0, 2.2);
     [2.1, 0.25, -1.6].forEach((z) => big(-DIV + 0.11, 1.75, z, PI / 2));
     [1.8, -0.05, -1.9].forEach((z) => big(DIV - 0.11, 1.75, z, -PI / 2));
-    [0.9, -0.9].forEach((x) => big(x, fy, fzB, PI, 2.2));
+    [0.9, -0.9].forEach((x) => big(x, fy, fzB, PI, 2.2, { caption: 'second', plaque: false }));   // Botanischer Garten = zweites Date
+    datePlaque('second', 0, 0.86, fzB, PI, 0, -1);
     [2.65, -2.65].forEach((x) => big(x, 1.75, 3.0 - 0.11, PI));
     // Blumen/Pflanzen: kleine Salon-Cluster (Rückwand-Flanken 2×3, kurze Seitenwände 3×2)
     cluster('flowers', -2.85, HALL.minZ, 0, 2, 3, 1.8, placeMo);

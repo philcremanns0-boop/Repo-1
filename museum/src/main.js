@@ -1,6 +1,6 @@
 import './style.css';
 import * as THREE from 'three';
-import { CONFIG, PHOTO_URLS, VIDEO_URL, BOOKS } from './config.js';
+import { CONFIG, PHOTO_URLS, VIDEO_URL, BOOKS, fmtCoords, mapUrl } from './config.js';
 import { t, pick, getLang, setLang, onLang } from './i18n.js';
 import { guessLook } from './gender.js';
 import { CHARACTERS } from './avatar.js';
@@ -9,9 +9,9 @@ import * as UI from './ui.js';
 import * as T from './textures.js';
 import { buildWorld } from './world.js';
 import { Actor } from './actors.js';
-import { CameraRig, LocalPlayer } from './player.js';
+import { CameraRig, LocalPlayer, EMOTE_KEYS } from './player.js';
 import { Input } from './input.js';
-import { Net, cleanCode } from './net.js';
+import { Net, cleanCode, warmIce } from './net.js';
 
 const $ = (s) => document.querySelector(s);
 const canvas = $('#gl');
@@ -45,8 +45,15 @@ canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); setTime
 const prog = { assets: 0, build: 0, gpu: 0 };
 const realProgress = () => prog.assets * 0.5 + prog.build * 0.12 + prog.gpu * 0.38;
 
+async function fetchRetry(url, tries = 3) {
+  for (let i = 0; ; i++) {
+    try { const r = await fetch(url); if (r.ok) return r; throw new Error(`HTTP ${r.status}`); }
+    catch (e) { if (i >= tries - 1) throw e; await new Promise((res) => setTimeout(res, 400 * (i + 1))); }
+  }
+}
+
 async function decodePhoto(url, MAX = 1280) {
-  const blob = await (await fetch(url)).blob();
+  const blob = await (await fetchRetry(url)).blob();
   let src, w, h;
   try {
     src = await createImageBitmap(blob);
@@ -156,7 +163,7 @@ const readName = () => nameInput.value.trim().slice(0, 16) || CHARACTERS[look];
 const showMain = () => { $('#panel-main').hidden = false; $('#panel-multi').hidden = true; status.textContent = ''; };
 const showMulti = () => { $('#panel-main').hidden = true; $('#panel-multi').hidden = false; status.textContent = ''; };
 
-$('#btn-multi').addEventListener('click', () => { showMulti(); if (!codeInput.value) codeInput.focus(); });
+$('#btn-multi').addEventListener('click', () => { warmIce(); showMulti(); if (!codeInput.value) codeInput.focus(); });
 $('#btn-back').addEventListener('click', showMain);
 codeInput.addEventListener('input', () => { codeInput.value = cleanCode(codeInput.value); });
 nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#btn-single').click(); });
@@ -172,6 +179,54 @@ $('#btn-join').addEventListener('click', () => begin('join'));
 {
   const room = cleanCode(new URLSearchParams(location.search).get('room'));
   if (room.length === 5) { codeInput.value = room; showMulti(); }
+}
+
+/* ═════════════ Zugangscode (einfache Hürde, kein echter Schutz – siehe README) ═════════════ */
+{
+  const gate = $('#gate'), form = $('#gate-form'), inp = $('#gate-input'), msg = $('#gate-msg');
+  const KEY = 'museum-unlocked';
+  let ok = !CONFIG.password;
+  try { if (localStorage.getItem(KEY) === CONFIG.password) ok = true; } catch { /* privater Modus */ }
+  if (ok) gate.remove();
+  else {
+    gate.hidden = false;
+    if (!matchMedia('(pointer: coarse)').matches) setTimeout(() => inp.focus(), 50);
+    const check = () => {
+      if (inp.value === CONFIG.password) {
+        try { localStorage.setItem(KEY, CONFIG.password); } catch { /* ignore */ }
+        msg.textContent = '';
+        inp.blur();
+        UI.hideScreen('#gate');
+        setTimeout(() => gate.remove(), 1000);
+        warmIce();
+      } else {
+        msg.textContent = t('gateWrong');
+        form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake');
+        inp.value = '';
+      }
+    };
+    form.addEventListener('submit', (e) => { e.preventDefault(); check(); });
+    inp.addEventListener('input', () => { msg.textContent = ''; if (inp.value.length >= CONFIG.password.length) check(); });
+  }
+}
+
+/* ═════════════ App-Installation & Offline-Cache ═════════════ */
+{
+  const standalone = matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches || navigator.standalone;
+  let deferred = null;
+  addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; if (!standalone) $('#btn-install').hidden = false; });
+  $('#btn-install').addEventListener('click', async () => {
+    if (!deferred) return;
+    deferred.prompt();
+    try { await deferred.userChoice; } catch { /* ignore */ }
+    deferred = null; $('#btn-install').hidden = true;
+  });
+  addEventListener('appinstalled', () => { $('#btn-install').hidden = true; });
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (ios && !standalone) $('#ios-hint').hidden = false;
+  if ('serviceWorker' in navigator && import.meta.env.PROD) {
+    addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
 }
 
 // Sprache
@@ -202,7 +257,7 @@ async function begin(mode) {
     console.warn('net', e);
     if (net) { net.close(); net = null; }
     const type = e && e.type;
-    status.textContent = type === 'peer-unavailable' ? t('notFound') : type === 'full' ? t('full') : t('netError');
+    status.textContent = type === 'peer-unavailable' ? t('notFound') : type === 'full' ? t('full') : type === 'no-direct' ? t('noDirect') : t('netError');
     busy(false);
     return;
   }
@@ -244,7 +299,8 @@ async function boot(mode) {
   input = new Input(canvas);
   rig = new CameraRig(camera);
   rig.bounds = world.bounds;
-  if (input.touch) $('#touch').hidden = false;
+  if (input.touch) { $('#touch').hidden = false; document.body.classList.add('touch'); }
+  if (net) document.body.classList.add('mp');
 
   const me = new Actor(world.scene, { id: net ? net.myId : 'me', name: mySettings.name, look: mySettings.look });
   me.views = world.views;
@@ -288,6 +344,12 @@ async function boot(mode) {
   UI.setRoom(net ? net.code : null, net ? net.count : 1);
 
   finished = true;
+  if ('serviceWorker' in navigator && import.meta.env.PROD) {
+    navigator.serviceWorker.ready.then((reg) => {
+      const urls = performance.getEntriesByType('resource').map((r) => r.name).filter((n) => n.includes('/assets/'));
+      if (reg.active) reg.active.postMessage({ type: 'cache', urls });
+    }).catch(() => {});
+  }
   await barDone;
   await new Promise((r) => setTimeout(r, 250));
 
@@ -314,6 +376,7 @@ function wireNet() {
     const a = remotes.get(m.id);
     if (a) { const txt = String(m.text).slice(0, 140); a.say(txt); addChat(a.name, txt); }
   });
+  net.on('unstable', () => addChat(null, t('unstable')));
   net.on('hostLeft', () => { UI.toast(t('hostLeft'), 5000); setTimeout(() => leave(), 2400); });
   UI.onCopy(async () => {
     const url = `${location.origin}${location.pathname}?room=${net.code}`;
@@ -347,8 +410,11 @@ function enterWorld() {
   ready = true;
   $('#hud').hidden = false;
   document.body.classList.add('in-game');
+  $('#topright').prepend($('#lang'));             // Sprachwahl wandert beim Spielstart in die Leiste oben rechts
   music.show(true);
   refreshHints();
+  setupFullscreen();
+  setupEmotes();
   setTimeout(() => $('#hints').classList.add('fade'), 14000);
   last = performance.now();
   requestAnimationFrame(loop);
@@ -360,6 +426,15 @@ function loop(now) {
   last = now;
 
   local.update(dt);
+  // Blickkontakt: jede Figur schaut zur nächsten anderen, wenn sie nah genug ist
+  if (remotes.size) {
+    const all = [local.actor, ...remotes.values()];
+    for (const a of all) {
+      let best = null, bd = 3.8 * 3.8;
+      for (const b of all) { if (b === a) continue; const d = (b.pos.x - a.pos.x) ** 2 + (b.pos.z - a.pos.z) ** 2; if (d < bd) { bd = d; best = b; } }
+      a.lookAt = best ? best.pos : null;
+    }
+  }
   for (const a of remotes.values()) a.update(dt);
   local.actor.update(dt);
   local.actor.avatar.root.visible = local.state !== 'viewing';
@@ -383,6 +458,7 @@ function loop(now) {
   const sx = (proj.x * 0.5 + 0.5) * innerWidth + 46, sy = (-proj.y * 0.5 + 0.5) * innerHeight - 14;
   const pr = chatOpen ? null : local.prompt;
   UI.setPrompt(pr, sx, sy);
+  updateCaption();
   if (input.touch) { const b = $('#t-act'); b.hidden = !local.prompt; if (local.prompt) b.textContent = local.prompt.label; }
 
   if (!blackout) renderer.render(world.scene, camera);   // hinter dem schwarzen Overlay nichts rendern → Akku sparen
@@ -444,8 +520,46 @@ addEventListener('keydown', (e) => {
   if ((e.key === 'Enter' || e.key === '/') && ready && !chatOpen && !exiting && !reading && !(document.activeElement && document.activeElement.tagName === 'INPUT')) { e.preventDefault(); openChat(); }
 });
 $('#t-chat').addEventListener('click', () => (chatOpen ? closeChat() : openChat()));
-$('#t-dance').addEventListener('click', () => input.pressed.add('g'));
 $('#t-act').addEventListener('click', () => local.interactTouch());
+
+/* ═════════════ Emotes, Vollbild, Karte zum Date ═════════════ */
+function setupEmotes() {
+  const pop = $('#emotes');
+  const toggle = (v) => { pop.hidden = v === undefined ? !pop.hidden : !v; };
+  $('#btn-emote').addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+  $('#t-emote').addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+  pop.querySelectorAll('[data-emote]').forEach((b) => b.addEventListener('click', () => { local.playEmote(b.dataset.emote); toggle(false); }));
+  addEventListener('pointerdown', (e) => { if (!pop.hidden && !pop.contains(e.target)) toggle(false); });
+}
+
+function setupFullscreen() {
+  const el = document.documentElement, btn = $('#btn-full');
+  const can = el.requestFullscreen || el.webkitRequestFullscreen;
+  const standalone = matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches || navigator.standalone;
+  if (!can || standalone) return;     // iPhone-Safari kennt keinen Vollbild-Modus für Seiten → dort hilft „Zum Home-Bildschirm“
+  btn.hidden = false;
+  btn.addEventListener('click', () => {
+    if (document.fullscreenElement || document.webkitFullscreenElement) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    else (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+  });
+}
+
+const capEl = $('#caption');
+let capShown = null, capLang = '';
+function updateCaption() {
+  const v = local.state === 'viewing' && local.frame ? local.frame.caption : null;
+  if (v !== capShown || (v && capLang !== getLang())) {
+    if (v && !capShown) input.releaseLock();       // Maus freigeben, damit der „Karte öffnen“-Link anklickbar ist
+    capShown = v; capLang = getLang();
+    capEl.hidden = !v;
+    if (v) {
+      $('#cap-kicker').textContent = pick(v.kicker);
+      $('#cap-place').textContent = pick(v.place);
+      $('#cap-coords').textContent = fmtCoords(v);
+      $('#cap-map').href = mapUrl(v);
+    }
+  }
+}
 
 /* ═════════════ Lesen ═════════════ */
 const reader = $('#reader');
@@ -475,6 +589,7 @@ function checkExit() {
 }
 function startExit() {
   exiting = true; input.enabled = false; input.releaseLock();
+  music.duck(0.12, 4.5);                       // Musik wird mit dem Bild leiser
   if (chatOpen) closeChat();
   $('#exit-text').textContent = pick(CONFIG.exitText);
   $('#exit-back').textContent = t('backToMuseum');
@@ -491,6 +606,7 @@ $('#exit-back').addEventListener('click', () => {
   rig.yaw = a.heading + Math.PI; rig.snapNext = true;
   exitScreen.classList.remove('text', 'show-back'); exitScreen.classList.add('out');
   blackout = false;
+  music.duck(1, 2.5);
   setTimeout(() => { exitScreen.hidden = true; exiting = false; input.enabled = true; }, 1500);
 });
 
@@ -501,4 +617,4 @@ function leave() {
 $('#btn-leave').addEventListener('click', leave);
 addEventListener('pagehide', () => { if (net) net.close(); });
 
-if (DEBUG) window.__museum = { get world() { return world; }, get local() { return local; }, get rig() { return rig; }, remotes, get net() { return net; }, renderer, camera, THREE };
+if (DEBUG) window.__museum = { music, get world() { return world; }, get local() { return local; }, get rig() { return rig; }, remotes, get net() { return net; }, renderer, camera, THREE };

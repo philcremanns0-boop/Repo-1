@@ -65,7 +65,7 @@ function mulberry(a) {
 
 const HIP_H = 0.82;
 const K = ['hipsY', 'torsoX', 'torsoY', 'torsoZ', 'headX', 'headY', 'headZ',
-  'aLx', 'aLz', 'aRx', 'aRz', 'eL', 'eR', 'tLx', 'tLz', 'tRx', 'tRz', 'kL', 'kR', 'skirt'];
+  'aLx', 'aLz', 'aRx', 'aRz', 'eL', 'eR', 'tLx', 'tLz', 'tRx', 'tRz', 'kL', 'kR', 'skirt', 'bodyY'];
 const KI = Object.fromEntries(K.map((k, i) => [k, i]));
 
 const SKIN = { boy: 0xe9b08e, girl: 0xf0bf9f };
@@ -81,6 +81,9 @@ export class Avatar {
     this.cur = new Float32Array(K.length);
     this.tgt = new Float32Array(K.length);
     this.cur[KI.hipsY] = this.tgt[KI.hipsY] = HIP_H;
+    this.lookYaw = 0;      // Blick-/Kopfdrehung zu einer anderen Figur (relativ zur Körperrichtung)
+    this.talking = false;  // Mund bewegt sich, solange eine Sprechblase da ist
+    this._look = 0; this._blinkAt = 1 + Math.random() * 3; this._blink = 0; this._mood = 0;
 
     const skin = toon(SKIN[this.look]);
     const white = toon(0xf4f1ea), dark = toon(0x2a1c18);
@@ -120,20 +123,27 @@ export class Avatar {
     ball(skin, 0.185, 0.178, 0.175, 0, 0.11, 0, this.head);
     ball(skin, 0.032, 0.048, 0.03, 0.18, 0.1, -0.005, this.head);
     ball(skin, 0.032, 0.048, 0.03, -0.18, 0.1, -0.005, this.head);
+    this.eyes = [];   // Augen als Gruppe, damit das Blinzeln nur die Höhe skaliert
+    this.brows = [];
     for (const sx of [-1, 1]) {
-      ball(white, 0.04, 0.05, 0.022, sx * 0.07, 0.125, 0.152, this.head);
-      ball(dark, 0.019, 0.028, 0.012, sx * 0.072, 0.122, 0.168, this.head);
-      ball(white, 0.006, 0.007, 0.004, sx * 0.078, 0.133, 0.178, this.head);
+      const eye = pivot(this.head, sx * 0.07, 0.124, 0.158);
+      ball(white, 0.04, 0.05, 0.022, 0, 0.001, -0.006, eye);
+      ball(dark, 0.019, 0.028, 0.012, sx * 0.002, -0.002, 0.01, eye);
+      ball(white, 0.006, 0.007, 0.004, sx * 0.008, 0.009, 0.02, eye);
+      this.eyes.push(eye);
       const brow = new THREE.Mesh(new THREE.BoxGeometry(mia ? 0.06 : 0.075, mia ? 0.011 : 0.02, 0.012), C.brow);
       brow.position.set(sx * 0.073, mia ? 0.185 : 0.178, 0.16); brow.rotation.z = sx * (mia ? 0.18 : -0.1); this.head.add(brow);
+      this.brows.push({ m: brow, y: brow.position.y });
     }
     // Nase (bei Seb markanter) & Lächeln
     ball(skin, mia ? 0.024 : 0.036, mia ? 0.026 : 0.04, mia ? 0.03 : 0.04, 0, 0.085, 0.178, this.head);
     const smile = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.0075, 6, 16, Math.PI), toon(0x8a3a3a));
     smile.rotation.z = Math.PI; smile.position.set(0, 0.062, 0.162); smile.scale.set(1, 0.8, 1); this.head.add(smile);
+    this.smile = smile;
+    this.cheeks = [];
     if (mia) {
-      ball(toon(0xf0a08e), 0.032, 0.02, 0.01, 0.105, 0.075, 0.15, this.head);
-      ball(toon(0xf0a08e), 0.032, 0.02, 0.01, -0.105, 0.075, 0.15, this.head);
+      const blush = toon(0xf0a08e);
+      this.cheeks.push(ball(blush, 0.032, 0.02, 0.01, 0.105, 0.075, 0.15, this.head), ball(blush, 0.032, 0.02, 0.01, -0.105, 0.075, 0.15, this.head));
     } else {
       ball(skin, 0.07, 0.04, 0.05, 0, 0.012, 0.13, this.head);               // markantes Kinn
     }
@@ -237,6 +247,37 @@ export class Avatar {
       tg[KI.torsoY] = s2 * 0.35; tg[KI.torsoZ] = s * 0.07;
       tg[KI.headZ] = -s * 0.1; tg[KI.headY] = -s2 * 0.2;
       tg[KI.skirt] = -0.25 + s2 * 0.25;
+    } else if (a === 'clap') {
+      const c = Math.abs(Math.sin(t * 9));
+      tg[KI.aLx] = tg[KI.aRx] = -1.05; tg[KI.aLz] = 0.32 - c * 0.3; tg[KI.aRz] = -0.32 + c * 0.3;
+      tg[KI.eL] = tg[KI.eR] = -1.35;
+      tg[KI.torsoX] = 0.05; tg[KI.headX] = -0.05 + c * 0.05; tg[KI.headZ] = Math.sin(t * 4.5) * 0.06;
+      tg[KI.hipsY] = HIP_H - 0.01 + c * 0.012;
+      tg[KI.tLz] = 0.04; tg[KI.tRz] = -0.04;
+    } else if (a === 'heart') {
+      // beide Hände aufs Herz, leichtes Wiegen
+      const sw = Math.sin(t * 2.4);
+      tg[KI.aLx] = tg[KI.aRx] = -0.55; tg[KI.aLz] = 0.2; tg[KI.aRz] = -0.2;
+      tg[KI.eL] = tg[KI.eR] = -1.9;
+      tg[KI.headZ] = 0.14 + sw * 0.04; tg[KI.torsoZ] = sw * 0.05; tg[KI.headX] = 0.06;
+      tg[KI.hipsY] = HIP_H + Math.sin(t * 4.8) * 0.006;
+      tg[KI.tLz] = 0.04; tg[KI.tRz] = -0.04;
+    } else if (a === 'bow') {
+      const ph = this.emoteT || 0;   // Sekunden seit Start der Emote (Actor)
+      const d = ph < 0.5 ? ph / 0.5 : ph < 1.5 ? 1 : Math.max(0, 1 - (ph - 1.5) / 0.6);
+      tg[KI.torsoX] = 0.95 * d; tg[KI.headX] = 0.25 * d;
+      tg[KI.aLx] = tg[KI.aRx] = 0.35 * d; tg[KI.aLz] = 0.12; tg[KI.aRz] = -0.12;
+      tg[KI.hipsY] = HIP_H - 0.02 * d;
+      tg[KI.tLx] = tg[KI.tRx] = -0.15 * d;
+    } else if (a === 'cheer') {
+      const jump = Math.abs(Math.sin(t * 6.5));
+      tg[KI.bodyY] = jump * 0.2;
+      tg[KI.aLz] = 2.65 + Math.sin(t * 13) * 0.12; tg[KI.aRz] = -2.65 - Math.sin(t * 13 + 1) * 0.12;
+      tg[KI.eL] = tg[KI.eR] = -0.2;
+      tg[KI.tLx] = tg[KI.tRx] = -0.25 * jump; tg[KI.kL] = tg[KI.kR] = 0.5 * jump;
+      tg[KI.hipsY] = HIP_H - 0.05 + jump * 0.05;
+      tg[KI.headX] = -0.18; tg[KI.torsoX] = -0.08;
+      tg[KI.skirt] = -0.5 * jump;
     } else if (a === 'wave') {
       tg[KI.aRz] = -2.65; tg[KI.aRx] = 0.1;
       tg[KI.eR] = -0.5 + Math.sin(t * 9) * 0.55;
@@ -250,7 +291,17 @@ export class Avatar {
       tg[KI.torsoX] = breathe * 0.008; tg[KI.hipsY] = HIP_H + breathe * 0.004;
       tg[KI.headY] = Math.sin(t * 0.43) * 0.1; tg[KI.headX] = Math.sin(t * 0.31) * 0.03;
       tg[KI.tLz] = 0.03; tg[KI.tRz] = -0.03;
+      // selten: Kopf neigen, Schultern zucken, Gewicht verlagern
+      const f = Math.pow(Math.max(0, Math.sin(t * 0.43 + 1.3)), 12);
+      tg[KI.headZ] = f * 0.14; tg[KI.torsoZ] = f * 0.035; tg[KI.aLz] += f * 0.08; tg[KI.aRz] -= f * 0.08;
+      const g = Math.pow(Math.max(0, Math.sin(t * 0.27 + 0.4)), 16);
+      tg[KI.tLz] += g * 0.05; tg[KI.tRz] += g * 0.02; tg[KI.hipsY] -= g * 0.012;
     }
+
+    // Blickkontakt: Kopf dreht sich zur anderen Figur (nur wenn sie nicht zu weit hinten steht)
+    this._look += (this.lookYaw - this._look) * (1 - Math.exp(-5 * dt));
+    if (a !== 'bow' && a !== 'sit') tg[KI.headY] += this._look * 0.85;
+    else if (a === 'sit') tg[KI.headY] += this._look * 0.6;
 
     const k = 1 - Math.exp(-16 * dt), c = this.cur;
     for (let i = 0; i < K.length; i++) c[i] += (tg[i] - c[i]) * k;
@@ -265,5 +316,19 @@ export class Avatar {
     this.thR.rotation.set(c[KI.tRx], 0, c[KI.tRz]);
     this.knL.rotation.x = c[KI.kL]; this.knR.rotation.x = c[KI.kR];
     if (this.skirt) this.skirt.rotation.x = c[KI.skirt];
+    this.body.position.y = c[KI.bodyY];
+
+    // Gesicht: Blinzeln, Sprechen, gute Laune
+    this._blinkAt -= dt;
+    if (this._blinkAt <= 0) { this._blink = 0.14; this._blinkAt = 2.2 + Math.random() * 4.5; }
+    let open = 1;
+    if (this._blink > 0) { this._blink -= dt; open = Math.abs(this._blink / 0.07 - 1) ; open = Math.max(0.08, open); }
+    const happy = a === 'heart' || a === 'cheer' || a === 'dance' || a === 'clap' || a === 'wave' ? 1 : 0;
+    this._mood += (happy - this._mood) * (1 - Math.exp(-6 * dt));
+    for (const e of this.eyes) e.scale.y = open * (1 - 0.25 * this._mood);
+    for (const b of this.brows) b.m.position.y = b.y + 0.012 * this._mood + (this.talking ? 0.006 * Math.sin(t * 9) : 0);
+    const talk = this.talking ? 0.5 + 0.5 * Math.abs(Math.sin(t * 13)) : 0;
+    this.smile.scale.set(1 + 0.25 * this._mood, 0.8 + 0.45 * this._mood + talk * 0.6, 1);
+    for (const ch of this.cheeks) ch.scale.set(0.032 * (1 + 0.5 * (a === 'heart' ? 1 : this._mood * 0.4)), 0.02 * (1 + 0.5 * (a === 'heart' ? 1 : this._mood * 0.4)), 0.01);
   }
 }

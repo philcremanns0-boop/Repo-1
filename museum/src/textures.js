@@ -457,3 +457,37 @@ export function poolTexture() {
   g.restore();
   return toTex(c, { mip: false });
 }
+
+
+/* Kleines Herz für das Herz-Emote */
+export function heartTexture() {
+  const [c, g] = mk(64, 64);
+  g.fillStyle = '#ff7f9c';
+  g.beginPath();
+  g.moveTo(32, 54);
+  g.bezierCurveTo(6, 36, 4, 14, 20, 11);
+  g.bezierCurveTo(27, 10, 31, 15, 32, 19);
+  g.bezierCurveTo(33, 15, 37, 10, 44, 11);
+  g.bezierCurveTo(60, 14, 58, 36, 32, 54);
+  g.fill();
+  g.fillStyle = 'rgba(255,255,255,0.45)';
+  g.beginPath(); g.ellipse(20, 20, 5, 3, -0.7, 0, Math.PI * 2); g.fill();
+  return toTex(c, { mip: false });
+}
+
+/* Museums-Schild für die zwei Dates (Karte aus Papier, Serifen-Titel, Ort, Koordinaten) */
+export function drawDatePlaque(g, w, h, d) {
+  g.fillStyle = '#f2efe8'; g.fillRect(0, 0, w, h);
+  g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = 3; g.strokeRect(10, 10, w - 20, h - 20);
+  g.fillStyle = '#1b1c20';
+  g.textBaseline = 'alphabetic';
+  g.font = `italic 400 66px ${SERIF}`;
+  g.fillText(d.title, 34, 100, w - 68);
+  g.fillStyle = '#4a4c52';
+  g.font = `600 22px ${SANS}`; g.letterSpacing = '2px';
+  g.fillText(d.place.toUpperCase(), 36, 152, w - 70);
+  g.letterSpacing = '0px';
+  g.fillStyle = '#7a7c82';
+  g.font = `500 24px ${SANS}`;
+  g.fillText(d.coords, 36, 200, w - 70);
+}

@@ -10,9 +10,41 @@ const PREFIX = 'ourmuseum-v1-';
 export const makeCode = () => Array.from({ length: 5 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
 export const cleanCode = (s) => (s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);
 
-function peerOptions() {
+/* ICE-Server: STUN für den Normalfall. Wo Router direkte Verbindungen blockieren (viele Mobilfunknetze),
+   braucht WebRTC einen TURN-Relay. Den liefert /api/ice (Vercel-Funktion) mit eigenen Zugangsdaten aus den
+   Umgebungsvariablen – siehe README. Ohne Konfiguration greift eine frei nutzbare Best-Effort-Liste. */
+const STUN = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun.cloudflare.com:3478' },
+  { urls: 'stun:global.stun.twilio.com:3478' },
+];
+const PUBLIC_TURN = [
+  { urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turns:openrelay.metered.ca:443?transport=tcp'], username: 'openrelayproject', credential: 'openrelayproject' },
+];
+let icePromise = null;
+function loadIce() {
+  if (!icePromise) {
+    icePromise = (async () => {
+      try {
+        const ctl = new AbortController();
+        const to = setTimeout(() => ctl.abort(), 4000);
+        const r = await fetch('/api/ice', { cache: 'no-store', signal: ctl.signal });
+        clearTimeout(to);
+        if (r.ok) {
+          const j = await r.json();
+          if (Array.isArray(j.iceServers) && j.iceServers.length) return [...STUN, ...j.iceServers];
+        }
+      } catch { /* kein /api (lokal) oder offline → Standardliste */ }
+      return [...STUN, ...PUBLIC_TURN];
+    })();
+  }
+  return icePromise;
+}
+export const warmIce = () => { loadIce(); };
+
+async function peerOptions() {
   const q = new URLSearchParams(location.search);
-  const o = { debug: 0, config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }] } };
+  const o = { debug: 0, config: { iceServers: await loadIce(), iceCandidatePoolSize: 4 } };
   if (q.get('peerhost')) { // nur zum lokalen Testen mit eigenem PeerServer
     o.host = q.get('peerhost'); o.port = +(q.get('peerport') || 9000); o.path = q.get('peerpath') || '/'; o.secure = q.get('peersecure') === '1';
   }
@@ -37,12 +69,18 @@ export class Net {
 
   async _newPeer(id) {
     const { Peer } = await import('peerjs');
-    return new Promise((resolve, reject) => {
-      const p = id ? new Peer(id, peerOptions()) : new Peer(peerOptions());
-      const to = setTimeout(() => { try { p.destroy(); } catch {} reject(new Error('timeout')); }, 12000);
+    const opts = await peerOptions();
+    const attempt = () => new Promise((resolve, reject) => {
+      const p = id ? new Peer(id, opts) : new Peer(opts);
+      const to = setTimeout(() => { try { p.destroy(); } catch {} reject(Object.assign(new Error('broker timeout'), { type: 'broker-timeout' })); }, 9000);
       p.on('open', () => { clearTimeout(to); resolve(p); });
-      p.on('error', (e) => { clearTimeout(to); reject(e); });
+      p.on('error', (e) => { clearTimeout(to); try { p.destroy(); } catch {} reject(e); });
     });
+    try { return await attempt(); } catch (e) {
+      // Der Verbindungs-Broker ist manchmal kurz überlastet → ein zweiter Versuch
+      if (e && (e.type === 'broker-timeout' || e.type === 'network' || e.type === 'server-error' || e.type === 'socket-error')) return attempt();
+      throw e;
+    }
   }
 
   /* ───── Host ───── */
@@ -105,10 +143,11 @@ export class Net {
     return new Promise((resolve, reject) => {
       let settled = false;
       const fail = (err) => { if (settled) return; settled = true; reject(err); };
-      const to = setTimeout(() => fail(Object.assign(new Error('timeout'), { type: 'peer-unavailable' })), 12000);
+      const to = setTimeout(() => fail(Object.assign(new Error('no direct connection'), { type: 'no-direct' })), 15000);
       this.peer.on('error', (e) => { clearTimeout(to); fail(e); });
       const conn = this.peer.connect(hostId, { reliable: true, serialization: 'json' });
       conn.on('open', () => conn.send({ t: 'hello', name: me.name, look: me.look }));
+      conn.on('iceStateChanged', (st) => { if (st === 'failed') this._emit('unstable'); });
       conn.on('data', (m) => {
         if (!m || typeof m !== 'object') return;
         if (m.t === 'welcome') {

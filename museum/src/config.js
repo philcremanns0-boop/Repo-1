@@ -12,6 +12,7 @@
 
 export const CONFIG = {
   title: 'Our Museum',
+  password: '1234',    // Zugangscode beim Start (leer lassen = kein Code). Nur eine Hürde, kein echter Schutz – siehe README.
   from: '',            // Dein Name (leer lassen = „From …“ wird nicht angezeigt)
   to: 'Emilia',
   toShort: 'Emi',      // Kosename, wird auf dem Schild verwendet
@@ -48,13 +49,23 @@ export const CONFIG = {
     words: { title: { en: 'Words', de: 'Worte', es: 'Palabras' }, sub: { en: 'Written for you', de: 'Für dich geschrieben', es: 'Escritas para ti' } },
   },
 
-  // Optionale Bildunterschriften (in der Reihenfolge der Dateien je Bereich, nur für die großen Bilder).
-  // Leer lassen → die Schildchen zeigen „No. 01“, „No. 02“ …
-  captions: {
-    us: [
-      // { title: { en: 'Botanical garden', de: 'Botanischer Garten', es: 'Jardín botánico' }, meta: '2025' },
-    ],
-    moments: [],
+  // Die zwei Dates: bekommen ein Schild mit Ort und Koordinaten (3D-Schild an der Wand + Karte beim Ansehen).
+  //   first  → hängt unter dem Restaurant-Foto (erste Datei in src/photos/moments/)
+  //   second → hängt zwischen den beiden Botanischer-Garten-Fotos (Datei 09 + 10)
+  // Alle anderen Bilder bleiben bewusst unbeschriftet.
+  dates: {
+    first: {
+      kicker: { en: 'First date', de: 'Erstes Date', es: 'Primera cita' },
+      place: { en: 'Gusto · Oxford city centre', de: 'Gusto · Oxford Innenstadt', es: 'Gusto · centro de Oxford' },
+      lat: 51.752, lon: -1.254, approx: true,           // ≈ The Mitre, High Street – gern durch genaue Werte ersetzen
+      mapQuery: 'Gusto, The Mitre, High Street, Oxford OX1 4AG',
+    },
+    second: {
+      kicker: { en: 'Second date', de: 'Zweites Date', es: 'Segunda cita' },
+      place: { en: 'Oxford Botanic Garden', de: 'Botanischer Garten Oxford', es: 'Jardín Botánico de Oxford' },
+      lat: 51.7515, lon: -1.2472,
+      mapQuery: 'Oxford Botanic Garden',
+    },
   },
 
   // Mindestdauer des Loading Screens (ms). Er wartet zusätzlich immer,
@@ -78,6 +89,13 @@ const urls = (mods) =>
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
     .map((k) => mods[k]);
 const g = (mods) => urls(mods);
+
+/* „51.7515° N, 1.2472° W“ – mit „≈“ davor, wenn der Wert nur eine Näherung ist */
+export const fmtCoords = (d) => {
+  const n = d.approx ? 3 : 4;
+  return `${d.approx ? '≈ ' : ''}${Math.abs(d.lat).toFixed(n)}° ${d.lat >= 0 ? 'N' : 'S'}, ${Math.abs(d.lon).toFixed(n)}° ${d.lon >= 0 ? 'E' : 'W'}`;
+};
+export const mapUrl = (d) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.mapQuery || `${d.lat},${d.lon}`)}`;
 
 export const PHOTO_URLS = {
   hero: g(import.meta.glob('./photos/hero.*', { eager: true, query: '?url', import: 'default' })),

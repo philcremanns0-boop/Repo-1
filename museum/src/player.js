@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { angDiff } from './actors.js';
 import { t } from './i18n.js';
 
+export const EMOTE_KEYS = ['wave', 'dance', 'clap', 'heart', 'bow', 'cheer'];
+const EMOTE_SECS = { wave: 2.4, clap: 3.2, heart: 3.2, bow: 2.3, cheer: 2.8 };
 const RADIUS = 0.3;
 const WALK = 2.5, RUN = 4.4;
 
@@ -95,7 +97,7 @@ export class LocalPlayer {
     this.onRead = () => {}; this.onCloseRead = () => {};
     this.frame = null; this.seatInfo = null;
     this.vel = new THREE.Vector2();
-    this.waveT = 0; this.dancing = false;
+    this.waveT = 0; this.dancing = false; this.emoteName = 'wave';
     this.prompt = null;
     this._lastMove = 0;
     this._others = () => [];
@@ -188,11 +190,9 @@ export class LocalPlayer {
     const took = (k) => inp.took(k);
 
     // Gesten
-    if (took('g')) {
-      if (this.state === 'free') this.dancing = !this.dancing;
-      this.waveT = 0;
-    }
-    if (took('h') && this.state === 'free') { this.waveT = 2.4; this.dancing = false; }
+    EMOTE_KEYS.forEach((name, i) => { if (took(String(i + 1))) this.playEmote(name); });
+    if (took('g')) this.playEmote('dance');
+    if (took('h')) this.playEmote('wave');
     if (this.waveT > 0) this.waveT -= dt;
 
     // Interaktion
@@ -241,7 +241,7 @@ export class LocalPlayer {
       }
       const gy = this.world.groundY(a.pos.x, a.pos.z);
       a.pos.y += (gy - a.pos.y) * (1 - Math.exp(-18 * dt));
-      a.anim = speed > 0.3 ? (speed > 3.2 ? 'run' : 'walk') : this.waveT > 0 ? 'wave' : this.dancing ? 'dance' : 'idle';
+      a.anim = speed > 0.3 ? (speed > 3.2 ? 'run' : 'walk') : this.waveT > 0 ? this.emoteName : this.dancing ? 'dance' : 'idle';
     } else if (this.state === 'sitting') {
       const s = this.seatInfo, k = 1 - Math.exp(-10 * dt);
       const dx = s.seat.x - a.pos.x, dz = s.seat.z - a.pos.z;
@@ -289,6 +289,13 @@ export class LocalPlayer {
       if (seat) this.prompt = { key: 'E', label: t('sit') };
       else { const v = this._nearestView(); if (v) this.prompt = { key: 'E', label: t(v.kind === 'book' ? 'read' : 'view') }; }
     }
+  }
+
+  /* Emote starten (Tastatur 1–6, Menü, Touch). „dance“ ist ein Schalter, die anderen laufen kurz und enden von selbst. */
+  playEmote(name) {
+    if (this.state !== 'free') return;
+    if (name === 'dance') { this.dancing = !this.dancing; this.waveT = 0; return; }
+    this.dancing = false; this.emoteName = name; this.waveT = EMOTE_SECS[name] || 2.4;
   }
 
   interactTouch() { this.input.pressed.add(this.state === 'sitting' ? 'f' : 'e'); }

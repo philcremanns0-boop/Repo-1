@@ -10,7 +10,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Our Museum">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231a1d29'/%3E%3Cpath d='M6 24V12l10-6 10 6v12h-3V13.5L16 9 9 13.5V24z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 </head>
 <body>
 <canvas id="gl" aria-label="Our Museum"></canvas>
@@ -18,6 +20,21 @@
 
 <div id="ui">
   <div id="lang" role="group" aria-label="Language"><button type="button" data-lang="en">EN</button><button type="button" data-lang="de">DE</button><button type="button" data-lang="es">ES</button></div>
+  <!-- Zugangscode -->
+  <section id="gate" class="screen" hidden>
+    <div class="start-inner">
+      <h1 class="title" data-title>Our Museum</h1>
+      <p class="fromto"><span class="fr"><span data-t="from"></span> <em data-from></em><i></i></span><span data-t="to"></span> <em data-to></em></p>
+      <form id="gate-form" class="panel" autocomplete="off">
+        <label class="field">
+          <span data-t="gateHint"></span>
+          <input id="gate-input" type="password" inputmode="numeric" autocomplete="off" maxlength="16" spellcheck="false">
+        </label>
+        <p id="gate-msg" class="status" role="status"></p>
+      </form>
+    </div>
+  </section>
+
   <!-- Start / lobby -->
   <section id="start" class="screen">
     <div class="start-inner">
@@ -50,6 +67,8 @@
         <button id="btn-back" class="link" data-t="back"></button>
       </div>
       <p class="foot" data-t="startHint"></p>
+      <button id="btn-install" class="link" type="button" hidden data-t="install"></button>
+      <p id="ios-hint" class="foot" hidden data-t="iosHint"></p>
     </div>
   </section>
 
@@ -70,7 +89,22 @@
       <span class="dot"></span><span id="room-text"></span>
       <button id="room-copy" type="button" data-t="copy"></button>
     </div>
-    <button id="btn-leave" type="button" data-t="leave"></button>
+    <div id="topright"><button id="btn-full" type="button" hidden aria-label="Fullscreen">⛶</button><button id="btn-leave" type="button" data-t="leave"></button></div>
+    <div id="caption" hidden>
+      <p class="ck" id="cap-kicker"></p>
+      <p class="ct" id="cap-place"></p>
+      <p class="cc" id="cap-coords"></p>
+      <a id="cap-map" href="#" target="_blank" rel="noopener" data-t="openMap"></a>
+    </div>
+    <button id="btn-emote" type="button" aria-label="Emotes">☺</button>
+    <div id="emotes" hidden>
+      <button type="button" data-emote="wave"><b>👋</b><span data-t="e_wave"></span></button>
+      <button type="button" data-emote="dance"><b>💃</b><span data-t="e_dance"></span></button>
+      <button type="button" data-emote="clap"><b>👏</b><span data-t="e_clap"></span></button>
+      <button type="button" data-emote="heart"><b>🩷</b><span data-t="e_heart"></span></button>
+      <button type="button" data-emote="bow"><b>🙇</b><span data-t="e_bow"></span></button>
+      <button type="button" data-emote="cheer"><b>🙌</b><span data-t="e_cheer"></span></button>
+    </div>
     <div id="hints"></div>
     <div id="music" hidden></div>
     <div id="chatbox">
@@ -84,7 +118,7 @@
       <div id="stick"><div id="knob"></div></div>
       <div id="tbtns">
         <button type="button" id="t-act" hidden></button>
-        <button type="button" id="t-dance">♪</button>
+        <button type="button" id="t-emote">☺</button>
         <button type="button" id="t-chat">💬</button>
       </div>
     </div>
