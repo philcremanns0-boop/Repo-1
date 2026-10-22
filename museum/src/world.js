@@ -66,10 +66,16 @@ export function buildWorld({ photos, screen, books }) {
   const track = (x) => { textures.push(x); return x; };
 
   /* ───── Licht ───── */
-  // Warmes „Golden Hour“-Licht: niedrige, honigfarbene Sonne + kühler, rosiger Gegenlicht-Hauch
-  const key = new THREE.DirectionalLight(0xffe0b8, 1.2); key.position.set(-8, 6, 7);
-  const fill = new THREE.DirectionalLight(0xd9c6ff, 0.35); fill.position.set(7, 5, -9);
-  scene.add(new THREE.HemisphereLight(0xfff5e8, 0xd2c1ab, 2.3), key, fill);
+  // Warmes „Golden Hour“-Licht: niedrige, honigfarbene Sonne (wirft die Schatten der Figuren) + kühler, rosiger Gegenlicht-Hauch
+  const key = new THREE.DirectionalLight(0xffe0b8, 1.85);
+  const KEY_OFFSET = new THREE.Vector3(-6, 12, 8);
+  key.position.copy(KEY_OFFSET);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  Object.assign(key.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6, near: 2, far: 34 });
+  key.shadow.bias = -0.0005; key.shadow.normalBias = 0.02;
+  const fill = new THREE.DirectionalLight(0xe6edff, 0.9); fill.position.set(7, 5, -9);
+  scene.add(new THREE.HemisphereLight(0xfff5e8, 0xd2c1ab, 1.95), key, key.target, fill);
 
   /* ───── Materialien ───── */
   const wallTex = track(T.wallTexture());
@@ -104,6 +110,7 @@ export function buildWorld({ photos, screen, books }) {
   floorTex.repeat.set(W / 4, D / 4);
   const floorMat = new THREE.MeshLambertMaterial({ map: floorTex });
   const floor = new THREE.Mesh(plane(W, D), floorMat);
+  floor.receiveShadow = true;
   floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, cz);
   scene.add(floor);
   const ceilTex = track(T.ceilingTexture());
@@ -158,6 +165,7 @@ export function buildWorld({ photos, screen, books }) {
   {
     const a = ALCOVE, len = a.maxX - a.minX, w = a.maxZ - a.minZ;
     const fl = new THREE.Mesh(plane(len, w), floorMat);
+    fl.receiveShadow = true;
     fl.rotation.x = -Math.PI / 2; fl.position.set((a.minX + a.maxX) / 2, 0.002, (a.minZ + a.maxZ) / 2);
     scene.add(fl);
     batch.add(box(len, 0.1, w), M.black, M4((a.minX + a.maxX) / 2, 3.0 + 0.05, (a.minZ + a.maxZ) / 2));
@@ -333,6 +341,7 @@ export function buildWorld({ photos, screen, books }) {
     bookcase(HALL.maxX - 0.02, -3.4, -PI / 2, 6.2, 2.7);
     const rug = new THREE.Mesh(plane(4.1, 5.6), new THREE.MeshLambertMaterial({ map: track(T.rugTexture()) }));
     rug.rotation.x = -PI / 2; rug.position.set(WORDS_X - 0.4, 0.008, -2.9);
+    rug.receiveShadow = true;
     scene.add(rug);
     const spots = [[6.0, -0.6, 0.3], [8.4, -1.8, -0.35], [6.0, -3.2, 0.25], [8.4, -4.5, -0.3], [6.0, -5.8, 0.2], [8.6, -6.3, -0.2], [8.4, 0.9, -0.25], [6.0, 1.6, 0.3]];
     const covers = [0x5a1f26, 0x1f3a4a, 0x2d4a33, 0x4a3a1f, 0x3a2a4a, 0x1d1d22];
@@ -477,6 +486,7 @@ export function buildWorld({ photos, screen, books }) {
   dust.frustumCulled = false; scene.add(dust);
 
   batch.build(scene);
+  scene.traverse((o) => { if (o.isMesh && (o.material === M.white || o.material === M.wood)) o.receiveShadow = true; });   // Sockel & Bänke fangen Schatten auf
   atlas.redraw();
 
   /* ───── Boden-Höhe, Begrenzung ───── */
@@ -501,7 +511,7 @@ export function buildWorld({ photos, screen, books }) {
 
   const heartMesh = null;
   return {
-    scene, textures, colliders, frames, books: bookViews, views, benches, groundY, clamp, spawns,
+    scene, textures, colliders, frames, books: bookViews, views, benches, groundY, clamp, spawns, key, KEY_OFFSET,
     bounds: { minX: HALL.minX, maxX: HALL.maxX + 0.25, minZ: HALL.minZ, maxZ: HALL.maxZ },
     exitZone: { minX: ALCOVE.minX + 1.1, maxX: ALCOVE.maxX, minZ: ALCOVE.minZ, maxZ: ALCOVE.maxZ },
     relocalize() { atlas.redraw(); redrawers.forEach((f) => f()); },

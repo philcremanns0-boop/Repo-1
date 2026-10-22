@@ -8,7 +8,7 @@ Ein kleines 3D-Museum im Browser (Three.js + Vite) – Single- oder Multiplayer,
 
 * Figuren: Seb & Mia (an La La Land angelehnt). Beim Namen entscheidet ein kleines System (Namenslisten + Endungen),
   wer man ist – mit „switch“ zum Korrigieren.
-* Chat wie in Roblox: Verlauf oben links, Nachrichten zusätzlich als Sprechblase über dem Kopf (Enter oder `/`, am Handy 💬). Der Name wird beim Start frei gewählt.
+* Chat wie in Roblox: Verlauf oben links, Nachrichten zusätzlich als Sprechblase über dem Kopf (Enter oder `/`, am Handy der Chat-Button). Der Name wird beim Start frei gewählt.
 * Musik-Box unten (Zurück / Play-Pause / Weiter / Fortschritt / Lautstärke). Songs werden am Ende ineinander überblendet; beim Exit wird die Musik leiser.
 * Beschriftet sind nur die zwei Dates (Ort + Koordinaten, `dates` in `src/config.js`); alle anderen Bilder bleiben bewusst ohne Schild.
 * Schriften: EB Garamond (Titel, Bücher) + System-Schrift (SF Pro auf Apple-Geräten) für die Bedienung.
@@ -103,8 +103,8 @@ Die Funktion `api/ice.js` holt damit kurzlebige Zugangsdaten; die Schlüssel lan
 | Umsehen | Maus (einmal in die Szene klicken → Mausblick wie in Minecraft, `Esc` gibt die Maus frei), Pfeil links/rechts, Mausrad = Zoom | Überall wischen |
 | Bild ansehen / Buch lesen / Hinsetzen | E | Button |
 | Aufstehen | F oder E | Button |
-| Emotes (Winken, Tanzen, Klatschen, Herz, Verbeugen, Jubeln) | Tasten `1`–`6` oder ☺-Button | ☺-Button |
-| Chat | Enter | 💬 |
+| Emotes (Winken, Tanzen, Klatschen, Herz, Verbeugen, Jubeln) | Tasten `1`–`6` oder Emote-Button | Emote-Button |
+| Chat | Enter | Chat-Button |
 
 ## Performance
 

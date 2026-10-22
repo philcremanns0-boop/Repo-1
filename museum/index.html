@@ -89,21 +89,21 @@
       <span class="dot"></span><span id="room-text"></span>
       <button id="room-copy" type="button" data-t="copy"></button>
     </div>
-    <div id="topright"><button id="btn-full" type="button" hidden aria-label="Fullscreen">⛶</button><button id="btn-leave" type="button" data-t="leave"></button></div>
+    <div id="topright"><button id="btn-full" type="button" hidden aria-label="Fullscreen" data-icon="fullscreen"></button><button id="btn-leave" type="button" data-t="leave"></button></div>
     <div id="caption" hidden>
       <p class="ck" id="cap-kicker"></p>
       <p class="ct" id="cap-place"></p>
       <p class="cc" id="cap-coords"></p>
       <a id="cap-map" href="#" target="_blank" rel="noopener" data-t="openMap"></a>
     </div>
-    <button id="btn-emote" type="button" aria-label="Emotes">☺</button>
+    <button id="btn-emote" type="button" aria-label="Emotes" data-icon="smile"></button>
     <div id="emotes" hidden>
-      <button type="button" data-emote="wave"><b>👋</b><span data-t="e_wave"></span></button>
-      <button type="button" data-emote="dance"><b>💃</b><span data-t="e_dance"></span></button>
-      <button type="button" data-emote="clap"><b>👏</b><span data-t="e_clap"></span></button>
-      <button type="button" data-emote="heart"><b>🩷</b><span data-t="e_heart"></span></button>
-      <button type="button" data-emote="bow"><b>🙇</b><span data-t="e_bow"></span></button>
-      <button type="button" data-emote="cheer"><b>🙌</b><span data-t="e_cheer"></span></button>
+      <button type="button" data-emote="wave"><b data-icon="wave"></b><span data-t="e_wave"></span></button>
+      <button type="button" data-emote="dance"><b data-icon="dance"></b><span data-t="e_dance"></span></button>
+      <button type="button" data-emote="clap"><b data-icon="clap"></b><span data-t="e_clap"></span></button>
+      <button type="button" data-emote="heart"><b data-icon="heart"></b><span data-t="e_heart"></span></button>
+      <button type="button" data-emote="bow"><b data-icon="bow"></b><span data-t="e_bow"></span></button>
+      <button type="button" data-emote="cheer"><b data-icon="cheer"></b><span data-t="e_cheer"></span></button>
     </div>
     <div id="hints"></div>
     <div id="music" hidden></div>
@@ -118,8 +118,8 @@
       <div id="stick"><div id="knob"></div></div>
       <div id="tbtns">
         <button type="button" id="t-act" hidden></button>
-        <button type="button" id="t-emote">☺</button>
-        <button type="button" id="t-chat">💬</button>
+        <button type="button" id="t-emote" aria-label="Emotes" data-icon="smile"></button>
+        <button type="button" id="t-chat" aria-label="Chat" data-icon="chat"></button>
       </div>
     </div>
   </div>
@@ -127,7 +127,7 @@
 
 <div id="reader" hidden>
   <article class="page" role="dialog" aria-modal="true">
-    <button id="reader-close" type="button" aria-label="Close">×</button>
+    <button id="reader-close" type="button" aria-label="Close" data-icon="close"></button>
     <p class="kicker" id="reader-kicker"></p>
     <h2 id="reader-title"></h2>
     <div id="reader-body"></div>

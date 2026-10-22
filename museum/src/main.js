@@ -18,6 +18,7 @@ const canvas = $('#gl');
 const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
 const DEBUG = new URLSearchParams(location.search).has('debug');
 
+UI.initIcons();
 UI.initTexts();
 
 /* ═════════════ Renderer (früh anlegen, kostet nichts) ═════════════ */
@@ -25,6 +26,8 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPrefere
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.NeutralToneMapping;
 renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 T.setAnisotropy(Math.min(8, renderer.capabilities.getMaxAnisotropy()));
 const camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 0.08, 90);
 const DPR_MAX = Math.min(devicePixelRatio || 1, 2);
@@ -317,7 +320,7 @@ async function boot(mode) {
   // Zweiten Look ebenfalls instanziieren (Shader/Geometrien warm), dann wieder entfernen
   const tmp = new Actor(world.scene, { id: 'tmp', name: '…', look: mySettings.look === 'boy' ? 'girl' : 'boy' });
   tmp.pos.set(me.pos.x + 0.6, 0, me.pos.z); tmp.update(0.016);
-  tmp.bubble.say('♥'); tmp.bubble.update(0.1);
+  tmp.bubble.say('Hi'); tmp.bubble.update(0.1);
 
   // GPU: alle Texturen hochladen (verteilt auf Frames, damit der Balken weiterläuft)
   const texs = [...world.textures, ...Object.values(photos).flat().map((p) => p.texture), screen.texture];
@@ -438,6 +441,12 @@ function loop(now) {
   for (const a of remotes.values()) a.update(dt);
   local.actor.update(dt);
   local.actor.avatar.root.visible = local.state !== 'viewing';
+  // Schattenlicht folgt der Spielerin; in festen Schritten, damit die Schatten nicht flimmern
+  {
+    const k = world.key, lp = local.actor.pos, q = (v) => Math.round(v / 0.047) * 0.047;
+    k.target.position.set(q(lp.x), 0, q(lp.z));
+    k.position.copy(k.target.position).add(world.KEY_OFFSET);
+  }
   world.update(now / 1000);
   checkExit();
   tickScreen(now);
@@ -480,6 +489,7 @@ function adapt(ms) {
   ema += (ms - ema) * 0.08;
   if (ema > 21) { badFrames++; okFrames = 0; } else if (ema < 13.5) { okFrames++; badFrames = 0; } else { okFrames = 0; badFrames = Math.max(0, badFrames - 1); }
   if (badFrames > 50 && dpr > 0.8) { dpr = Math.max(0.8, dpr - 0.25); badFrames = 0; resize(); }
+  else if (badFrames > 90 && world.key.castShadow) { world.key.castShadow = false; badFrames = 0; }   // bei minimaler Auflösung immer noch zu langsam → Schatten abschalten
   else if (okFrames > 400 && dpr < DPR_MAX) { dpr = Math.min(DPR_MAX, dpr + 0.25); okFrames = 0; resize(); }
 }
 

@@ -42,8 +42,14 @@ const toon = (c, side) => {
   if (!matCache.has(k)) matCache.set(k, new THREE.MeshToonMaterial({ color: c, gradientMap: toonGradient(), side: side || THREE.FrontSide }));
   return matCache.get(k);
 };
+let proxyMat;
+const proxyMaterial = () => proxyMat || (proxyMat = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }));
+const skirtShadowGeo = () => {
+  if (!geoCache.has('skirtS')) geoCache.set('skirtS', new THREE.CylinderGeometry(0.15, 0.31, 0.4, 14));
+  return geoCache.get('skirtS');
+};
 let blobMat;
-const blobMaterial = () => blobMat || (blobMat = new THREE.MeshBasicMaterial({ map: blobTexture(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
+const blobMaterial = () => blobMat || (blobMat = new THREE.MeshBasicMaterial({ map: blobTexture(), transparent: true, opacity: 0.8, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
 
 function ball(mat, sx, sy, sz, x, y, z, parent) {
   const m = new THREE.Mesh(sphereGeo(), mat);
@@ -199,9 +205,34 @@ export class Avatar {
     const lL = leg(1), lR = leg(-1);
     this.thL = lL.th; this.knL = lL.kn; this.thR = lR.th; this.knR = lR.kn;
 
+    this._addShadowProxies(mia);
+
     const blob = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.95), blobMaterial());
     blob.rotation.x = -Math.PI / 2; blob.position.y = 0.012; blob.renderOrder = 2;
     this.root.add(blob);
+  }
+
+  /* Schatten: wenige unsichtbare Hüllen (Rumpf, Kopf, Arme, Beine) werfen den Schatten, statt der ~70 sichtbaren Teile.
+     Sie hängen an denselben Gelenken und bewegen sich daher mit jeder Animation mit. */
+  _addShadowProxies(mia) {
+    const mat = proxyMaterial();
+    const add = (geo, parent, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1) => {
+      const m = new THREE.Mesh(geo, mat);
+      m.castShadow = true; m.position.set(x, y, z); m.scale.set(sx, sy, sz);
+      parent.add(m); return m;
+    };
+    add(sphereGeo(), this.hips, 0, 0, 0, 0.16, 0.11, 0.12);
+    add(limbGeo(0.14, 0.2), this.torso, 0, 0.46, 0, 1.15, 1, 0.78);
+    add(sphereGeo(), this.head, 0, 0.11, 0, 0.19, 0.18, 0.18);
+    for (const [sh, el] of [[this.shL, this.elL], [this.shR, this.elR]]) {
+      add(limbGeo(0.052, 0.17), sh); add(limbGeo(0.046, 0.15), el);
+      add(sphereGeo(), el, 0, -0.29, 0, 0.055, 0.065, 0.05);
+    }
+    for (const [th, kn] of [[this.thL, this.knL], [this.thR, this.knR]]) {
+      add(limbGeo(0.082, 0.22), th); add(limbGeo(0.068, 0.24), kn);
+      add(sphereGeo(), kn, 0, -0.385, 0.05, 0.075, 0.058, 0.14);
+    }
+    if (mia) add(skirtShadowGeo(), this.skirt, 0, -0.17, 0, 1, 1, 0.94);
   }
 
   setAnim(a) { this.anim = a; }

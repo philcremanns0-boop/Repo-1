@@ -1,8 +1,14 @@
 import { CONFIG } from './config.js';
 import { t, getLang } from './i18n.js';
+import { ICONS } from './icons.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+/* Icon-Platzhalter (data-icon) durch SVG ersetzen – im ganzen Projekt keine Emojis */
+export function initIcons() {
+  $$('[data-icon]').forEach((el) => { if (!el.firstChild) el.innerHTML = ICONS[el.dataset.icon] || ''; });
+}
 
 export function initTexts() {
   document.documentElement.lang = { en: 'en', de: 'de', es: 'es-CL' }[getLang()];
