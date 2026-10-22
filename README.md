@@ -25,3 +25,9 @@ Auf dem iPad: Safari → Teilen → „Zum Home-Bildschirm“ für Vollbild.
 `AudioContext({latencyHint:'interactive'})`, vordekodierte Buffer, `pointerdown`, Lookahead-Scheduler (25 ms / 120 ms), `audioSession.type='playback'` (iOS-Stumm-Schalter).
 
 Struktur & Plan: `docs/PLAN.md`
+
+---
+
+## Our Museum (`museum/`)
+
+Im Ordner [`museum/`](museum/README.md) liegt ein 3D-Museum (Three.js + Vite, Single- & Multiplayer). Für Vercel dort **Root Directory = `museum`** setzen.
