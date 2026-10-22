@@ -66,8 +66,9 @@ Einmalig (geht komplett im Browser, auch am iPad):
 1. **Vercel-Token erstellen:** vercel.com → Profilbild → *Settings* → *Tokens* → *Create* (Name z. B. `github`, Ablauf nach Wunsch, Scope = dein Konto). Token kopieren.
 2. **Token ins Repo:** github.com, eingeloggt als `philcremanns0-boop` → Repo `Repo-1` → *Settings* → *Secrets and variables* → *Actions* →
    *New repository secret* → Name `VERCEL_TOKEN`, Wert = der Token.
-3. **Starten:** Repo → Tab *Actions* → *Deploy museum to Vercel* → *Run workflow* (Branch `claude/our-museum`).
-   Nach ca. 1–2 Minuten steht die Adresse (`https://….vercel.app`) unter dem Lauf in der *Summary*.
+3. **Starten:** Repo → Tab *Actions* → den obersten Lauf *Deploy museum to Vercel* öffnen (er ist rot, weil der Token fehlte) → oben rechts
+   *Re-run all jobs*. Nach ca. 1–2 Minuten steht die Adresse (`https://….vercel.app`) unter dem Lauf in der *Summary*.
+   (Den Knopf *Run workflow* gibt es erst, wenn der Branch `claude/our-museum` der Standard-Branch ist; jeder neue Push startet das Deployment ohnehin automatisch.)
    In Vercel erscheint das Projekt `our-museum`; dort kannst du später eine eigene Domain eintragen.
 
 Alternative (falls du lieber den normalen Vercel-Import willst): Repo in dein Vercel-GitHub-Konto verschieben oder importieren,
