@@ -13,6 +13,7 @@ export function initTexts() {
   $$('[data-title]').forEach((el) => { el.textContent = CONFIG.title; });
   $$('[data-from]').forEach((el) => { el.textContent = CONFIG.from; });
   $$('[data-to]').forEach((el) => { el.textContent = CONFIG.to; });
+  $$('.fr').forEach((el) => { el.hidden = !CONFIG.from; });
 }
 
 const barFill = $('#bar-fill'), barPct = $('#bar-pct');

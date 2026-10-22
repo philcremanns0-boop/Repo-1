@@ -18,6 +18,7 @@ export class MusicPlayer {
     this.i = 0;
     this.audio = new Audio();
     this.audio.preload = 'auto';
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* iOS: Ton trotz Stumm-Schalter */ }
     this.started = false;
     let vol = 0.55;
     try { const v = parseFloat(localStorage.getItem('museum-vol')); if (!Number.isNaN(v)) vol = v; } catch { /* ignore */ }

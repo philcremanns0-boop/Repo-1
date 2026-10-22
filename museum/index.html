@@ -6,10 +6,15 @@
 <title>Our Museum</title>
 <meta name="description" content="A tiny museum, made just for you.">
 <meta name="theme-color" content="#1a1d29">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Our Museum">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231a1d29'/%3E%3Cpath d='M6 24V12l10-6 10 6v12h-3V13.5L16 9 9 13.5V24z' fill='%23fff'/%3E%3C/svg%3E">
 </head>
 <body>
 <canvas id="gl" aria-label="Our Museum"></canvas>
+<div id="vignette"></div>
 
 <div id="ui">
   <div id="lang" role="group" aria-label="Language"><button type="button" data-lang="en">EN</button><button type="button" data-lang="es">ES</button></div>
@@ -17,7 +22,7 @@
   <section id="start" class="screen">
     <div class="start-inner">
       <h1 class="title" data-title>Our Museum</h1>
-      <p class="fromto"><span data-t="from"></span> <em data-from></em><i></i><span data-t="to"></span> <em data-to></em></p>
+      <p class="fromto"><span class="fr"><span data-t="from"></span> <em data-from></em><i></i></span><span data-t="to"></span> <em data-to></em></p>
 
       <div class="panel" id="identity">
         <label class="field">
@@ -52,7 +57,7 @@
   <section id="loading" class="screen" hidden>
     <div class="load-inner">
       <h1 class="title" data-title>Our Museum</h1>
-      <p class="fromto"><span data-t="from"></span> <em data-from></em><i></i><span data-t="to"></span> <em data-to></em></p>
+      <p class="fromto"><span class="fr"><span data-t="from"></span> <em data-from></em><i></i></span><span data-t="to"></span> <em data-to></em></p>
       <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
       <div class="bar-meta"><span data-t="preparing"></span><span id="bar-pct">0%</span></div>
     </div>
@@ -68,9 +73,12 @@
     <button id="btn-leave" type="button" data-t="leave"></button>
     <div id="hints"></div>
     <div id="music" hidden></div>
-    <form id="chat" autocomplete="off" hidden>
-      <input id="chat-input" type="text" maxlength="140" autocomplete="off" data-ph="chatPlaceholder">
-    </form>
+    <div id="chatbox">
+      <div id="chatlog" aria-live="polite"></div>
+      <form id="chat" autocomplete="off" hidden>
+        <input id="chat-input" type="text" maxlength="140" autocomplete="off" data-ph="chatPlaceholder">
+      </form>
+    </div>
     <div id="toast" hidden></div>
     <div id="touch" hidden>
       <div id="stick"><div id="knob"></div></div>

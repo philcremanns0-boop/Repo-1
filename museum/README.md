@@ -8,7 +8,9 @@ Ein kleines 3D-Museum im Browser (Three.js + Vite) – Single- oder Multiplayer,
 
 * Figuren: Seb & Mia (an La La Land angelehnt). Beim Namen entscheidet ein kleines System (Namenslisten + Endungen),
   wer man ist – mit „switch“ zum Korrigieren.
+* Chat wie in Roblox: Verlauf oben links, Nachrichten zusätzlich als Sprechblase über dem Kopf (Enter oder `/`, am Handy 💬). Der Name wird beim Start frei gewählt.
 * Musik-Box unten (Zurück / Play-Pause / Weiter / Fortschritt / Lautstärke).
+* Schriften: EB Garamond (Titel, Bücher) + System-Schrift (SF Pro auf Apple-Geräten) für die Bedienung.
 * Sprache: Englisch (Standard) oder Spanisch (Chile) – Umschalter **EN | ES** oben rechts, alles inkl. Schilder & Bücher.
 * Multiplayer: 5-stelliger Raum-Code oder Einladungslink, direkt Peer-to-Peer (kein eigener Server).
 
@@ -30,7 +32,7 @@ npm run build      # → dist/
 | Moments (Erlebnisse) | `src/photos/moments/*` | 6 Rahmen; leer → schlichte Platzhalter |
 | Video für den Screen | `src/media/video.mp4` (oder `.webm`) | läuft stumm in Schleife, Bereich „Moments“ |
 | Musik | `src/media/music/*.mp3` | alphabetisch; Titel/Künstler in `src/config.js` (`MUSIC_TITLES`) |
-| Bücher | `src/books/*.md` | eine Datei = ein Buch auf einem Lesepult (max. 6) |
+| Bücher | `src/books/*.md` | eine Datei = ein Buch auf einem Lesepult (max. 8). Neue Datei ergänzen → neues Pult erscheint |
 | Namen, Schild, Exit-Text, Bildunterschriften | `src/config.js` | alles zweisprachig `{ en, es }` |
 
 Fotos vorher verkleinern spart Ladezeit: `npm run photos -- /pfad/zu/originalen` (schreibt `.webp` nach `src/photos/`;
@@ -70,8 +72,8 @@ Im Repo-Wurzelordner liegt noch ein anderes Projekt. Deshalb in Vercel beim Impo
 
 | Aktion | Desktop | Handy |
 |---|---|---|
-| Laufen / Rennen | WASD / Shift | Joystick |
-| Umsehen | Maus ziehen, Pfeil links/rechts, Mausrad = Zoom | Wischen |
+| Laufen / Rennen | WASD / Shift | Stick links unten |
+| Umsehen | Maus (einmal in die Szene klicken → Mausblick wie in Minecraft, `Esc` gibt die Maus frei), Pfeil links/rechts, Mausrad = Zoom | Überall wischen |
 | Bild ansehen / Buch lesen / Hinsetzen | E | Button |
 | Aufstehen | F oder E | Button |
 | Tanzen / Winken | G / H | ♪ |

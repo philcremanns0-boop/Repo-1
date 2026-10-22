@@ -11,22 +11,23 @@
 
 export const CONFIG = {
   title: 'Our Museum',
-  from: 'Daniel',
-  to: 'Emma',
+  from: '',            // Dein Name (leer lassen = „From …“ wird nicht angezeigt)
+  to: 'Emilia',
+  toShort: 'Emi',      // Kosename, wird auf dem Schild verwendet
 
   // Schild in der Eingangshalle
   plaque: {
     en: {
-      kicker: 'A GIFT FROM DANIEL',
-      title: 'For Emma',
+      kicker: 'A GIFT',
+      title: 'For Emi',
       text: 'A little museum of everything we are,\nand everything still to come.',
-      signature: 'Always yours',
+      signature: '',
     },
     es: {
-      kicker: 'UN REGALO DE DANIEL',
-      title: 'Para Emma',
+      kicker: 'UN REGALO',
+      title: 'Para Emi',
       text: 'Un museo chiquitito de todo lo que somos\ny de todo lo que viene.',
-      signature: 'Siempre tuyo',
+      signature: '',
     },
   },
 

@@ -45,12 +45,12 @@ function rr(ctx, x, y, w, h, r) {
 export function wallTexture() {
   const [c, g] = mk(64, 512);
   const grd = g.createLinearGradient(0, 0, 0, 512);
-  grd.addColorStop(0.0, '#d2d4d8');   // oben (unter der dunklen Decke)
-  grd.addColorStop(0.12, '#dfe1e4');
-  grd.addColorStop(0.45, '#eceded');
-  grd.addColorStop(0.88, '#e2e3e6');
-  grd.addColorStop(0.97, '#c3c4c8');  // Sockel
-  grd.addColorStop(1.0, '#b3b4b9');
+  grd.addColorStop(0.0, '#d9cdbd');   // oben (unter der dunklen Decke)
+  grd.addColorStop(0.12, '#e6dccd');
+  grd.addColorStop(0.45, '#f2eadf');
+  grd.addColorStop(0.88, '#e9dfd2');
+  grd.addColorStop(0.97, '#d3c7b8');  // Sockel
+  grd.addColorStop(1.0, '#c0b3a3');
   g.fillStyle = grd; g.fillRect(0, 0, 64, 512);
   grain(g, 64, 512, 5);
   return toTex(c, { wrap: true });
@@ -58,7 +58,7 @@ export function wallTexture() {
 
 export function floorTexture() {
   const [c, g] = mk(512, 512);
-  g.fillStyle = '#e6e4e0'; g.fillRect(0, 0, 512, 512);
+  g.fillStyle = '#eadfd0'; g.fillRect(0, 0, 512, 512);
   for (let i = 0; i < 26; i++) {
     const x = Math.random() * 512, y = Math.random() * 512, r = 70 + Math.random() * 150;
     const gr = g.createRadialGradient(x, y, 0, x, y, r);
@@ -75,8 +75,8 @@ export function floorTexture() {
 
 export function ceilingTexture() {
   const [c, g] = mk(256, 256);
-  g.fillStyle = '#2a2e36'; g.fillRect(0, 0, 256, 256);
-  g.fillStyle = '#4a505b';
+  g.fillStyle = '#2c2723'; g.fillRect(0, 0, 256, 256);
+  g.fillStyle = '#4e443b';
   g.fillRect(0, 0, 256, 5); g.fillRect(0, 0, 5, 256);
   g.fillStyle = 'rgba(255,255,255,0.03)';
   g.fillRect(4, 4, 252, 252);
@@ -87,9 +87,9 @@ export function ceilingTexture() {
 export function blackWallTexture() {
   const [c, g] = mk(64, 256);
   const grd = g.createLinearGradient(0, 0, 0, 256);
-  grd.addColorStop(0, '#23262e');
-  grd.addColorStop(0.5, '#383d49');
-  grd.addColorStop(1, '#262a32');
+  grd.addColorStop(0, '#2b2630');
+  grd.addColorStop(0.5, '#403a47');
+  grd.addColorStop(1, '#2c272f');
   g.fillStyle = grd; g.fillRect(0, 0, 64, 256);
   grain(g, 64, 256, 4);
   return toTex(c, { wrap: true });
@@ -223,18 +223,18 @@ export function plaqueTexture(cfg) {
   g.fillStyle = '#101216'; g.fillRect(0, 0, 1024, 560);
   g.fillStyle = 'rgba(255,255,255,0.05)'; g.fillRect(0, 0, 1024, 560);
   g.fillStyle = 'rgba(255,255,255,0.5)';
-  g.font = '600 22px "Inter Variable", sans-serif';
+  g.font = '600 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif';
   g.letterSpacing = '5px';
   g.fillText(cfg.kicker || '', 64, 88);
   g.letterSpacing = '0px';
   g.fillStyle = '#fff';
-  g.font = '400 132px "Instrument Serif", serif';
+  g.font = '400 132px "EB Garamond", serif';
   g.fillText(cfg.title || '', 60, 232);
   g.fillStyle = 'rgba(255,255,255,0.68)';
-  g.font = '400 30px "Inter Variable", sans-serif';
+  g.font = '400 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif';
   (cfg.text || '').split('\n').forEach((ln, i) => g.fillText(ln, 64, 318 + i * 44));
   g.fillStyle = 'rgba(255,255,255,0.4)';
-  g.font = 'italic 400 34px "Instrument Serif", serif';
+  g.font = 'italic 400 34px "EB Garamond", serif';
   g.fillText(cfg.signature || '', 64, 496);
   return toTex(c);
 }
@@ -255,7 +255,7 @@ export function labelTexture(text, { dot = true, serif = false } = {}) {
   const hit = labelCache.get(key);
   if (hit) return hit;
   const S = 3, H = 26, padX = 11, dotW = dot ? 14 : 0;
-  const font = serif ? `italic 400 15px "Instrument Serif", serif` : `600 12px "Inter Variable", sans-serif`;
+  const font = serif ? `italic 400 15px "EB Garamond", serif` : `600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif`;
   const [m, mg] = mk(8, 8);
   mg.font = font;
   const tw = Math.ceil(mg.measureText(text).width);
@@ -276,7 +276,7 @@ export function labelTexture(text, { dot = true, serif = false } = {}) {
 
 export function bubbleTexture(text) {
   const S = 3, maxW = 190, pad = 11, lh = 17;
-  const font = '500 13px "Inter Variable", system-ui, sans-serif';
+  const font = '500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", system-ui, sans-serif';
   const [m, mg] = mk(8, 8);
   mg.font = font;
   const words = text.split(/\s+/);
@@ -310,8 +310,8 @@ export function canvasTex(w, h, draw, { mip = true } = {}) {
   return { texture, redraw };
 }
 
-const SERIF = '"Instrument Serif", Georgia, serif';
-const SANS = '"Inter Variable", system-ui, sans-serif';
+const SERIF = '"EB Garamond", Georgia, serif';
+const SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif';
 
 export function drawPlaque(g, w, h, cfg) {
   g.fillStyle = '#121418'; g.fillRect(0, 0, w, h);
@@ -320,13 +320,13 @@ export function drawPlaque(g, w, h, cfg) {
   g.fillText(cfg.kicker || '', 64, 88);
   g.letterSpacing = '0px';
   g.fillStyle = '#f6f4ef';
-  g.font = `400 132px ${SERIF}`;
+  g.font = `400 150px ${SERIF}`;
   g.fillText(cfg.title || '', 60, 232);
   g.fillStyle = 'rgba(255,255,255,0.7)';
   g.font = `400 30px ${SANS}`;
   (cfg.text || '').split('\n').forEach((ln, i) => g.fillText(ln, 64, 318 + i * 44));
   g.fillStyle = 'rgba(255,255,255,0.45)';
-  g.font = `italic 400 34px ${SERIF}`;
+  g.font = `italic 400 38px ${SERIF}`;
   g.fillText(cfg.signature || '', 64, 496);
 }
 
@@ -337,10 +337,10 @@ export function drawSign(g, w, h, title, sub, n) {
   g.fillText(n, 60, 82);
   g.letterSpacing = '0px';
   g.fillStyle = '#f6f4ef';
-  g.font = `400 150px ${SERIF}`;
-  g.fillText(title, 56, 218);
+  g.font = `400 168px ${SERIF}`;
+  g.fillText(title, 54, 222);
   g.fillStyle = 'rgba(255,255,255,0.55)';
-  g.font = `italic 400 42px ${SERIF}`;
+  g.font = `italic 400 46px ${SERIF}`;
   g.fillText(sub, 62, 268);
 }
 
@@ -350,8 +350,8 @@ export function drawWallText(g, w, h, kicker, title) {
   g.fillText(kicker.toUpperCase(), 8, 54);
   g.letterSpacing = '0px';
   g.fillStyle = '#23252b';
-  g.font = `400 150px ${SERIF}`;
-  g.fillText(title, 4, 196);
+  g.font = `400 168px ${SERIF}`;
+  g.fillText(title, 2, 200);
 }
 
 export function drawExitSign(g, w, h, word) {
@@ -374,7 +374,7 @@ export function drawLabels(g, w, h, defs, pick, noWord) {
     g.fillStyle = '#f1efea'; g.fillRect(x, y, cw, ch);
     g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = 2; g.strokeRect(x + 3, y + 3, cw - 6, ch - 6);
     g.fillStyle = '#1b1c20';
-    g.font = `italic 400 34px ${SERIF}`;
+    g.font = `italic 400 38px ${SERIF}`;
     const title = d.title ? pick(d.title) : `${noWord} ${String(d.n).padStart(2, '0')}`;
     g.fillText(title, x + 18, y + 54, cw - 34);
     g.fillStyle = '#6a6c72';
@@ -432,5 +432,28 @@ export function floorGlowTexture() {
   const gr = g.createRadialGradient(0, 64, 0, 0, 64, 110);
   gr.addColorStop(0, 'rgba(255,230,180,0.5)'); gr.addColorStop(1, 'rgba(255,230,180,0)');
   g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  return toTex(c, { mip: false });
+}
+
+
+/* Weiche Leuchtpunkte (Staub, Lichterkette, Leselampen) */
+export function glowTexture() {
+  const [c, g] = mk(64, 64);
+  const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)');
+  gr.addColorStop(0.25, 'rgba(255,255,255,0.55)');
+  gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  return toTex(c, { mip: false });
+}
+
+/* Warmer Lichtfleck auf dem Boden unter den Strahlern */
+export function poolTexture() {
+  const [c, g] = mk(128, 128);
+  g.save(); g.translate(64, 64); g.scale(1, 0.7);
+  const gr = g.createRadialGradient(0, 0, 0, 0, 0, 64);
+  gr.addColorStop(0, 'rgba(255,255,255,0.9)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(-64, -91, 128, 182);
+  g.restore();
   return toTex(c, { mip: false });
 }

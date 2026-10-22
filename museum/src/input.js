@@ -8,6 +8,8 @@ export class Input {
     this.lookDX = 0; this.lookDY = 0; this.zoom = 0;
     this.pressed = new Set();       // Tasten, die seit dem letzten Frame gedrückt wurden
     this.enabled = true;
+    this.locked = false;          // Pointer-Lock aktiv (Minecraft-Mausblick)
+    this.lockAllowed = true;
     this.touch = matchMedia('(pointer: coarse)').matches;
     this.stick = { id: null, x: 0, y: 0, cx: 0, cy: 0 };
     this.lookId = null; this.lx = 0; this.ly = 0;
@@ -28,6 +30,9 @@ export class Input {
 
     const cv = this.canvas;
     cv.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse' && this.lockAllowed && !document.pointerLockElement && cv.requestPointerLock) {
+        try { const r = cv.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch { /* Drag-Fallback */ }
+      }
       if (e.pointerType === 'touch') {
         if (this.lookId === null) { this.lookId = e.pointerId; this.lx = e.clientX; this.ly = e.clientY; cv.setPointerCapture(e.pointerId); }
         return;
@@ -41,6 +46,8 @@ export class Input {
     });
     const end = (e) => { if (e.pointerId === this.lookId) { this.lookId = null; cv.classList.remove('dragging'); } };
     cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+    document.addEventListener('pointerlockchange', () => { this.locked = document.pointerLockElement === cv; cv.classList.toggle('locked', this.locked); });
+    document.addEventListener('mousemove', (e) => { if (this.locked) { this.lookDX += e.movementX; this.lookDY += e.movementY; } });
     cv.addEventListener('contextmenu', (e) => e.preventDefault());
     cv.addEventListener('wheel', (e) => { e.preventDefault(); this.zoom += Math.sign(e.deltaY); }, { passive: false });
 
@@ -88,3 +95,5 @@ export class Input {
     this.lookDX = 0; this.lookDY = 0; this.zoom = 0;
   }
 }
+
+Input.prototype.releaseLock = function releaseLock() { if (document.pointerLockElement) document.exitPointerLock(); };

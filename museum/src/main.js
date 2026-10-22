@@ -92,8 +92,7 @@ const music = new MusicPlayer();
 
 const assetsPromise = (async () => {
   const fontJobs = [
-    '400 40px "Instrument Serif"', 'italic 400 40px "Instrument Serif"',
-    '500 14px "Inter Variable"', '600 14px "Inter Variable"',
+    '400 40px "EB Garamond"', 'italic 400 40px "EB Garamond"', '500 40px "EB Garamond"',
   ].map((f) => document.fonts.load(f).catch(() => {}));
   await Promise.all(fontJobs);
   prog.assets = 0.05;
@@ -294,10 +293,10 @@ async function boot(mode) {
 
 /* ═════════════ Multiplayer ═════════════ */
 function wireNet() {
-  net.on('join', (p) => { syncRemotes(); UI.toast(t('joined', p.name)); UI.setRoom(net.code, net.count); });
+  net.on('join', (p) => { syncRemotes(); addChat(null, t('joined', p.name)); UI.setRoom(net.code, net.count); });
   net.on('leave', (id) => {
     const a = remotes.get(id);
-    if (a) UI.toast(t('left', a.name));
+    if (a) addChat(null, t('left', a.name));
     syncRemotes(); UI.setRoom(net.code, net.count);
   });
   net.on('state', (m) => {
@@ -308,7 +307,7 @@ function wireNet() {
   });
   net.on('chat', (m) => {
     const a = remotes.get(m.id);
-    if (a) a.say(String(m.text).slice(0, 140));
+    if (a) { const txt = String(m.text).slice(0, 140); a.say(txt); addChat(a.name, txt); }
   });
   net.on('hostLeft', () => { UI.toast(t('hostLeft'), 5000); setTimeout(() => leave(), 2400); });
   UI.onCopy(async () => {
@@ -381,7 +380,7 @@ function loop(now) {
   UI.setPrompt(pr, sx, sy);
   if (input.touch) { const b = $('#t-act'); b.hidden = !local.prompt; if (local.prompt) b.textContent = local.prompt.label; }
 
-  renderer.render(world.scene, camera);
+  if (!blackout) renderer.render(world.scene, camera);   // hinter dem schwarzen Overlay nichts rendern → Akku sparen
   input.endFrame();
   adapt(dt * 1000);
 }
@@ -403,16 +402,28 @@ function adapt(ms) {
   else if (okFrames > 400 && dpr < DPR_MAX) { dpr = Math.min(DPR_MAX, dpr + 0.25); okFrames = 0; resize(); }
 }
 
-/* ═════════════ Chat, Touch, Verlassen ═════════════ */
-const chatForm = $('#chat'), chatInput = $('#chat-input');
+/* ═════════════ Chat (Roblox-Stil) ═════════════ */
+const chatBox = $('#chatbox'), chatLog = $('#chatlog'), chatForm = $('#chat'), chatInput = $('#chat-input');
 let chatOpen = false;
+const NAME_COLORS = ['#ff8fa3', '#ffb86b', '#ffe08a', '#9be3a1', '#7fd6e8', '#9db4ff', '#c9a2ff', '#ff9de0'];
+const nameColor = (n) => { let h = 0; for (const c of n) h = (h * 31 + c.charCodeAt(0)) >>> 0; return NAME_COLORS[h % NAME_COLORS.length]; };
+function addChat(name, text) {
+  const p = document.createElement('p');
+  p.className = name ? 'cl' : 'cl sys';
+  if (name) { const b = document.createElement('b'); b.textContent = name + ':'; b.style.color = nameColor(name); p.append(b); }
+  p.append(document.createTextNode(text));
+  chatLog.append(p);
+  while (chatLog.children.length > 40) chatLog.firstChild.remove();
+  setTimeout(() => p.classList.add('old'), 14000);
+}
 function openChat() {
-  if (!input) return;
-  chatOpen = true; chatForm.hidden = false; input.enabled = false; chatInput.value = '';
+  if (!input || chatOpen) return;
+  chatOpen = true; chatForm.hidden = false; chatBox.classList.add('typing'); input.enabled = false; chatInput.value = '';
+  input.releaseLock();
   chatInput.focus();
 }
 function closeChat() {
-  chatOpen = false; chatForm.hidden = true; input.enabled = true; chatInput.blur();
+  chatOpen = false; chatForm.hidden = true; chatBox.classList.remove('typing'); input.enabled = true; chatInput.blur();
 }
 chatForm.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -420,11 +431,12 @@ chatForm.addEventListener('submit', (e) => {
   closeChat();
   if (!text) return;
   local.actor.say(text);
+  addChat(local.actor.name, text);
   if (net) net.sendChat(text);
 });
 chatInput.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeChat(); e.stopPropagation(); });
 addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && ready && !chatOpen && !(document.activeElement && document.activeElement.tagName === 'INPUT')) { e.preventDefault(); openChat(); }
+  if ((e.key === 'Enter' || e.key === '/') && ready && !chatOpen && !exiting && !reading && !(document.activeElement && document.activeElement.tagName === 'INPUT')) { e.preventDefault(); openChat(); }
 });
 $('#t-chat').addEventListener('click', () => (chatOpen ? closeChat() : openChat()));
 $('#t-dance').addEventListener('click', () => input.pressed.add('g'));
@@ -441,6 +453,7 @@ function openReader(book) {
   const body = $('#reader-body');
   body.replaceChildren(...b.body.split(/\n\s*\n/).map((para) => { const p = document.createElement('p'); p.textContent = para; return p; }));
   reader.hidden = false;
+  input.releaseLock();
   reader.querySelector('.page').scrollTop = 0;
 }
 function closeReader() { reading = null; reader.hidden = true; }
@@ -449,28 +462,30 @@ reader.addEventListener('pointerdown', (e) => { if (e.target === reader) input.p
 
 /* ═════════════ Exit: Fade → schwarz → „I love you / Te quiero“ ═════════════ */
 const exitScreen = $('#exit-screen');
-let exiting = false;
+let exiting = false, blackout = false;
 function checkExit() {
   if (exiting) return;
   const z = world.exitZone, p = local.actor.pos;
   if (local.state === 'free' && p.x > z.minX && p.x < z.maxX && p.z > z.minZ && p.z < z.maxZ) startExit();
 }
 function startExit() {
-  exiting = true; input.enabled = false;
+  exiting = true; input.enabled = false; input.releaseLock();
+  if (chatOpen) closeChat();
   $('#exit-text').textContent = pick(CONFIG.exitText);
   $('#exit-back').textContent = t('backToMuseum');
   exitScreen.className = ''; exitScreen.hidden = false;
   void exitScreen.offsetWidth;
   exitScreen.classList.add('on');
-  setTimeout(() => exitScreen.classList.add('text'), 4300);
-  setTimeout(() => exitScreen.classList.add('btn'), 9500);
+  setTimeout(() => { exitScreen.classList.add('text'); blackout = true; }, 4300);
+  setTimeout(() => exitScreen.classList.add('show-back'), 9500);
 }
 onLang(() => { if (exiting) { $('#exit-text').textContent = pick(CONFIG.exitText); $('#exit-back').textContent = t('backToMuseum'); } });
 $('#exit-back').addEventListener('click', () => {
   const a = local.actor;
   a.pos.set(10.6, 0, 7.6); a.heading = -Math.PI / 2; local.vel.set(0, 0);
   rig.yaw = a.heading + Math.PI; rig.snapNext = true;
-  exitScreen.classList.remove('text', 'btn'); exitScreen.classList.add('out');
+  exitScreen.classList.remove('text', 'show-back'); exitScreen.classList.add('out');
+  blackout = false;
   setTimeout(() => { exitScreen.hidden = true; exiting = false; input.enabled = true; }, 1500);
 });
 

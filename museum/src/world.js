@@ -65,9 +65,10 @@ export function buildWorld({ photos, screen, books }) {
   const track = (x) => { textures.push(x); return x; };
 
   /* ───── Licht ───── */
-  const key = new THREE.DirectionalLight(0xfff1e0, 1.05); key.position.set(-6, 12, 8);
-  const fill = new THREE.DirectionalLight(0xe6edff, 0.7); fill.position.set(7, 7, -9);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xece8e2, 2.8), key, fill);
+  // Warmes „Golden Hour“-Licht: niedrige, honigfarbene Sonne + kühler, rosiger Gegenlicht-Hauch
+  const key = new THREE.DirectionalLight(0xffe0b8, 1.2); key.position.set(-8, 6, 7);
+  const fill = new THREE.DirectionalLight(0xd9c6ff, 0.35); fill.position.set(7, 5, -9);
+  scene.add(new THREE.HemisphereLight(0xfff5e8, 0xd2c1ab, 2.3), key, fill);
 
   /* ───── Materialien ───── */
   const wallTex = track(T.wallTexture());
@@ -77,10 +78,10 @@ export function buildWorld({ photos, screen, books }) {
   };
   const blackTex = track(T.blackWallTexture());
   const M = {
-    white: new THREE.MeshLambertMaterial({ color: 0xf0efeb }),
+    white: new THREE.MeshLambertMaterial({ color: 0xf3ece1 }),
     black: new THREE.MeshLambertMaterial({ color: 0x15171b }),
     frame: new THREE.MeshLambertMaterial({ color: 0x101114 }),
-    mat: new THREE.MeshLambertMaterial({ color: 0xf5f3ee }),
+    mat: new THREE.MeshLambertMaterial({ color: 0xf6f0e4 }),
     wood: new THREE.MeshLambertMaterial({ color: 0xd6c4a4 }),
     walnut: new THREE.MeshLambertMaterial({ color: 0x6d4a33 }),
     paper: new THREE.MeshLambertMaterial({ color: 0xf3eee0 }),
@@ -89,9 +90,10 @@ export function buildWorld({ photos, screen, books }) {
     pot: new THREE.MeshLambertMaterial({ color: 0xc9b9a3 }),
     leaf: new THREE.MeshLambertMaterial({ color: 0x4f6b45 }),
     leaf2: new THREE.MeshLambertMaterial({ color: 0x6b8a58 }),
-    wash: new THREE.MeshBasicMaterial({ map: track(T.washTexture()), transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
+    wash: new THREE.MeshBasicMaterial({ map: track(T.washTexture()), color: 0xffd3a0, transparent: true, opacity: 0.3, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
     shadow: new THREE.MeshBasicMaterial({ map: track(T.boxShadowTexture()), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
-    heart: new THREE.MeshBasicMaterial({ color: 0xe77c88 }),
+    pool: new THREE.MeshBasicMaterial({ map: track(T.poolTexture()), color: 0xffc98f, transparent: true, opacity: 0.32, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+    bulb: new THREE.MeshBasicMaterial({ color: 0xffe3b5 }),
   };
   const spineMats = [0x7a2f2a, 0x2f4a5c, 0x5b6b3a, 0xc9a35b, 0x3b3b44, 0x8a5a3a, 0xa8b3a0, 0x6b3e5a, 0xd8cfc0, 0x24382f].map((c) => new THREE.MeshLambertMaterial({ color: c }));
 
@@ -194,6 +196,7 @@ export function buildWorld({ photos, screen, books }) {
     return photoMats.get(tx);
   };
   const wallSpots = [];
+  const lamps = [];
   const counters = { us: 0, moments: 0, hero: 0 };
   const addFrame = (section, spec) => {
     const list = photos[section];
@@ -293,9 +296,10 @@ export function buildWorld({ photos, screen, books }) {
     const rug = new THREE.Mesh(plane(4.3, 5.9), new THREE.MeshLambertMaterial({ map: track(T.rugTexture()) }));
     rug.rotation.x = -PI / 2; rug.position.set(8.5, 0.008, -3.3); rug.rotation.z = 0;
     scene.add(rug);
-    const spots = [[7.2, -0.8, 0.35], [9.8, -2.5, -0.4], [7.2, -4.3, 0.3], [9.8, -6.0, -0.3], [7.2, -6.9, 0.2], [10.2, 0.2, -0.5]];
+    const spots = [[7.2, -0.8, 0.35], [9.8, -2.5, -0.4], [7.2, -4.3, 0.3], [9.8, -6.0, -0.3], [7.2, -6.9, 0.2], [10.2, 0.2, -0.5], [9.9, -7.4, -0.2], [7.0, 1.3, 0.45]];
     const covers = [0x5a1f26, 0x1f3a4a, 0x2d4a33, 0x4a3a1f, 0x3a2a4a, 0x1d1d22];
     books.slice(0, spots.length).forEach((b, i) => lectern(spots[i], b, covers[i % covers.length]));
+    lamps.push(...spots.slice(0, Math.min(books.length, spots.length)).map(([x, z]) => [x, 1.55, z]));
     plant(11.0, 2.0);
   }
 
@@ -323,6 +327,7 @@ export function buildWorld({ photos, screen, books }) {
   for (const s of wallSpots) {
     const k = `${Math.round(s.x * 0.5)}|${Math.round(s.z * 0.5)}|${s.nx.toFixed(1)}|${s.nz.toFixed(1)}`;
     if (seen.has(k)) continue; seen.add(k);
+    batch.add(plane(3.4, 2.6), M.pool, M4(s.x + s.nx * 1.15, 0.012, s.z + s.nz * 1.15, Math.atan2(s.nx, s.nz), -PI / 2));
     batch.add(plane(3.2, 3.0), M.wash, M4(s.x + s.nx * 0.014, 2.7, s.z + s.nz * 0.014, Math.atan2(s.nx, s.nz)));
     const fx = s.x + s.nx * 0.85, fz = s.z + s.nz * 0.85, fy = H - 0.3;
     const dir = new THREE.Vector3(s.x - fx, 2.4 - fy, s.z - fz).normalize();
@@ -397,6 +402,42 @@ export function buildWorld({ photos, screen, books }) {
     });
   }
 
+  /* ───── Stimmung: Lichterkette, Leselampen, schwebender Staub im Licht ───── */
+  const glowTex = track(T.glowTexture());
+  const glowPts = (pts, size, opacity, color) => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pts.flat(), 3));
+    const m = new THREE.PointsMaterial({ map: glowTex, size, sizeAttenuation: true, transparent: true, opacity, depthWrite: false, blending: THREE.AdditiveBlending, color, toneMapped: false });
+    const p = new THREE.Points(g, m); p.frustumCulled = false; scene.add(p);
+    return p;
+  };
+  {
+    const bulbs = [];
+    const arc = (x0, x1, y, z, sag, n) => {
+      for (let i = 0; i <= n; i++) {
+        const u = i / n, x = x0 + (x1 - x0) * u, yy = y - sag * 4 * u * (1 - u);
+        bulbs.push([x, yy, z]);
+      }
+    };
+    arc(-3.7, 0, 3.75, HALL.maxZ - 0.3, 0.55, 8);
+    arc(0, 3.7, 3.75, HALL.maxZ - 0.3, 0.55, 8);
+    arc(-3.7, 3.7, 3.95, HALL.maxZ - 0.3, 0.2, 14);
+    bulbs.forEach(([x, y, z]) => batch.add(new THREE.SphereGeometry(0.028, 8, 6), M.bulb, M4(x, y, z)));
+    glowPts(bulbs, 0.34, 0.85, 0xffcf8a);
+    if (lamps.length) glowPts(lamps, 0.9, 0.5, 0xffc98a);
+  }
+  const DUST = 240, dustPos = new Float32Array(DUST * 3), dustSeed = new Float32Array(DUST * 3);
+  const rr2 = rng(42);
+  for (let i = 0; i < DUST; i++) {
+    dustSeed[i * 3] = dustPos[i * 3] = HALL.minX + 1 + rr2() * (W - 2);
+    dustSeed[i * 3 + 1] = dustPos[i * 3 + 1] = 0.4 + rr2() * 3.4;
+    dustSeed[i * 3 + 2] = dustPos[i * 3 + 2] = HALL.minZ + 1 + rr2() * (D - 2);
+  }
+  const dustGeo = new THREE.BufferGeometry();
+  dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+  const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({ map: glowTex, size: 0.075, sizeAttenuation: true, transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending, color: 0xffe2b8, toneMapped: false }));
+  dust.frustumCulled = false; scene.add(dust);
+
   batch.build(scene);
   atlas.redraw();
 
@@ -425,6 +466,15 @@ export function buildWorld({ photos, screen, books }) {
     bounds: { minX: HALL.minX, maxX: HALL.maxX + 0.25, minZ: HALL.minZ, maxZ: HALL.maxZ },
     exitZone: { minX: ALCOVE.minX + 1.1, maxX: ALCOVE.maxX, minZ: ALCOVE.minZ, maxZ: ALCOVE.maxZ },
     relocalize() { atlas.redraw(); redrawers.forEach((f) => f()); },
-    update() { /* statisch */ },
+    update(time) {
+      // Staubkörnchen treiben langsam durchs Licht
+      for (let i = 0; i < DUST; i++) {
+        const k = i * 3, ph = dustSeed[k] * 1.7 + i;
+        dustPos[k] = dustSeed[k] + Math.sin(time * 0.11 + ph) * 0.6;
+        dustPos[k + 1] = dustSeed[k + 1] + Math.sin(time * 0.09 + ph * 1.3) * 0.35;
+        dustPos[k + 2] = dustSeed[k + 2] + Math.cos(time * 0.1 + ph) * 0.6;
+      }
+      dustGeo.attributes.position.needsUpdate = true;
+    },
   };
 }

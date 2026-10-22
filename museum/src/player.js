@@ -28,7 +28,7 @@ export class CameraRig {
   update(dt, input, local, colliders, mode, frame) {
     // Eingabe
     if (input.lookDX || input.lookDY) {
-      const sens = input.touch ? 0.0065 : 0.0048;
+      const sens = input.locked ? 0.0026 : input.touch ? 0.0065 : 0.0048;
       this.yaw -= input.lookDX * sens;
       this.pitch = Math.max(-0.25, Math.min(1.15, this.pitch + input.lookDY * sens));
     }
