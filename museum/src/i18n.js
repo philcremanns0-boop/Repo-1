@@ -1,4 +1,4 @@
-// Sprache: Englisch (Standard) oder Spanisch (Chile). Wird im Browser gemerkt.
+// Sprache: Englisch (Standard), Deutsch oder Spanisch (Chile). Wird im Browser gemerkt.
 const DICT = {
   en: {
     from: 'From',
@@ -50,6 +50,57 @@ const DICT = {
     pause: 'Pause',
     volume: 'Volume',
     no: 'No.',
+  },
+  de: {
+    from: 'Von',
+    to: 'Für',
+    yourName: 'Dein Name',
+    playingAs: 'Du bist',
+    switchChar: 'wechseln',
+    single: 'Single Player',
+    multi: 'Multiplayer',
+    create: 'Raum erstellen',
+    or: 'oder',
+    join: 'Beitreten',
+    codePlaceholder: 'Raum-Code',
+    back: 'Zurück',
+    startHint: 'Es läuft Musik. Schalte den Ton an.',
+    preparing: 'Die Sammlung wird vorbereitet',
+    copy: 'Link kopieren',
+    copied: 'Kopiert',
+    leave: 'Verlassen',
+    room: 'Raum',
+    online: 'online',
+    view: 'Ansehen',
+    back2: 'Zurücktreten',
+    sit: 'Hinsetzen',
+    standUp: 'Aufstehen',
+    read: 'Lesen',
+    close: 'Schließen',
+    viewing: 'Betrachtet',
+    reading: 'Liest',
+    chatPlaceholder: 'Schreib etwas…  (Enter zum Senden)',
+    connecting: 'Verbinde…',
+    creating: 'Raum wird erstellt…',
+    notFound: 'Kein Raum mit diesem Code gefunden.',
+    badCode: 'Bitte den 5-stelligen Raum-Code eingeben.',
+    full: 'Dieser Raum ist voll.',
+    hostLeft: 'Der Host hat das Museum verlassen.',
+    joined: (n) => `${n} ist beigetreten`,
+    left: (n) => `${n} hat den Raum verlassen`,
+    netError: 'Verbindung fehlgeschlagen. Internet prüfen und nochmal versuchen.',
+    hintsDesktop: 'WASD laufen · in die Szene klicken für Mausblick (Esc gibt die Maus frei) · Shift rennen · E Interagieren · G Tanzen · H Winken · Enter Chat',
+    hintsTouch: 'Stick zum Laufen · irgendwo wischen zum Umsehen',
+    shareText: 'Raum-Code',
+    exit: 'Ausgang',
+    backToMuseum: 'Zurück ins Museum',
+    music: 'Musik',
+    prev: 'Zurück',
+    next: 'Weiter',
+    play: 'Abspielen',
+    pause: 'Pause',
+    volume: 'Lautstärke',
+    no: 'Nr.',
   },
   es: {
     from: 'De',
@@ -104,16 +155,17 @@ const DICT = {
   },
 };
 
+const LANG_TAG = { en: 'en', de: 'de', es: 'es-CL' };
 let lang = 'en';
-try { const s = localStorage.getItem('museum-lang'); if (s === 'en' || s === 'es') lang = s; } catch { /* privater Modus */ }
+try { const s = localStorage.getItem('museum-lang'); if (s === 'en' || s === 'de' || s === 'es') lang = s; } catch { /* privater Modus */ }
 const listeners = [];
 
 export const getLang = () => lang;
 export const setLang = (l) => {
-  if (l !== 'en' && l !== 'es') return;
+  if (l !== 'en' && l !== 'de' && l !== 'es') return;
   lang = l;
   try { localStorage.setItem('museum-lang', l); } catch { /* ignore */ }
-  document.documentElement.lang = l === 'es' ? 'es-CL' : 'en';
+  document.documentElement.lang = LANG_TAG[l];
   listeners.forEach((f) => f(l));
 };
 export const onLang = (f) => listeners.push(f);
@@ -123,4 +175,4 @@ export const t = (key, ...a) => {
   return typeof v === 'function' ? v(...a) : v;
 };
 /* Wählt aus {en, es} den aktuellen Text (Strings bleiben unverändert). */
-export const pick = (o) => (o && typeof o === 'object' ? o[lang] ?? o.en : o);
+export const pick = (o) => (o && typeof o === 'object' ? o[lang] ?? o.en ?? o.de ?? o.es : o);

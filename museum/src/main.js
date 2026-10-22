@@ -38,13 +38,14 @@ function resize() {
 }
 resize();
 addEventListener('resize', resize);
+// Bei WebGL-Kontextverlust (iOS unter Speicherdruck) lädt die Seite sauber neu
+canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); setTimeout(() => location.reload(), 300); });
 
 /* ═════════════ Assets vorladen (startet sofort beim Seitenaufruf) ═════════════ */
 const prog = { assets: 0, build: 0, gpu: 0 };
 const realProgress = () => prog.assets * 0.5 + prog.build * 0.12 + prog.gpu * 0.38;
 
-async function decodePhoto(url) {
-  const MAX = 1600;
+async function decodePhoto(url, MAX = 1280) {
   const blob = await (await fetch(url)).blob();
   let src, w, h;
   try {
@@ -67,6 +68,8 @@ async function decodePhoto(url) {
   tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   tex.generateMipmaps = true;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
+  // Nach dem GPU-Upload den CPU-Pixelpuffer freigeben (spart auf iPhone/iPad viel Arbeitsspeicher)
+  tex.onUpdate = () => { tex.onUpdate = null; c.width = c.height = 1; };
   return { texture: tex, aspect: cw / ch };
 }
 
@@ -85,6 +88,7 @@ async function loadVideo(url) {
   const tex = new THREE.VideoTexture(v);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.generateMipmaps = false; tex.minFilter = THREE.LinearFilter;
+  tex.userData = { aspect: v.videoWidth && v.videoHeight ? v.videoWidth / v.videoHeight : 16 / 9 };
   return { texture: tex, video: v, draw: null };
 }
 
@@ -100,19 +104,20 @@ const assetsPromise = (async () => {
   // Fotos je Bereich laden (fehlt ein Bereich → schlichte Platzhalter)
   const jobs = [];
   for (const [sec, urls] of Object.entries(PHOTO_URLS)) urls.forEach((u, i) => jobs.push({ sec, u, i }));
-  const results = { hero: [], us: [], moments: [] };
+  const results = { hero: [], us: [], moments: [], flowers: [] };
+  const MAXPX = { hero: 1400, us: 1200, moments: 1280, flowers: 900 };
   let done = 0;
   const queue = jobs.slice();
   const worker = async () => {
     while (queue.length) {
       const j = queue.shift();
-      try { results[j.sec][j.i] = await decodePhoto(j.u); } catch (e) { console.warn('photo failed', j.u, e); }
+      try { results[j.sec][j.i] = await decodePhoto(j.u, MAXPX[j.sec]); } catch (e) { console.warn('photo failed', j.u, e); }
       done++; prog.assets = 0.05 + 0.65 * (done / jobs.length);
     }
   };
   await Promise.all([worker(), worker(), worker()]);
   const photos = {};
-  const need = { hero: 1, us: 7, moments: 6 };
+  const need = { hero: 1, us: 7, moments: 12, flowers: 22 };
   for (const sec of Object.keys(need)) {
     photos[sec] = results[sec].filter(Boolean);
     if (!photos[sec].length) {
@@ -447,7 +452,7 @@ const reader = $('#reader');
 let reading = null;
 function openReader(book) {
   reading = book;
-  const b = getLang() === 'es' ? book.es : book.en;
+  const b = book[getLang()] || book.en;
   $('#reader-kicker').textContent = pick(CONFIG.sections.words.title);
   $('#reader-title').textContent = b.title;
   const body = $('#reader-body');

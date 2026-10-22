@@ -6,20 +6,21 @@ import { pick, t as tr } from './i18n.js';
 
 /*  Grundriss (Draufsicht, x → rechts, z → zum Betrachter)
 
-      z=-9  ┌──────────┬────────────────┬──────────┐
-            │  About   │    Moments     │  Words   │
-            │   us     │  (Screen, Bank,│ (Bücher, │
-            │          │   schwarze     │  Lesepulte│
-            │          │   Wand)        │  Teppich)│
-      z= 3  ├───┬──────┴──┬──────────┬──┴──────┬───┤
-            │        Eingangshalle  (Bank, Hero)  ├─ Exit →
-      z=11  └─────────────────────────────────────┘
-        x=-12                                     x=12                */
+      z=-8  ┌─────────┬──────────────┬─────────┐
+            │ About   │   Moments    │ Words   │
+            │  us     │ (Screen, FW, │ (Bücher,│
+            │ (7 Bild)│  12 große +  │ Pulte,  │
+            │         │  22 kleine)  │ Teppich)│
+      z= 3  ├──┬──────┴──┬────────┬──┴──────┬──┤
+            │       Eingangshalle (Hero)      ├─ Exit →
+      z=11  └─────────────────────────────────┘
+        x=-11   x=-4          x=4          x=11                */
 
 const H = 4.2;
-export const HALL = { minX: -12, maxX: 12, minZ: -9, maxZ: 11, h: H };
+export const HALL = { minX: -11, maxX: 11, minZ: -8, maxZ: 11, h: H };
+const DIV = 4;                       // Trennwände bei x = ±4  →  Moments ist 8 m breit, About us / Words je 7 m
 const MARGIN = 0.32;
-const ALCOVE = { minX: 12, maxX: 14.4, minZ: 6.65, maxZ: 8.55 };
+const ALCOVE = { minX: HALL.maxX, maxX: HALL.maxX + 2.4, minZ: 6.65, maxZ: 8.55 };
 
 const _p = new THREE.Vector3();
 const _q = new THREE.Quaternion();
@@ -148,10 +149,10 @@ export function buildWorld({ photos, screen, books }) {
   wall(false, HALL.minX - 0.15, HALL.minZ, HALL.maxZ, [], { thick: 0.3, collide: false });
   wall(false, HALL.maxX + 0.15, HALL.minZ, HALL.maxZ, [[ALCOVE.minZ, ALCOVE.maxZ]], { thick: 0.3, collide: false, headerY: 3.0 });
   // Trennwand zur Eingangshalle mit drei Türen
-  const DOORS = [-8.5, 0, 8.5];
+  const DOORS = [-(HALL.maxX + DIV) / 2, 0, (HALL.maxX + DIV) / 2];
   wall(true, 3.0, HALL.minX, HALL.maxX, DOORS.map((x) => [x - 1.4, x + 1.4]));
   // Raumtrenner mit Durchgang
-  for (const x of [-5, 5]) wall(false, x, HALL.minZ, 3.0, [[-5.3, -2.7]]);
+  for (const x of [-DIV, DIV]) wall(false, x, HALL.minZ, 3.0, [[-5.3, -2.7]]);
 
   /* ───── Exit-Nische ───── */
   {
@@ -197,14 +198,19 @@ export function buildWorld({ photos, screen, books }) {
   };
   const wallSpots = [];
   const lamps = [];
-  const counters = { us: 0, moments: 0, hero: 0 };
+  const counters = { us: 0, moments: 0, flowers: 0, hero: 0 };
+  const PI = Math.PI;
+
+  /* Legt den nächsten Foto-Rahmen eines Bereichs an. Gibt es kein Foto mehr, bleibt der Platz leer. */
   const addFrame = (section, spec) => {
-    const list = photos[section];
-    const n = counters[section]++;
-    const ph = list[n % list.length];
+    const list = photos[section] || [];
+    const n = counters[section];
+    if (n >= list.length) return false;
+    counters[section]++;
+    const ph = list[n];
     const asp = ph.aspect;
     const w = Math.min(spec.w, spec.h * asp), h = w / asp;
-    const mat = 0.07, bd = 0.028;
+    const mat = spec.mat ?? 0.07, bd = spec.bd ?? 0.028;
     const ow = w + 2 * (mat + bd), oh = h + 2 * (mat + bd);
     const [x, y, z] = spec.pos;
     const base = M4(x, y, z, spec.ry);
@@ -216,24 +222,38 @@ export function buildWorld({ photos, screen, books }) {
     const rx = Math.cos(spec.ry), rz = -Math.sin(spec.ry);
     const off = ow / 2 + 0.2;
     const cap = (CONFIG.captions[section] || [])[n] || {};
-    if (!spec.noLabel) addLabel(
+    if (!spec.noLabel && labelDefs.length < T.LABEL_COLS * T.LABEL_ROWS) addLabel(
       { title: cap.title, meta: cap.meta, place: spec.place, n: n + 1 },
       M4(x + rx * off + nx * 0.006, y - oh / 2 + 0.17, z + rz * off + nz * 0.006, spec.ry),
     );
     const center = new THREE.Vector3(x + nx * 0.06, y, z + nz * 0.06);
     frames.push({
-      kind: 'frame', index: frames.length, center, normal: new THREE.Vector3(nx, 0, nz), w: ow, h: oh,
+      kind: 'frame', index: 0, center, normal: new THREE.Vector3(nx, 0, nz), w: ow, h: oh,
       top: center.clone().add(new THREE.Vector3(0, oh / 2 + 0.16, 0)),
       stand: new THREE.Vector3(x + nx * (spec.stand ?? 1.7), 0, z + nz * (spec.stand ?? 1.7)),
     });
     if (!spec.noSpot) wallSpots.push({ x, z, nx, nz });
+    return true;
   };
 
-  const PI = Math.PI;
-  const placeUs = { en: 'About us' }, placeMo = { en: 'Moments' };
-  placeUs.es = CONFIG.sections.us.title.es; placeUs.en = CONFIG.sections.us.title.en;
-  placeMo.es = CONFIG.sections.moments.title.es; placeMo.en = CONFIG.sections.moments.title.en;
-  const S = { w: 1.0, h: 1.5 }, S2 = { w: 1.1, h: 1.45 };
+  /* Salon-Hängung: kleine Rahmen im Raster (Spalten × Zeilen) an einer Wand.
+     (wx, wz) = Mitte auf der Wand, ry = Blickrichtung der Wand in den Raum. */
+  const CELL = { w: 0.56, h: 0.76, gap: 0.1 };
+  const cluster = (section, wx, wz, ry, cols, rows, yMid, place) => {
+    const tx = Math.cos(ry), tz = -Math.sin(ry);      // „rechts“ aus Sicht des Betrachters
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const u = (c - (cols - 1) / 2) * (CELL.w + CELL.gap);
+        const v = yMid + ((rows - 1) / 2 - r) * (CELL.h + CELL.gap);
+        addFrame(section, { pos: [wx + tx * u, v, wz + tz * u], ry, w: CELL.w, h: CELL.h, mat: 0.035, bd: 0.018, stand: 1.4, noLabel: true, noSpot: true, place });
+      }
+    }
+    wallSpots.push({ x: wx, z: wz, nx: Math.sin(ry), nz: Math.cos(ry) });
+  };
+
+  const placeUs = CONFIG.sections.us.title, placeMo = CONFIG.sections.moments.title;
+  const S = { w: 1.0, h: 1.5 }, S2 = { w: 1.25, h: 1.75 };
+  const US_X = -(HALL.maxX + DIV) / 2, WORDS_X = (HALL.maxX + DIV) / 2;
 
   /* Eingangshalle: schwarzes Paneel, Hero-Foto, Sockel mit Schild */
   {
@@ -252,63 +272,72 @@ export function buildWorld({ photos, screen, books }) {
     batch.add(box(1.54, 0.86, 0.05), M.black, M4(pm.position.x, pm.position.y, pm.position.z + 0.03, PI, -0.42));
   }
 
-  /* About us (links) */
+  /* About us (links, klein: 7 Bilder) */
   {
-    const left = [-7.2, -4.4, -1.6, 1.1];
-    left.forEach((z) => addFrame('us', { pos: [HALL.minX, 1.62, z], ry: PI / 2, ...S, place: placeUs }));
-    [-7.2, 0.5].forEach((z) => addFrame('us', { pos: [-5 - 0.11, 1.62, z], ry: -PI / 2, ...S, place: placeUs }));
-    addFrame('us', { pos: [-8.5, 1.42, HALL.minZ], ry: 0, ...S, place: placeUs });
+    [-6.6, -3.9, -1.2, 1.5].forEach((z) => addFrame('us', { pos: [HALL.minX, 1.62, z], ry: PI / 2, ...S, place: placeUs }));
+    [-6.9, 0.4].forEach((z) => addFrame('us', { pos: [-DIV - 0.11, 1.62, z], ry: -PI / 2, ...S, place: placeUs }));
+    addFrame('us', { pos: [US_X, 1.45, HALL.minZ], ry: 0, ...S, place: placeUs });
     const wt = T.canvasTex(1024, 256, (g, w, h) => T.drawWallText(g, w, h, pick(CONFIG.sections.us.title), pick(CONFIG.sections.us.sub)));
     redrawers.push(wt.redraw); track(wt.texture);
     const m = new THREE.Mesh(plane(3.6, 0.9), new THREE.MeshBasicMaterial({ map: wt.texture, transparent: true, depthWrite: false, toneMapped: false }));
-    m.position.set(-8.5, 3.0, HALL.minZ + 0.012); scene.add(m);
-    plant(-11.2, 2.0);
+    m.position.set(US_X, 3.05, HALL.minZ + 0.012); scene.add(m);
+    plant(HALL.minX + 0.8, 2.0);
   }
 
-  /* Moments (Mitte) */
+  /* Moments (Mitte, 8 m breit): 12 große Rahmen + 22 kleine Blumenbilder als Cluster + Screen */
   {
-    const PL = { minX: -2.9, maxX: 2.9, minZ: -2.6, maxZ: -0.2, h: 0.2 };
+    const PL = { minX: -2.4, maxX: 2.4, minZ: -1.8, maxZ: 0.2, h: 0.2 };
     var plinth = PL;
     batch.add(box(PL.maxX - PL.minX, PL.h, PL.maxZ - PL.minZ), M.white, M4(0, PL.h / 2, (PL.minZ + PL.maxZ) / 2));
     batch.add(plane(PL.maxX - PL.minX + 1.6, PL.maxZ - PL.minZ + 1.6), M.shadow, M4(0, 0.006, (PL.minZ + PL.maxZ) / 2, 0, -PI / 2));
-    const FW = { z: -1.45, w: 4.8, h: 3.7, d: 0.26 };
+    const FW = { z: -0.8, w: 3.6, h: 3.7, d: 0.26 };
     const fw = new THREE.Mesh(box(FW.w, FW.h, FW.d), repMat(blackTex, FW.w, 4, THREE.MeshLambertMaterial));
     fw.position.set(0, PL.h + FW.h / 2, FW.z); scene.add(fw);
     colliders.push({ minX: -FW.w / 2, maxX: FW.w / 2, minZ: FW.z - FW.d / 2, maxZ: FW.z + FW.d / 2, tall: true });
-    [-1.2, 1.2].forEach((x) => addFrame('moments', { pos: [x, PL.h + 1.75, FW.z + FW.d / 2], ry: 0, ...S2, stand: 2.2, place: placeMo }));
-    [-7.2, 0.5].forEach((z) => {
-      addFrame('moments', { pos: [-5 + 0.11, 1.62, z], ry: PI / 2, ...S2, place: placeMo });
-      addFrame('moments', { pos: [5 - 0.11, 1.62, z], ry: -PI / 2, ...S2, place: placeMo });
-    });
-    // Screen an der Rückwand
-    const sx = 0, sy = 2.0, sz = HALL.minZ + 0.05;
-    batch.add(box(3.9, 2.3, 0.1), M.black, M4(sx, sy, sz));
-    const sm = new THREE.Mesh(plane(3.6, 2.025), new THREE.MeshBasicMaterial({ map: screen.texture, toneMapped: false }));
+    const fy = PL.h + 1.82, fzF = FW.z + FW.d / 2, fzB = FW.z - FW.d / 2;
+    const big = (x, y, z, ry, stand = 1.8) => addFrame('moments', { pos: [x, y, z], ry, ...S2, stand, place: placeMo });
+    // Reihenfolge = Reihenfolge der Dateien: Freistehende Wand (Vorderseite) → linke Wand → rechte Wand → Rückseite → Türwand
+    [-0.9, 0.9].forEach((x) => big(x, fy, fzF, 0, 2.2));
+    [2.1, 0.25, -1.6].forEach((z) => big(-DIV + 0.11, 1.75, z, PI / 2));
+    [1.8, -0.05, -1.9].forEach((z) => big(DIV - 0.11, 1.75, z, -PI / 2));
+    [0.9, -0.9].forEach((x) => big(x, fy, fzB, PI, 2.2));
+    [2.65, -2.65].forEach((x) => big(x, 1.75, 3.0 - 0.11, PI));
+    // Blumen/Pflanzen: kleine Salon-Cluster (Rückwand-Flanken 2×3, kurze Seitenwände 3×2)
+    cluster('flowers', -2.85, HALL.minZ, 0, 2, 3, 1.8, placeMo);
+    cluster('flowers', 2.85, HALL.minZ, 0, 2, 3, 1.8, placeMo);
+    cluster('flowers', -DIV + 0.11, -6.65, PI / 2, 3, 2, 1.75, placeMo);
+    cluster('flowers', DIV - 0.11, -6.65, -PI / 2, 3, 2, 1.75, placeMo);
+    // Screen an der Rückwand – passt sich dem Seitenverhältnis des Videos an (hochkant oder quer)
+    const asp = screen.texture.userData.aspect || 16 / 9;
+    const sh = asp < 1 ? 3.0 : Math.min(2.2, 3.4 / asp), sw = sh * asp;
+    const sx = 0, sy = 2.05, sz = HALL.minZ + 0.05;
+    batch.add(box(sw + 0.24, sh + 0.24, 0.1), M.black, M4(sx, sy, sz));
+    const sm = new THREE.Mesh(plane(sw, sh), new THREE.MeshBasicMaterial({ map: screen.texture, toneMapped: false }));
     sm.position.set(sx, sy, sz + 0.055); scene.add(sm);
-    addBench(0, -5.4, PI);
-    plant(4.2, 1.9);
+    wallSpots.push({ x: 0, z: HALL.minZ, nx: 0, nz: 1 });
+    addBench(0, -4.7, PI);
   }
 
   /* Words (rechts) */
   {
-    bookcase(8.7, HALL.minZ + 0.02, 0, 6.4, 3.1);
-    bookcase(HALL.maxX - 0.02, -3.6, -PI / 2, 6.6, 2.7);
-    const rug = new THREE.Mesh(plane(4.3, 5.9), new THREE.MeshLambertMaterial({ map: track(T.rugTexture()) }));
-    rug.rotation.x = -PI / 2; rug.position.set(8.5, 0.008, -3.3); rug.rotation.z = 0;
+    bookcase(WORDS_X, HALL.minZ + 0.02, 0, 6.4, 3.1);
+    bookcase(HALL.maxX - 0.02, -3.4, -PI / 2, 6.2, 2.7);
+    const rug = new THREE.Mesh(plane(4.1, 5.6), new THREE.MeshLambertMaterial({ map: track(T.rugTexture()) }));
+    rug.rotation.x = -PI / 2; rug.position.set(WORDS_X - 0.4, 0.008, -2.9);
     scene.add(rug);
-    const spots = [[7.2, -0.8, 0.35], [9.8, -2.5, -0.4], [7.2, -4.3, 0.3], [9.8, -6.0, -0.3], [7.2, -6.9, 0.2], [10.2, 0.2, -0.5], [9.9, -7.4, -0.2], [7.0, 1.3, 0.45]];
+    const spots = [[6.0, -0.6, 0.3], [8.4, -1.8, -0.35], [6.0, -3.2, 0.25], [8.4, -4.5, -0.3], [6.0, -5.8, 0.2], [8.6, -6.3, -0.2], [8.4, 0.9, -0.25], [6.0, 1.6, 0.3]];
     const covers = [0x5a1f26, 0x1f3a4a, 0x2d4a33, 0x4a3a1f, 0x3a2a4a, 0x1d1d22];
     books.slice(0, spots.length).forEach((b, i) => lectern(spots[i], b, covers[i % covers.length]));
     lamps.push(...spots.slice(0, Math.min(books.length, spots.length)).map(([x, z]) => [x, 1.55, z]));
-    plant(11.0, 2.0);
+    plant(HALL.maxX - 0.8, 2.0);
   }
 
   /* Lobby */
   addBench(0, 7.4, 0);
-  plant(-11.0, 10.0); plant(11.0, 10.2); plant(-3.6, 3.7);
+  plant(HALL.minX + 0.8, 10.0); plant(HALL.maxX - 0.8, 10.2); plant(-3.6, 3.7);
 
   /* ───── Türschilder ───── */
-  [['us', -8.5], ['moments', 0], ['words', 8.5]].forEach(([k, x], i) => {
+  [['us', US_X], ['moments', 0], ['words', WORDS_X]].forEach(([k, x], i) => {
     const sec = CONFIG.sections[k];
     const tx = T.canvasTex(1024, 300, (g, w, h) => T.drawSign(g, w, h, pick(sec.title), pick(sec.sub), `0${i + 1}`));
     redrawers.push(tx.redraw); track(tx.texture);
@@ -320,8 +349,8 @@ export function buildWorld({ photos, screen, books }) {
   const up = new THREE.Vector3(0, 1, 0);
   const rail = (x, z, w, d) => batch.add(box(w, 0.05, d), M.black, M4(x, H - 0.03, z));
   rail(0, HALL.minZ + 1.1, W - 1, 0.05);
-  rail(HALL.minX + 1.1, -3, 0.05, 11);
-  rail(HALL.maxX - 1.1, -3, 0.05, 11);
+  rail(HALL.minX + 1.1, -2.5, 0.05, 10);
+  rail(HALL.maxX - 1.1, -2.5, 0.05, 10);
   rail(0, 9.9, 9, 0.05);
   const seen = new Set();
   for (const s of wallSpots) {
@@ -391,12 +420,12 @@ export function buildWorld({ photos, screen, books }) {
     batch.add(box(0.27, 0.025, 0.37), M.paper, L(-0.135, 0.935, 0.02, -0.38, 0.05));
     batch.add(box(0.27, 0.025, 0.37), M.paper, L(0.135, 0.935, 0.02, -0.38, -0.05));
     batch.add(plane(1.3, 1.1), M.shadow, L(0, 0.006, 0.0).multiply(M4(0, 0, 0, 0, -PI / 2)));
-    addLabel({ title: { en: book.en.title, es: book.es.title }, meta: () => tr('read'), n: 0 }, L(0, 0.55, 0.146), 0.3);
+    if (labelDefs.length < T.LABEL_COLS * T.LABEL_ROWS) addLabel({ title: { en: book.en.title, de: book.de.title, es: book.es.title }, meta: () => tr('read'), n: 0 }, L(0, 0.55, 0.146), 0.3);
     const nx = Math.sin(ry), nz = Math.cos(ry);
     const center = new THREE.Vector3(x + nx * 0.1, 0.95, z + nz * 0.1);
     colliders.push({ minX: x - 0.28, maxX: x + 0.28, minZ: z - 0.28, maxZ: z + 0.28, tall: false });
     bookViews.push({
-      kind: 'book', book, index: frames.length + bookViews.length, center,
+      kind: 'book', book, index: 0, center,
       normal: new THREE.Vector3(nx, 0, nz), top: new THREE.Vector3(x, 1.5, z),
       stand: new THREE.Vector3(x + nx * 1.0, 0, z + nz * 1.0), w: 0.6, h: 0.6,
     });
@@ -458,6 +487,7 @@ export function buildWorld({ photos, screen, books }) {
     }
   };
   const views = [...frames, ...bookViews];
+  views.forEach((v, i) => { v.index = i; });
   const spawns = [[-0.8, 5.0], [0.8, 5.0], [-2.4, 5.6], [2.4, 5.6], [-0.8, 6.0], [0.8, 6.0]];
 
   const heartMesh = null;

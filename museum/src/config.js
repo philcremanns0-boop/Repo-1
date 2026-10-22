@@ -3,7 +3,8 @@
 //
 //  Fotos   →  src/photos/hero.(jpg|png|webp)      großes Bild in der Eingangshalle
 //             src/photos/us/*                     Bereich „About us“
-//             src/photos/moments/*                Bereich „Moments“ (Erlebnisse)
+//             src/photos/moments/*                Bereich „Moments“: große Bilder (Menschen, Orte)
+//             src/photos/moments/flowers/*        Bereich „Moments“: kleine Rahmen (reine Blumen-/Pflanzenfotos)
 //  Video   →  src/media/video.mp4                 läuft auf dem Wand-Screen in „Moments“
 //  Musik   →  src/media/music/*.mp3               Playlist (alphabetisch)
 //  Bücher  →  src/books/*.md                      je eine Datei = ein Buch (siehe README dort)
@@ -23,6 +24,12 @@ export const CONFIG = {
       text: 'A little museum of everything we are,\nand everything still to come.',
       signature: '',
     },
+    de: {
+      kicker: 'EIN GESCHENK',
+      title: 'Für Emi',
+      text: 'Ein kleines Museum von allem, was wir sind,\nund allem, was noch kommt.',
+      signature: '',
+    },
     es: {
       kicker: 'UN REGALO',
       title: 'Para Emi',
@@ -32,20 +39,20 @@ export const CONFIG = {
   },
 
   // Text nach dem Betreten des Exits (Fade → schwarz → Text)
-  exitText: { en: 'I love you', es: 'Te quiero' },
+  exitText: { en: 'I love you', de: 'Ich liebe dich', es: 'Te quiero' },
 
   // Bereiche
   sections: {
-    us: { title: { en: 'About us', es: 'Nosotros' }, sub: { en: 'The two of us', es: 'Los dos' } },
-    moments: { title: { en: 'Moments', es: 'Momentos' }, sub: { en: 'Where we have been', es: 'Dónde hemos estado' } },
-    words: { title: { en: 'Words', es: 'Palabras' }, sub: { en: 'Written for you', es: 'Escritas para ti' } },
+    us: { title: { en: 'About us', de: 'Über uns', es: 'Nosotros' }, sub: { en: 'The two of us', de: 'Wir zwei', es: 'Los dos' } },
+    moments: { title: { en: 'Moments', de: 'Momente', es: 'Momentos' }, sub: { en: 'Where we have been', de: 'Wo wir waren', es: 'Dónde hemos estado' } },
+    words: { title: { en: 'Words', de: 'Worte', es: 'Palabras' }, sub: { en: 'Written for you', de: 'Für dich geschrieben', es: 'Escritas para ti' } },
   },
 
-  // Optionale Bildunterschriften (in der Reihenfolge der Dateien je Bereich).
+  // Optionale Bildunterschriften (in der Reihenfolge der Dateien je Bereich, nur für die großen Bilder).
   // Leer lassen → die Schildchen zeigen „No. 01“, „No. 02“ …
   captions: {
     us: [
-      // { title: { en: 'Botanical garden', es: 'Jardín botánico' }, meta: '2025' },
+      // { title: { en: 'Botanical garden', de: 'Botanischer Garten', es: 'Jardín botánico' }, meta: '2025' },
     ],
     moments: [],
   },
@@ -76,6 +83,7 @@ export const PHOTO_URLS = {
   hero: g(import.meta.glob('./photos/hero.*', { eager: true, query: '?url', import: 'default' })),
   us: g(import.meta.glob('./photos/us/*.{jpg,jpeg,png,webp,avif,JPG,JPEG,PNG,WEBP}', { eager: true, query: '?url', import: 'default' })),
   moments: g(import.meta.glob('./photos/moments/*.{jpg,jpeg,png,webp,avif,JPG,JPEG,PNG,WEBP}', { eager: true, query: '?url', import: 'default' })),
+  flowers: g(import.meta.glob('./photos/moments/flowers/*.{jpg,jpeg,png,webp,avif,JPG,JPEG,PNG,WEBP}', { eager: true, query: '?url', import: 'default' })),
 };
 
 const videoMods = import.meta.glob('./media/*.{mp4,webm,MP4,WEBM}', { eager: true, query: '?url', import: 'default' });
@@ -91,13 +99,18 @@ export const MUSIC = Object.keys(musicMods)
   });
 
 /* ───── Bücher: src/books/*.md ─────
-   Format je Datei:
-       # Titel (Englisch)
+   Format je Datei – ein Block pro Sprache:
+       === en
+       # Title
+       Text …
+       === de
+       # Titel
        Text …
        === es
-       # Título (Español)
+       # Título
        Texto …
-   Der Block nach „=== es“ ist optional (sonst wird Englisch gezeigt). */
+   Fehlt eine Sprache, wird ersatzweise en → de → es gezeigt.
+   Text ohne „===“-Zeile am Anfang gilt als Englisch. */
 const bookMods = import.meta.glob('./books/*.md', { eager: true, query: '?raw', import: 'default' });
 const parsePart = (s) => {
   const lines = s.trim().split('\n');
@@ -108,8 +121,10 @@ const parsePart = (s) => {
 export const BOOKS = Object.keys(bookMods)
   .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
   .map((k, i) => {
-    const [en, es] = bookMods[k].split(/^=== es\s*$/m);
-    const e = parsePart(en);
-    const s = es ? parsePart(es) : e;
-    return { id: i, en: e, es: { title: s.title || e.title, body: s.body || e.body } };
+    const parts = {};
+    const chunks = bookMods[k].split(/^=== (en|de|es)\s*$/m);
+    if (chunks[0].trim()) parts.en = parsePart(chunks[0]);
+    for (let c = 1; c < chunks.length; c += 2) parts[chunks[c]] = parsePart(chunks[c + 1] || '');
+    const fb = parts.en || parts.de || parts.es || { title: '', body: '' };
+    return { id: i, en: parts.en || fb, de: parts.de || fb, es: parts.es || fb };
   });

@@ -5,7 +5,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 export function initTexts() {
-  document.documentElement.lang = getLang() === 'es' ? 'es-CL' : 'en';
+  document.documentElement.lang = { en: 'en', de: 'de', es: 'es-CL' }[getLang()];
   $$('#lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === getLang())));
   document.title = CONFIG.title;
   $$('[data-t]').forEach((el) => { el.textContent = t(el.dataset.t); });

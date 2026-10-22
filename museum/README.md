@@ -11,7 +11,7 @@ Ein kleines 3D-Museum im Browser (Three.js + Vite) – Single- oder Multiplayer,
 * Chat wie in Roblox: Verlauf oben links, Nachrichten zusätzlich als Sprechblase über dem Kopf (Enter oder `/`, am Handy 💬). Der Name wird beim Start frei gewählt.
 * Musik-Box unten (Zurück / Play-Pause / Weiter / Fortschritt / Lautstärke).
 * Schriften: EB Garamond (Titel, Bücher) + System-Schrift (SF Pro auf Apple-Geräten) für die Bedienung.
-* Sprache: Englisch (Standard) oder Spanisch (Chile) – Umschalter **EN | ES** oben rechts, alles inkl. Schilder & Bücher.
+* Sprache: Englisch (Standard), Deutsch oder Spanisch (Chile) – Umschalter **EN | DE | ES** oben rechts, alles inkl. Schilder & Bücher.
 * Multiplayer: 5-stelliger Raum-Code oder Einladungslink, direkt Peer-to-Peer (kein eigener Server).
 
 ## Starten
@@ -29,8 +29,9 @@ npm run build      # → dist/
 |---|---|---|
 | Hero-Foto (Eingangshalle) | `src/photos/hero.webp` (oder jpg/png) | |
 | About us | `src/photos/us/*` | 7 Rahmen, alphabetisch |
-| Moments (Erlebnisse) | `src/photos/moments/*` | 6 Rahmen; leer → schlichte Platzhalter |
-| Video für den Screen | `src/media/video.mp4` (oder `.webm`) | läuft stumm in Schleife, Bereich „Moments“ |
+| Moments – große Bilder (Menschen, Orte) | `src/photos/moments/*` | 12 große Rahmen, Reihenfolge = Dateinamen (`01-…`, `02-…`) |
+| Moments – kleine Rahmen (reine Blumen-/Pflanzenfotos) | `src/photos/moments/flowers/*` | 24 kleine Rahmen in Salon-Hängung |
+| Video für den Screen | `src/media/video.mp4` (oder `.webm`) | läuft stumm in Schleife an der Rückwand von „Moments“; Hoch- oder Querformat wird erkannt. Ca. 540–720 px Breite, wenige MB |
 | Musik | `src/media/music/*.mp3` | alphabetisch; Titel/Künstler in `src/config.js` (`MUSIC_TITLES`) |
 | Bücher | `src/books/*.md` | eine Datei = ein Buch auf einem Lesepult (max. 8). Neue Datei ergänzen → neues Pult erscheint |
 | Namen, Schild, Exit-Text, Bildunterschriften | `src/config.js` | alles zweisprachig `{ en, es }` |
@@ -38,16 +39,20 @@ npm run build      # → dist/
 Fotos vorher verkleinern spart Ladezeit: `npm run photos -- /pfad/zu/originalen` (schreibt `.webp` nach `src/photos/`;
 anschließend in den passenden Unterordner verschieben).
 
-**Bücher-Format** (`src/books/01-mein-text.md`):
+**Bücher-Format** (`src/books/03-mein-text.md`) – ein Block pro Sprache:
 
 ```
-# Titel
+=== en
+# Title
 Text … (Absätze durch Leerzeile trennen)
+=== de
+# Titel
+Text …
 === es
 # Título
 Texto …
 ```
-Der Block nach `=== es` ist optional – ohne ihn wird auch im Spanisch-Modus der englische Text gezeigt.
+Fehlt eine Sprache, wird ersatzweise Englisch → Deutsch → Spanisch gezeigt. Eine neue Datei in `src/books/` erzeugt automatisch ein neues Lesepult.
 
 ## Auf Vercel deployen
 
