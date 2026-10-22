@@ -57,17 +57,25 @@ Fehlt eine Sprache, wird ersatzweise Englisch → Deutsch → Spanisch gezeigt. 
 
 ## Auf Vercel deployen
 
-Im Repo-Wurzelordner liegt noch ein anderes Projekt (der Pad Sampler). Deshalb:
+**Warum nicht „Import Git Repository“?** Vercel erlaubt pro Vercel-Konto nur **einen** GitHub-Account. Dieses Repo liegt im Account
+`philcremanns0-boop`, das Vercel-Konto hängt an einem anderen – deshalb taucht das Repo in der Import-Liste nie auf.
+Statt Vercel auf GitHub zugreifen zu lassen, schiebt ein GitHub-Workflow (`.github/workflows/deploy-museum.yml`) das Museum per Token zu Vercel.
+Vorteil: Das Repo kann **privat** sein, und jeder Push auf `claude/our-museum` aktualisiert die Seite automatisch.
 
-1. vercel.com → **Add New → Project** → GitHub-Repo importieren.
-2. **Root Directory: `museum`** (Framework „Vite“, Build `npm run build`, Output `dist` werden erkannt).
-3. Der Standard-Branch des Repos ist `claude/pad-sampler` – dort gibt es kein `museum/`. Darum nach dem Import
-   **Settings → Git → Production Branch = `claude/our-museum`** setzen (oder `claude/our-museum` in den Standard-Branch mergen) und neu deployen.
-   Nur ein *Production*-Deployment ist öffentlich erreichbar; Preview-Deployments verlangen bei Vercel einen Login.
+Einmalig (geht komplett im Browser, auch am iPad):
+1. **Vercel-Token erstellen:** vercel.com → Profilbild → *Settings* → *Tokens* → *Create* (Name z. B. `github`, Ablauf nach Wunsch, Scope = dein Konto). Token kopieren.
+2. **Token ins Repo:** github.com, eingeloggt als `philcremanns0-boop` → Repo `Repo-1` → *Settings* → *Secrets and variables* → *Actions* →
+   *New repository secret* → Name `VERCEL_TOKEN`, Wert = der Token.
+3. **Starten:** Repo → Tab *Actions* → *Deploy museum to Vercel* → *Run workflow* (Branch `claude/our-museum`).
+   Nach ca. 1–2 Minuten steht die Adresse (`https://….vercel.app`) unter dem Lauf in der *Summary*.
+   In Vercel erscheint das Projekt `our-museum`; dort kannst du später eine eigene Domain eintragen.
+
+Alternative (falls du lieber den normalen Vercel-Import willst): Repo in dein Vercel-GitHub-Konto verschieben oder importieren,
+dann *Root Directory = `museum`* und *Production Branch = `claude/our-museum`* setzen.
 
 ### Zugangscode
 Beim Start fragt die Seite nach einem Code (`password` in `src/config.js`, aktuell `1234`; leer lassen = kein Code).
-Der Code wird auf dem Gerät gemerkt. **Das ist nur eine Hürde gegen zufällige Besucher, kein echter Schutz:** Fotos und Texte liegen als normale
+Der Code wird auf dem Gerät gemerkt. **Das ist nur eine Hürde gegen zufällige Besucher, kein echter Schutz** (und das Repo selbst sollte privat sein – im öffentlichen Repo sind alle Fotos einsehbar): Fotos und Texte liegen als normale
 Dateien auf dem Server und wären mit der genauen Datei-URL abrufbar. Echten Schutz bietet nur Vercels „Password Protection“ (Pro-Plan) oder ein privates Hosting.
 
 ### App installieren (Android / iPhone / iPad)

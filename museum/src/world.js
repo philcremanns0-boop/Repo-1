@@ -245,6 +245,7 @@ export function buildWorld({ photos, screen, books }) {
       top: center.clone().add(new THREE.Vector3(0, oh / 2 + 0.16, 0)),
       stand: new THREE.Vector3(x + nx * (spec.stand ?? 1.7), 0, z + nz * (spec.stand ?? 1.7)),
       caption: spec.caption ? CONFIG.dates[spec.caption] : null,
+      section, photo: n,
     });
     if (spec.caption && spec.plaque !== false) datePlaque(spec.caption, x + rx * 0, y - oh / 2 - 0.2, z + rz * 0, spec.ry, nx, nz);
     if (!spec.noSpot) wallSpots.push({ x, z, nx, nz });
@@ -255,13 +256,17 @@ export function buildWorld({ photos, screen, books }) {
      (wx, wz) = Mitte auf der Wand, ry = Blickrichtung der Wand in den Raum. */
   const CELL = { w: 0.56, h: 0.76, gap: 0.1 };
   const cluster = (section, wx, wz, ry, cols, rows, yMid, place) => {
+    const remaining = (photos[section] || []).length - counters[section];
+    const count = Math.min(cols * rows, remaining);
+    if (count <= 0) return;
+    const rws = Math.ceil(count / cols);
     const tx = Math.cos(ry), tz = -Math.sin(ry);      // „rechts“ aus Sicht des Betrachters
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const u = (c - (cols - 1) / 2) * (CELL.w + CELL.gap);
-        const v = yMid + ((rows - 1) / 2 - r) * (CELL.h + CELL.gap);
-        addFrame(section, { pos: [wx + tx * u, v, wz + tz * u], ry, w: CELL.w, h: CELL.h, mat: 0.035, bd: 0.018, stand: 1.4, noLabel: true, noSpot: true, place });
-      }
+    for (let k = 0; k < count; k++) {
+      const r = Math.floor(k / cols), inRow = r === rws - 1 ? count - r * cols : cols;   // letzte Reihe wird zentriert
+      const c = k - r * cols;
+      const u = (c - (inRow - 1) / 2) * (CELL.w + CELL.gap);
+      const v = yMid + ((rws - 1) / 2 - r) * (CELL.h + CELL.gap);
+      addFrame(section, { pos: [wx + tx * u, v, wz + tz * u], ry, w: CELL.w, h: CELL.h, mat: 0.035, bd: 0.018, stand: 1.4, noLabel: true, noSpot: true, place });
     }
     wallSpots.push({ x: wx, z: wz, nx: Math.sin(ry), nz: Math.cos(ry) });
   };

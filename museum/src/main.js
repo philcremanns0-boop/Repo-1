@@ -1,6 +1,6 @@
 import './style.css';
 import * as THREE from 'three';
-import { CONFIG, PHOTO_URLS, VIDEO_URL, BOOKS, fmtCoords, mapUrl } from './config.js';
+import { CONFIG, PHOTO_URLS, VIDEO, BOOKS, fmtCoords, mapUrl } from './config.js';
 import { t, pick, getLang, setLang, onLang } from './i18n.js';
 import { guessLook } from './gender.js';
 import { CHARACTERS } from './avatar.js';
@@ -83,23 +83,39 @@ async function decodePhoto(url, MAX = 1280) {
   return { texture: tex, aspect: cw / ch };
 }
 
-async function loadVideo(url) {
-  const v = document.createElement('video');
-  v.src = url; v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'auto'; v.crossOrigin = 'anonymous';
-  v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
-  await new Promise((res) => {
-    const done = () => res();
-    v.addEventListener('loadeddata', done, { once: true });
-    v.addEventListener('error', done, { once: true });
-    setTimeout(done, 9000);
-    v.load();
-  });
-  if (v.readyState < 2) return null;
-  const tex = new THREE.VideoTexture(v);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.generateMipmaps = false; tex.minFilter = THREE.LinearFilter;
-  tex.userData = { aspect: v.videoWidth && v.videoHeight ? v.videoWidth / v.videoHeight : 16 / 9 };
-  return { texture: tex, video: v, draw: null };
+/* Video für den Wand-Screen. Wählt MP4 oder WebM je nach Browser-Unterstützung; schlägt beides fehl,
+   wird das Vorschaubild (erstes Videobild) gezeigt – nie ein leerer oder fremder Platzhalter. */
+async function loadVideo() {
+  const probe = document.createElement('video');
+  const can = (t) => probe.canPlayType(t) !== '';
+  const order = [];
+  if (VIDEO.mp4 && can('video/mp4; codecs="avc1.42E01E"')) order.push(VIDEO.mp4);
+  if (VIDEO.webm && can('video/webm; codecs="vp9"')) order.push(VIDEO.webm);
+  if (VIDEO.mp4 && !order.includes(VIDEO.mp4)) order.push(VIDEO.mp4);   // zur Sicherheit auch probieren, wenn canPlayType zweifelt
+  for (const url of order) {
+    const v = document.createElement('video');
+    v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'auto';
+    v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
+    v.src = url;
+    const ok = await new Promise((res) => {
+      v.addEventListener('loadeddata', () => res(true), { once: true });
+      v.addEventListener('error', () => res(false), { once: true });
+      setTimeout(() => res(false), 9000);
+      v.load();
+    });
+    if (!ok || v.readyState < 2) continue;
+    const tex = new THREE.VideoTexture(v);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.generateMipmaps = false; tex.minFilter = THREE.LinearFilter;
+    tex.userData = { aspect: v.videoWidth && v.videoHeight ? v.videoWidth / v.videoHeight : 9 / 16 };
+    return { texture: tex, video: v, draw: null };
+  }
+  if (VIDEO.poster) {
+    const p = await decodePhoto(VIDEO.poster, 960);
+    p.texture.userData = { aspect: p.aspect };
+    return { texture: p.texture, video: null, draw: null };
+  }
+  return null;
 }
 
 const music = new MusicPlayer();
@@ -137,7 +153,7 @@ const assetsPromise = (async () => {
   prog.assets = 0.72;
 
   let screen = null;
-  if (VIDEO_URL) screen = await loadVideo(VIDEO_URL);
+  if (VIDEO.mp4 || VIDEO.webm) screen = await loadVideo();
   if (!screen) { const sc = T.createScreenCanvas(); screen = { texture: sc.texture, draw: sc.draw, video: null }; }
   prog.assets = 0.85;
   await music.ready();
@@ -339,7 +355,14 @@ async function boot(mode) {
   tmp.dispose();
   prog.gpu = 1;
 
-  if (screen.video) { try { await screen.video.play(); } catch { /* wird bei erster Interaktion gestartet */ } }
+  if (screen.video) {
+    const v = screen.video;
+    try { await v.play(); } catch {
+      // iOS (Stromsparmodus) blockiert Autoplay manchmal → beim ersten Tippen starten
+      const kick = () => { v.play().catch(() => {}); };
+      addEventListener('pointerdown', kick, { once: true });
+    }
+  }
 
   // Multiplayer verdrahten
   if (net) wireNet();

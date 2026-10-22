@@ -5,7 +5,7 @@
 //             src/photos/us/*                     Bereich „About us“
 //             src/photos/moments/*                Bereich „Moments“: große Bilder (Menschen, Orte)
 //             src/photos/moments/flowers/*        Bereich „Moments“: kleine Rahmen (reine Blumen-/Pflanzenfotos)
-//  Video   →  src/media/video.mp4                 läuft auf dem Wand-Screen in „Moments“
+//  Video   →  src/media/video.mp4 (+ video.webm, video-poster.webp)   läuft auf dem Wand-Screen in „Moments“
 //  Musik   →  src/media/music/*.mp3               Playlist (alphabetisch)
 //  Bücher  →  src/books/*.md                      je eine Datei = ein Buch (siehe README dort)
 // ─────────────────────────────────────────────────────────────
@@ -104,8 +104,15 @@ export const PHOTO_URLS = {
   flowers: g(import.meta.glob('./photos/moments/flowers/*.{jpg,jpeg,png,webp,avif,JPG,JPEG,PNG,WEBP}', { eager: true, query: '?url', import: 'default' })),
 };
 
-const videoMods = import.meta.glob('./media/*.{mp4,webm,MP4,WEBM}', { eager: true, query: '?url', import: 'default' });
-export const VIDEO_URL = Object.values(videoMods)[0] || null;
+const videoMods = import.meta.glob('./media/video.{mp4,webm}', { eager: true, query: '?url', import: 'default' });
+const posterMods = import.meta.glob('./media/video-poster.{webp,jpg,png}', { eager: true, query: '?url', import: 'default' });
+/* Das Video liegt als MP4 (Safari/iOS/Android) und als WebM (Rückfall) vor; der Browser wählt, was er abspielen kann. */
+export const VIDEO = {
+  mp4: Object.entries(videoMods).find(([k]) => k.endsWith('.mp4'))?.[1] || null,
+  webm: Object.entries(videoMods).find(([k]) => k.endsWith('.webm'))?.[1] || null,
+  poster: Object.values(posterMods)[0] || null,
+};
+export const VIDEO_URL = VIDEO.mp4 || VIDEO.webm;
 
 const musicMods = import.meta.glob('./media/music/*.{mp3,m4a,ogg,wav}', { eager: true, query: '?url', import: 'default' });
 export const MUSIC = Object.keys(musicMods)
