@@ -87,7 +87,7 @@ export function MorePopover({ page, index, total, onBookmark, onCopy, onRotate, 
             onKeyDown={(e) => { if (e.key === 'Enter') { const n = +goto; if (n >= 1 && n <= total) { onGoto(n); b.onClose() } } }} className="w-[84px] rounded-lg bg-chip px-2 py-1 text-right text-[17px] text-sub outline-none" />
         }>{t('Gehe zu Seite')}</Row>
       </Group>
-      <div className="px-4 pb-1.5 pt-4 text-[19px] font-semibold text-sub">{t('Seite leeren oder löschen')}</div>
+      <div className="px-4 pb-1.5 pt-4 text-[18px] font-bold text-sub">{t('Seite leeren oder löschen')}</div>
       <Group>
         <Row icon={<Shapes size={22} />} chevron onClick={() => setView('objects')}>{t('Bestimmte Objekte löschen')}</Row>
         <Row danger icon={<FilePen size={22} />} onClick={done(onClearPage)}>{t('Seite leeren')}</Row>
@@ -107,7 +107,7 @@ export function SharePopover({ onExport, onPrint, present, onPresent, onUnavaila
   const t = useT()
   const [view, setView] = useState<'main' | 'print'>('main')
   useEffect(() => { if (!b.open) setView('main') }, [b.open])
-  const H = ({ children }: { children: React.ReactNode }) => <div className="px-4 pb-1.5 pt-4 text-[19px] font-semibold text-sub">{children}</div>
+  const H = ({ children }: { children: React.ReactNode }) => <div className="px-4 pb-1.5 pt-4 text-[18px] font-bold text-sub">{children}</div>
   if (view === 'print') return (
     <Popover {...b} width={370} align="right"><Push id="print" dir={1}>
       <PopTitle left={<BackBtn onClick={() => setView('main')} />}>{t('Drucken')}</PopTitle>

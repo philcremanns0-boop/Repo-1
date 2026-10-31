@@ -34,10 +34,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', '"Inter Variable"', '-apple-system', 'sans-serif'],
+        sans: ['Roobert', '"Albert Sans Variable"', '-apple-system', '"Noto Sans"', 'sans-serif'],
         hand: ['"Goodnotes Hand"', 'Caveat', 'cursive'],
       },
-      letterSpacing: { gn: '-0.025em', 'gn-tight': '-0.03em' },
+      letterSpacing: { gn: '0', 'gn-tight': '-0.01em' },
       lineHeight: { gn: '1.2', 'gn-body': '1.32' },
       colors: {
         gn,
@@ -46,7 +46,7 @@ export default {
       },
       boxShadow: {
         page: '0 0 0 .5px rgba(15,16,16,.12), 0 1px 3px rgba(15,16,16,.12), 0 8px 24px rgba(15,16,16,.08)',
-        pop: '0 0 0 .5px rgba(15,16,16,.08), 0 12px 40px -6px rgba(15,16,16,.28)',
+        popover: '0 0 0 .5px rgba(0,0,0,.05), 0 12px 44px rgba(0,0,0,.15), 0 2px 14px rgba(0,0,0,.08)',
         pill: 'var(--shadow-float)',
         /* floating toolbar depth measured from the reference: hairline + short contact + soft wide falloff */
         'gn-float': '0 4px 30px rgba(0, 0, 0, 0.03)',

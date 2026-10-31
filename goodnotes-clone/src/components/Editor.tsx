@@ -196,7 +196,7 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
           <DocumentView nb={nb} ed={ed} zoom={zoomSet} setZoom={setZoom} scrollTo={scrollTo} topInset={present ? 8 : floating ? 116 : 58} onZoomValue={(z) => { zoomNow.current = z }}
             laser={{ on: tool === 'laser' && !readOnly, color: prefs.laserColor, trail: prefs.laserTrail, size: 9 }} />
           {!present && (
-            <div className={`pointer-events-none absolute inset-x-0 ${floating ? 'top-[66px]' : 'top-2'} z-20 grid grid-cols-[88px_minmax(0,1fr)_88px] items-start px-2`}>
+            <div className={`pointer-events-none absolute inset-x-0 ${floating ? 'top-[66px]' : 'top-2'} z-20 grid grid-cols-[96px_minmax(0,1fr)_96px] items-start px-2`}>
               <div className="pointer-events-auto w-fit"><UndoPill canUndo={nb.canUndo(page.id)} canRedo={nb.canRedo(page.id)} onUndo={store.undo} onRedo={store.redo} /></div>
               <div className="pointer-events-auto flex min-w-0 justify-center"><OptionsBar tool={tool} prefs={prefs} set={set} anchors={anchors} popover={popover} onPop={setPopover} onTextStyle={onTextStyle} /></div>
             </div>

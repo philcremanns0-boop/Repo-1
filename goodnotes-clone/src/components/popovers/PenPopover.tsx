@@ -16,9 +16,9 @@ export function PenPreview({ type, opts, color }: { type: PenType; opts: ToolPre
     const bez = (a: number[], b: number[], c2: number[], d: number[], t: number) => [0, 1].map((i) => (1 - t) ** 3 * a[i] + 3 * (1 - t) ** 2 * t * b[i] + 3 * (1 - t) * t * t * c2[i] + t ** 3 * d[i])
     const pts: { x: number; y: number; w: number }[] = []
     let w = 0
-    const segs = [[[22, 38], [50, 95], [100, 100], [150, 52]], [[150, 52], [200, 6], [265, -2], [330, 44]]]
+    const segs = [[[90, 60], [110, 95], [150, 98], [180, 64]], [[180, 64], [205, 34], [240, 24], [280, 52]]]
     segs.forEach((s, k) => { for (let i = k ? 1 : 0; i <= 30; i++) { const [x, y] = bez(s[0], s[1], s[2], s[3], i / 30); const prev = pts[pts.length - 1]; const sp = prev ? Math.hypot(x - prev.x, y - prev.y) / 9 : 0; w = pointWeight(type, opts, 'mouse', 0.5, sp * 1.6, w); pts.push({ x, y: y + 24, w }) } })
-    const s: Stroke = { id: 0, tool: 'pen', pen: type, opts, color, width: 5.5, points: pts }
+    const s: Stroke = { id: 0, tool: 'pen', pen: type, opts, color, width: 8, points: pts }
     drawStroke(ctx, s)
   }, [type, opts, color])
   return <canvas ref={cv} width={360} height={130} className="mx-auto block" />
@@ -38,7 +38,7 @@ export default function PenPopover({ anchor, open, onClose, prefs, set }: Props)
   const setOpt = (patch: Partial<typeof o>) => set((p) => ({ ...p, penOpts: { ...p.penOpts, [p.penType]: { ...p.penOpts[p.penType], ...patch } } }))
   const Cap = ({ label, value, children, off }: { label: string; value: string; children: React.ReactNode; off?: boolean }) => (
     <div className={`px-3.5 pb-0.5 pt-3 [&:not(:first-child)]:border-t [&:not(:first-child)]:border-hair ${off ? 'pointer-events-none opacity-40' : ''}`}>
-      <div className="flex justify-between text-[16px] uppercase tracking-wide"><span>{label}</span><span className="normal-case">{value}</span></div>{children}
+      <div className="flex justify-between text-[12.5px] uppercase tracking-[.01em]"><span>{label}</span><span className="text-[13px] normal-case">{value}</span></div>{children}
     </div>
   )
   const sub = (title: string, body: React.ReactNode) => (
@@ -49,7 +49,7 @@ export default function PenPopover({ anchor, open, onClose, prefs, set }: Props)
   )
   const note = (s: string) => <p className="px-5 pb-5 pt-3 text-[16px] leading-snug text-sub">{t(s)}</p>
   return (
-    <Popover anchor={anchor} open={open} onClose={onClose} width={370} align="left" className="!bg-pop">
+    <Popover anchor={anchor} open={open} onClose={onClose} width={390} align="center" className="!bg-pop">
       <Push id={view} dir={dir}>
       {view === 'main' && (
         <>
@@ -57,8 +57,8 @@ export default function PenPopover({ anchor, open, onClose, prefs, set }: Props)
           <PenPreview type={prefs.penType} opts={o} color={dark ? '#ffffff' : '#000000'} />
           <div className="mx-3 mt-1 grid grid-cols-3 gap-1">
             {([['fountain', FountainI], ['ballpoint', BallpointI], ['brush', BrushI]] as const).map(([id, I]) => (
-              <button key={id} onClick={() => set((p) => ({ ...p, penType: id }))} className={`flex flex-col items-center gap-1.5 rounded-[18px] py-4 text-[16px] ${prefs.penType === id ? 'bg-card' : ''}`}>
-                <I size={28} active={prefs.penType === id} />{t(NAMES[id])}
+              <button key={id} onClick={() => set((p) => ({ ...p, penType: id }))} className={`flex flex-col items-center gap-2.5 rounded-[18px] py-5 text-[13.5px] ${prefs.penType === id ? 'bg-card' : ''}`}>
+                <I size={22} active={prefs.penType === id} />{t(NAMES[id])}
               </button>
             ))}
           </div>
@@ -69,7 +69,7 @@ export default function PenPopover({ anchor, open, onClose, prefs, set }: Props)
             <Cap label={t('Rundung der Spitze')} value={t(ROUND[o.round])}><Slider value={o.round} min={0} max={3} ticks={4} onChange={(v) => setOpt({ round: v })} /></Cap>
             <Cap label={t('Strich-Stabilisierung')} value={`${prefs.stab}%`}><Slider value={prefs.stab} onChange={(v) => set((p) => ({ ...p, stab: v }))} step={5} /></Cap>
           </Group>
-          <div className="px-4 pb-1.5 pt-4 text-[19px] font-semibold text-sub">{t('Einstellungen')}</div>
+          <div className="px-4 pb-1.5 pt-4 text-[18px] font-bold text-sub">{t('Einstellungen')}</div>
           <Group>
             <Row chevron onClick={() => setView('settings')}>{t('Stift-Einstellungen')}</Row>
             <Row chevron onClick={() => setView('help')}>{t('Schreibhilfen')}</Row>

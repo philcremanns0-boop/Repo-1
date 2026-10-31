@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import { SettingsProvider } from './context/Settings'
-import '@fontsource-variable/inter'
+import '@fontsource-variable/albert-sans'
 import '@fontsource/caveat/400.css'
 import './index.css'
 

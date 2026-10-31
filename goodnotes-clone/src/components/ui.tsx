@@ -16,7 +16,7 @@ interface PopProps {
   arrow?: boolean
   style?: CSSProperties
 }
-export function Popover({ anchor, open, onClose, width = 360, align = 'center', children, className = '', arrow = true, style }: PopProps) {
+export function Popover({ anchor, open, onClose, width = 360, align = 'center', children, className = '', arrow = false, style }: PopProps) {
   const ref = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ left: 0, top: 0, ax: 0, maxH: 600 })
   useLayoutEffect(() => {
@@ -25,10 +25,10 @@ export function Popover({ anchor, open, onClose, width = 360, align = 'center', 
       const r = anchor.current?.getBoundingClientRect()
       if (!r) return
       const vw = window.innerWidth, vh = window.innerHeight
-      const w = Math.min(width, vw - 16)
+      const w = Math.min(width, vw - 24)
       let left = align === 'center' ? r.left + r.width / 2 - w / 2 : align === 'left' ? r.left : r.right - w
-      left = Math.max(8, Math.min(left, vw - w - 8))
-      const top = r.bottom + 10
+      left = Math.max(12, Math.min(left, vw - w - 12))
+      const top = r.bottom + 12
       setPos({ left, top, ax: Math.max(24, Math.min(r.left + r.width / 2 - left, w - 24)), maxH: vh - top - 12 })
     }
     place()
@@ -51,12 +51,12 @@ export function Popover({ anchor, open, onClose, width = 360, align = 'center', 
   return createPortal(
     <AnimatePresence>
       {open && (
-        <motion.div ref={ref} data-popover key="pop" className={`fixed z-[60] flex flex-col rounded-[22px] bg-pop text-ink shadow-pop ${className}`}
+        <motion.div ref={ref} data-popover key="pop" className={`fixed z-[60] flex flex-col rounded-[26px] bg-pop text-ink shadow-popover ${className}`}
           style={{ left: pos.left, top: pos.top, width: Math.min(width, window.innerWidth - 16), maxHeight: pos.maxH, transformOrigin: `${pos.ax}px -8px`, ...style }}
           initial={{ opacity: 0, scale: 0.82, y: -6 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.92, y: -4, pointerEvents: 'none', transition: { duration: 0.14, ease: 'easeIn' } }}
           transition={GN_SPRING}>
           {arrow && <div className="absolute -top-[7px] h-4 w-4 rotate-45 rounded-[3px] bg-pop" style={{ left: pos.ax - 8 }} />}
-          <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain rounded-[22px] no-scrollbar">{children}</div>
+          <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain rounded-[26px] no-scrollbar">{children}</div>
         </motion.div>
       )}
     </AnimatePresence>,
@@ -89,7 +89,7 @@ export function Sheet({ open, onClose, children, width = 680, className = '' }: 
       {open && (
         <motion.div key="sheet" className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-3" onPointerDown={(e) => e.target === e.currentTarget && onClose()}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, pointerEvents: 'none', transition: { duration: 0.16 } }} transition={{ duration: 0.18 }}>
-          <motion.div data-popover className={`relative flex max-h-[94vh] w-full flex-col overflow-hidden rounded-[30px] bg-pop text-ink shadow-pop ${className}`} style={{ maxWidth: width }}
+          <motion.div data-popover className={`relative flex max-h-[94vh] w-full flex-col overflow-hidden rounded-[30px] bg-pop text-ink shadow-popover ${className}`} style={{ maxWidth: width }}
             initial={{ y: 36, scale: 0.97, opacity: 0.6 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={{ y: 24, scale: 0.98, opacity: 0, transition: { duration: 0.16 } }} transition={GN_SPRING}>
             {children}
           </motion.div>
@@ -159,7 +159,7 @@ export function Row({ icon, children, trailing, onClick, danger, chevron, ext, s
     <>
       {icon && <span className={`flex w-7 shrink-0 justify-center ${danger ? 'text-danger' : 'text-ink'}`}>{icon}</span>}
       <span className="min-w-0 flex-1">
-        <span className={`block text-[18px] leading-tight ${danger ? 'text-danger' : ''}`}>{children}</span>
+        <span className={`block text-[17px] leading-tight ${danger ? 'text-danger' : ''}`}>{children}</span>
         {sub && <span className="mt-0.5 block text-[16px] leading-snug text-sub">{sub}</span>}
       </span>
       {trailing}

@@ -75,15 +75,15 @@ interface BtnProps {
  * Docked: white icons on navy, active = white tile + navy icon.
  * Glass:  ink icons on frosted white, active = Teal III tile + ink icon.
  */
-export function BarBtn({ active, onClick, label, children, refFn, chevron, w = 33, slide, glass }: BtnProps) {
+export function BarBtn({ active, onClick, label, children, refFn, chevron, w = 36, slide, glass }: BtnProps) {
   const tile = glass ? 'bg-gn-teal-3 dark:bg-gn-halo' : 'bg-[var(--tool-active)] shadow-[0_1px_2px_rgba(11,28,51,.18)]'
   const idle = glass ? 'text-gn-navy dark:text-gn-white hover:bg-[var(--halo)]' : 'text-gn-white hover:bg-white/10'
   const on = glass ? 'text-gn-navy dark:text-gn-white' : 'text-[var(--tool-active-ink)]'
   return (
     <motion.button ref={refFn} type="button" aria-label={label} title={label} aria-pressed={active} onClick={onClick} whileTap={{ scale: 0.88 }} transition={GN_TAP}
-      className={`relative flex h-[33px] shrink-0 items-center justify-center rounded-[10px] transition-colors duration-150 ${active ? `${slide ? '' : tile} ${on}` : idle}`}
+      className={`relative flex h-[36px] shrink-0 items-center justify-center rounded-[11px] transition-colors duration-150 ${active ? `${slide ? '' : tile} ${on}` : idle}`}
       style={{ width: chevron ? w + 14 : w }}>
-      {active && slide && <motion.span layoutId={slide} className={`absolute inset-0 rounded-[10px] ${tile}`} transition={GN_SPRING} />}
+      {active && slide && <motion.span layoutId={slide} className={`absolute inset-0 rounded-[11px] ${tile}`} transition={GN_SPRING} />}
       <span className="relative flex items-center gap-[2px]">
         {children}
         {chevron && <ChevronDown size={13} strokeWidth={2.2} className="opacity-80" />}
@@ -91,7 +91,7 @@ export function BarBtn({ active, onClick, label, children, refFn, chevron, w = 3
     </motion.button>
   )
 }
-const Sep = ({ glass }: { glass?: boolean }) => <span className={`mx-[6px] h-[22px] w-px shrink-0 ${glass ? 'bg-gn-ink-1/15 dark:bg-white/15' : 'bg-white/20'}`} />
+const Sep = ({ glass }: { glass?: boolean }) => <span className={`mx-[4px] h-[26px] w-px shrink-0 ${glass ? 'bg-gn-ink-1/15 dark:bg-white/15' : 'bg-white/20'}`} />
 
 /* ------------------------------------------------------------------ */
 /* Toolbar                                                             */
@@ -128,22 +128,22 @@ export default function Toolbar({ tool, onTool, prefs, anchors, popover, onPop, 
 
   const shell = glass
     ? 'relative z-30 mx-auto flex w-[min(1120px,calc(100%-16px))] shrink-0 items-center rounded-full bg-gn-panel-light px-4 py-2 shadow-gn-float dark:bg-gn-panel-dark dark:shadow-gn-float-dark'
-    : 'relative z-30 flex h-[41px] shrink-0 items-center bg-bar px-[7px]'
+    : 'relative z-30 flex h-[44px] shrink-0 items-center bg-bar px-[4px]'
 
   return (
-    <motion.nav aria-label={t('Werkzeugleiste')} className={shell}
+    <motion.nav aria-label={t('Werkzeugleiste')} className={`gn-bar ${shell}`}
       initial={glass ? { y: -12, opacity: 0, scale: 0.98 } : false} animate={{ y: 0, opacity: 1, scale: 1 }} transition={GN_SPRING}>
       {/* left */}
-      <div className="flex w-[124px] shrink-0 items-center gap-[8px] lg:w-[220px]">
-        <BarBtn glass={glass} label={t('Seitenleiste')} active={sidebar} onClick={onSidebar}><SidebarI size={21} /></BarBtn>
-        <BarBtn glass={glass} label={t('Suchen')} active={popover === 'search'} refFn={reg('search')} onClick={() => toggle('search')}><SearchI size={21} /></BarBtn>
-        <BarBtn glass={glass} label={t('Lesemodus')} active={readOnly} onClick={onReadOnly}><ReadI size={21} /></BarBtn>
+      <div className="flex w-[132px] shrink-0 items-center gap-[8px] lg:w-[220px]">
+        <BarBtn glass={glass} label={t('Seitenleiste')} active={sidebar} onClick={onSidebar}><SidebarI size={26} /></BarBtn>
+        <BarBtn glass={glass} label={t('Suchen')} active={popover === 'search'} refFn={reg('search')} onClick={() => toggle('search')}><SearchI size={26} /></BarBtn>
+        <BarBtn glass={glass} label={t('Lesemodus')} active={readOnly} onClick={onReadOnly}><ReadI size={26} /></BarBtn>
       </div>
 
       {/* centre: tool cluster */}
-      <div className="no-scrollbar flex min-w-0 flex-1 items-center justify-center gap-[13px] overflow-x-auto">
+      <div className="no-scrollbar flex min-w-0 flex-1 items-center justify-center gap-[14px] overflow-x-auto">
         <BarBtn glass={glass} slide="gn-tool" label={t('Lasso')} active={tool === 'lasso'} chevron={tool === 'lasso'} refFn={reg('tool:lasso')} onClick={() => onTool('lasso', tool === 'lasso')}>
-          <LassoGlyph size={22} active={tool === 'lasso'} />
+          <LassoGlyph size={27} active={tool === 'lasso'} />
         </BarBtn>
         <Sep glass={glass} />
         {prefs.visibleTools.map((id) => {
@@ -151,23 +151,23 @@ export default function Toolbar({ tool, onTool, prefs, anchors, popover, onPop, 
           const active = tool === id
           return (
             <BarBtn glass={glass} slide="gn-tool" key={id} label={t(label)} active={active} refFn={reg(`tool:${id}`)} onClick={() => onTool(id, active)}>
-              <Icon size={22} active={active} />
+              <Icon size={27} active={active} />
             </BarBtn>
           )
         })}
         {(shown.length > 0 || hiddenAcc.length > 0) && <Sep glass={glass} />}
         {shown.map((a) => {
           const { Icon, label } = ACC_META[a]
-          return <BarBtn glass={glass} key={a} label={t(label)} active={accActive[a]} onClick={() => onAcc(a)}><Icon size={22} /></BarBtn>
+          return <BarBtn glass={glass} key={a} label={t(label)} active={accActive[a]} onClick={() => onAcc(a)}><Icon size={27} /></BarBtn>
         })}
-        <BarBtn glass={glass} label={t('Zubehör')} chevron w={30} active={popover === 'acc'} refFn={reg('acc')} onClick={() => toggle('acc')}><AccessoriesI size={22} /></BarBtn>
+        <BarBtn glass={glass} label={t('Zubehör')} chevron w={34} active={popover === 'acc'} refFn={reg('acc')} onClick={() => toggle('acc')}><AccessoriesI size={27} /></BarBtn>
       </div>
 
       {/* right */}
-      <div className="flex w-[124px] shrink-0 items-center justify-end gap-[8px] lg:w-[220px]">
-        <BarBtn glass={glass} label={t('Seite hinzufügen')} active={popover === 'add'} refFn={reg('add')} onClick={() => toggle('add')}><PagePlusI size={22} /></BarBtn>
-        <BarBtn glass={glass} label={t('Teilen und Exportieren')} active={popover === 'share'} refFn={reg('share')} onClick={() => toggle('share')}><ShareI size={22} /></BarBtn>
-        <BarBtn glass={glass} label={t('Mehr')} active={popover === 'more'} refFn={reg('more')} onClick={() => toggle('more')}><MoreI size={24} /></BarBtn>
+      <div className="flex w-[132px] shrink-0 items-center justify-end gap-[8px] lg:w-[220px]">
+        <BarBtn glass={glass} label={t('Seite hinzufügen')} active={popover === 'add'} refFn={reg('add')} onClick={() => toggle('add')}><PagePlusI size={27} /></BarBtn>
+        <BarBtn glass={glass} label={t('Teilen und Exportieren')} active={popover === 'share'} refFn={reg('share')} onClick={() => toggle('share')}><ShareI size={27} /></BarBtn>
+        <BarBtn glass={glass} label={t('Mehr')} active={popover === 'more'} refFn={reg('more')} onClick={() => toggle('more')}><MoreI size={28} /></BarBtn>
       </div>
     </motion.nav>
   )

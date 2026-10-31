@@ -23,13 +23,13 @@ export default function TabBar({ tabs, view, onHome, onOpen, onClose, onRename, 
   const home = view === 'home' || view === 'shared' || view === 'trash' || view === 'cloud'
   const cur = tabs.find((x) => x.id === menu)
   return (
-    <div className="flex h-[36px] shrink-0 items-end bg-tab pl-1 text-[15px] text-white">
-      <button aria-label={t('Dokumente')} onClick={onHome} className={`mx-0.5 flex h-[33px] w-[52px] items-center justify-center rounded-t-[10px] ${home ? 'bg-bar' : 'text-white/70'}`}><HomeI size={20} /></button>
+    <div className="flex h-[40px] shrink-0 items-end bg-tab pl-1 text-[17px] text-white">
+      <button aria-label={t('Dokumente')} onClick={onHome} className={`mx-0.5 flex h-[36px] w-[54px] items-center justify-center rounded-t-[12px] ${home ? 'bg-bar' : 'text-white/70'}`}><HomeI size={20} /></button>
       <div className="no-scrollbar flex min-w-0 flex-1 items-end overflow-x-auto">
         {tabs.map((n) => {
           const active = view === n.id
           return (
-            <div key={n.id} className={`group relative flex h-[33px] min-w-[150px] max-w-[250px] flex-1 items-center rounded-t-[10px] pl-3.5 pr-1.5 ${active ? 'bg-bar' : 'text-white/70'}`}>
+            <div key={n.id} className={`group relative flex h-[36px] w-[182px] shrink-0 items-center rounded-t-[12px] pl-[18px] pr-2 ${active ? 'bg-bar' : 'text-white/70'}`}>
               {!active && <span className="absolute left-0 top-1.5 h-[20px] w-px bg-white/15" />}
               <button className="min-w-0 flex-1 truncate text-left" onClick={() => onOpen(n.id)}>{n.title || t('Unbenannt')}</button>
               {active && (
