@@ -40,12 +40,12 @@ function PageViewImpl({ page, store, ed, onActivate, panel }: Props) {
         {near && (
           <>
             <div className="absolute inset-0 overflow-hidden"><ImagesLayer images={c.images} /></div>
-            <NoteCanvas pageId={page.id} store={store} tool={ed.canvasTool} zoom={z} width={w} height={h} ruler={ed.ruler} onSelect={ed.setSelection} onActivate={() => onActivate(page.id)} onLassoTap={(p, cl) => ed.onLassoTap(page.id, p, cl)} onEraseEnd={ed.onEraseEnd} />
+            <NoteCanvas pageId={page.id} store={store} tool={ed.canvasTool} zoom={z} width={w} height={h} ruler={ed.ruler} onSelect={ed.setSelection} onActivate={() => onActivate(page.id)} onLassoTap={(p, cl) => ed.onLassoTap(page.id, p, cl)} onEraseEnd={ed.onEraseEnd} playback={panel ? null : ed.playback} />
             <TextLayer texts={c.texts} store={store} mode={mode} style={ed.textStyle} pageW={w} zoom={z}
               selectedId={ed.selText?.pageId === page.id ? ed.selText.id : null} editingId={ed.editText?.pageId === page.id ? ed.editText.id : null}
               onSelect={(id) => ed.setSelText(id == null ? null : { pageId: page.id, id })} onEdit={(id) => ed.setEditText(id == null ? null : { pageId: page.id, id })} onCreated={ed.onTextCreated} />
             {!panel && <LinkLayer links={c.links ?? []} active={ed.readOnly || ed.tool === 'lasso'} store={store} onGo={ed.goPage} pageNo={ed.pageNo} />}
-            {sel && <SelectionLayer store={store} selection={sel} zoom={z} colors={ed.colors} pageW={w} pageH={h} onChange={ed.setSelection} onToast={ed.toast} onLink={(box) => ed.onAddLink(page.id, box)} />}
+            {sel && <SelectionLayer store={store} selection={sel} zoom={z} colors={ed.colors} pageW={w} pageH={h} onChange={ed.setSelection} onToast={ed.toast} onLink={(box) => ed.onAddLink(page.id, box)} onSaveElement={ed.onSaveElement} />}
             {zr && <ZoomFrame region={zr} zoom={z} pageW={w} pageH={h} onChange={ed.setZoomRegion} />}
             {!panel && ed.ruler?.pageId === page.id && <RulerOverlay ruler={ed.ruler} zoom={z} onChange={ed.setRuler} onClose={() => ed.setRuler(null)} />}
           </>

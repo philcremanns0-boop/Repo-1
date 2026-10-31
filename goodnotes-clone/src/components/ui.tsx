@@ -49,6 +49,8 @@ export function Popover({ anchor, open, onClose, width = 360, align = 'center', 
     return () => { document.removeEventListener('pointerdown', down, true); document.removeEventListener('keydown', key) }
   }, [open, onClose, anchor])
   return createPortal(
+    // pointer-events is inherited: the moment `open` turns false the exiting dialog stops catching taps
+    <div className="contents" style={{ pointerEvents: open ? undefined : 'none' }}>
     <AnimatePresence>
       {open && (
         <motion.div ref={ref} data-popover key="pop" className={`fixed z-[60] flex flex-col rounded-[26px] bg-pop text-ink shadow-popover ${className}`}
@@ -59,7 +61,8 @@ export function Popover({ anchor, open, onClose, width = 360, align = 'center', 
           <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain rounded-[26px] no-scrollbar">{children}</div>
         </motion.div>
       )}
-    </AnimatePresence>,
+    </AnimatePresence>
+    </div>,
     document.body,
   )
 }
@@ -85,6 +88,8 @@ export function Sheet({ open, onClose, children, width = 680, className = '' }: 
     return () => document.removeEventListener('keydown', k)
   }, [open, onClose])
   return createPortal(
+    // pointer-events is inherited: the moment `open` turns false the exiting dialog stops catching taps
+    <div className="contents" style={{ pointerEvents: open ? undefined : 'none' }}>
     <AnimatePresence>
       {open && (
         <motion.div key="sheet" className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-3" onPointerDown={(e) => e.target === e.currentTarget && onClose()}
@@ -95,7 +100,8 @@ export function Sheet({ open, onClose, children, width = 680, className = '' }: 
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>,
+    </AnimatePresence>
+    </div>,
     document.body,
   )
 }

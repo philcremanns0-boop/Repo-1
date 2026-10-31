@@ -18,8 +18,9 @@ interface Props {
   onRemoveRec: (id: string) => void
   recording: boolean
   secs: number
+  onPlayback: (p: { now: number; end: number; start: number } | null) => void
 }
-export default function Sidebar({ nb, tab, setTab, onClose, onGo, recordings, onRemoveRec, recording, secs }: Props) {
+export default function Sidebar({ nb, tab, setTab, onClose, onGo, recordings, onRemoveRec, recording, secs, onPlayback }: Props) {
   const t = useT()
   const [filter, setFilter] = useState<'all' | 'fav'>('all')
   const [menu, setMenu] = useState<string | null>(null)
@@ -146,7 +147,10 @@ export default function Sidebar({ nb, tab, setTab, onClose, onGo, recordings, on
             <div key={r.id} className="mb-3 rounded-[18px] bg-card p-3">
               <div className="mb-1 flex items-center justify-between text-[16px]"><span>{new Date(r.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · {mmss(r.secs)}</span>
                 <button aria-label={t('Löschen')} onClick={() => onRemoveRec(r.id)}><Trash2 size={17} className="text-sub" /></button></div>
-              <audio controls src={r.url} className="h-9 w-full" />
+              <audio controls src={r.url} className="h-9 w-full"
+                onTimeUpdate={(e) => { const start = r.at - r.secs * 1000; onPlayback({ start, end: r.at, now: start + e.currentTarget.currentTime * 1000 }) }}
+                onPause={() => onPlayback(null)} onEnded={() => onPlayback(null)} />
+              <p className="mt-1 text-[13px] text-sub">{t('Beim Abspielen wird später Geschriebenes ausgeblendet.')}</p>
             </div>
           ))}
         </div>

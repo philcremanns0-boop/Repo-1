@@ -42,7 +42,7 @@ interface Props {
 }
 
 export default function DocumentView({ nb, ed, zoom, setZoom, scrollTo, laser, topInset, onZoomValue, onUndo, onRedo }: Props) {
-  const { scroll } = useSettings()
+  const { scroll, t } = useSettings()
   const box = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ w: 800, h: 600 })
   useLayoutEffect(() => {
@@ -159,6 +159,13 @@ export default function DocumentView({ nb, ed, zoom, setZoom, scrollTo, laser, t
               <PageView page={p} store={nb.store(p.id)} ed={full} onActivate={nb.setCurrent} />
             </PageSlot>
           ))}
+          {!ed.readOnly && (
+            <button onClick={() => { const id = nb.addPage('last'); requestAnimationFrame(() => box.current?.querySelector(`[data-page="${id}"]`)?.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' })) }}
+              aria-label="Seite am Ende hinzufügen" className="flex shrink-0 flex-col items-center justify-center gap-2 rounded-[6px] border-[1.5px] border-dashed border-sub/50 text-[15px] text-sub hover:border-gn-ui-select hover:text-gn-ui-select"
+              style={horizontal ? { width: 180, height: Math.round(pageDims(pg).h * z * 0.6) } : { width: Math.round(pageDims(pg).w * z), height: 120 }}>
+              <span className="text-[28px] leading-none">+</span>{t('Seite hinzufügen')}
+            </button>
+          )}
         </div>
       </div>
       {laser.on && <LaserLayer color={laser.color} trail={laser.trail} size={laser.size} />}

@@ -84,22 +84,23 @@ function drawShape(ctx: CanvasRenderingContext2D, s: Stroke) {
   if (s.shape === 'tape') {
     const len = Math.hypot(b.x - a.x, b.y - a.y), h = s.width
     ctx.translate(a.x, a.y); ctx.rotate(Math.atan2(b.y - a.y, b.x - a.x))
-    ctx.globalAlpha = 0.55
+    const a0 = ctx.globalAlpha
+    ctx.globalAlpha = a0 * 0.55
     ctx.beginPath()
     const n = h * 0.22
     ctx.moveTo(0, -h / 2); ctx.lineTo(len, -h / 2); ctx.lineTo(len - n, -h / 4); ctx.lineTo(len, 0); ctx.lineTo(len - n, h / 4); ctx.lineTo(len, h / 2)
     ctx.lineTo(0, h / 2); ctx.lineTo(n, h / 4); ctx.lineTo(0, 0); ctx.lineTo(n, -h / 4); ctx.closePath(); ctx.fill()
-    ctx.globalAlpha = 0.28; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2
+    ctx.globalAlpha = a0 * 0.28; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2
     for (let x = n * 2; x < len - n; x += 9) { ctx.beginPath(); ctx.moveTo(x, -h / 2); ctx.lineTo(x - h / 3, h / 2); ctx.stroke() }
   } else if (s.shape === 'ellipse') {
     ctx.beginPath()
     ctx.ellipse((a.x + b.x) / 2, (a.y + b.y) / 2, Math.abs(b.x - a.x) / 2, Math.abs(b.y - a.y) / 2, 0, 0, Math.PI * 2)
-    if (s.fill) { ctx.globalAlpha = 0.25; ctx.fill(); ctx.globalAlpha = 1 }
+    if (s.fill) { const a0 = ctx.globalAlpha; ctx.globalAlpha = a0 * 0.25; ctx.fill(); ctx.globalAlpha = a0 }
     ctx.stroke()
   } else {
     const o = shapeOutline(s)
     ctx.beginPath(); ctx.moveTo(o[0].x, o[0].y); o.slice(1).forEach((p) => ctx.lineTo(p.x, p.y))
-    if (s.fill && s.shape !== 'line' && s.shape !== 'arrow') { ctx.globalAlpha = 0.25; ctx.fill(); ctx.globalAlpha = 1 }
+    if (s.fill && s.shape !== 'line' && s.shape !== 'arrow') { const a0 = ctx.globalAlpha; ctx.globalAlpha = a0 * 0.25; ctx.fill(); ctx.globalAlpha = a0 }
     ctx.stroke()
     if (s.shape === 'arrow') {
       const ang = Math.atan2(b.y - a.y, b.x - a.x), L = Math.max(12, s.width * 4)
@@ -121,7 +122,7 @@ export function drawStroke(ctx: CanvasRenderingContext2D, s: Stroke) {
   ctx.lineJoin = 'round'; ctx.strokeStyle = s.color; ctx.fillStyle = s.color
 
   if (s.tool === 'highlighter') {
-    ctx.globalAlpha = HIGHLIGHTER_ALPHA; ctx.lineCap = 'square'; ctx.lineWidth = s.width
+    ctx.globalAlpha *= HIGHLIGHTER_ALPHA; ctx.lineCap = 'square'; ctx.lineWidth = s.width
     ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y)
     if (pts.length === 1) ctx.lineTo(pts[0].x + 0.01, pts[0].y)
     for (let i = 1; i < pts.length - 1; i++) ctx.quadraticCurveTo(pts[i].x, pts[i].y, (pts[i].x + pts[i + 1].x) / 2, (pts[i].y + pts[i + 1].y) / 2)

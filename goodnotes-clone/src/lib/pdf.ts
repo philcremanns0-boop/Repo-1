@@ -1,5 +1,5 @@
-import * as pdfjs from 'pdfjs-dist'
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.min.mjs'
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'
 import { putBlob } from './blobstore'
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl

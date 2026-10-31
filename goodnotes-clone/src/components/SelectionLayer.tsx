@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Copy, Trash2 } from './glyphs'
 import { newId, selectionBBox, translateStroke, type Content, type Pt, type Selection } from '../lib/draw'
 import { copySel, pick, remove } from '../lib/clipboard'
-import { renderPage, download } from '../lib/export'
+import { drawContent, renderPage, download } from '../lib/export'
 import type { PageStore } from '../store/useNotebook'
 import { useT } from '../context/Settings'
 
@@ -42,8 +42,9 @@ interface Props {
   onChange: (s: Selection | null) => void
   onToast?: (m: string) => void
   onLink?: (box: { x: number; y: number; w: number; h: number }) => void
+  onSaveElement?: (src: string) => void
 }
-export default function SelectionLayer({ store, selection, zoom, colors, pageW, pageH, onChange, onToast, onLink }: Props) {
+export default function SelectionLayer({ store, selection, zoom, colors, pageW, pageH, onChange, onToast, onLink, onSaveElement }: Props) {
   const t = useT()
   const [palette, setPalette] = useState(false)
   const c = store.content
@@ -103,6 +104,16 @@ export default function SelectionLayer({ store, selection, zoom, colors, pageW, 
     cv.toBlob((b) => b && download('screenshot.png', b), 'image/png')
   }
 
+  /** Lasso → 'Als Objekt sichern': transparent PNG of the selection, reusable from Objekte → Meine Objekte. */
+  const saveElement = async () => {
+    const k = 2, w = Math.ceil(bb.x1 - bb.x0) + 4, h = Math.ceil(bb.y1 - bb.y0) + 4
+    const cv = document.createElement('canvas'); cv.width = w * k; cv.height = h * k
+    const ctx = cv.getContext('2d')!
+    ctx.scale(k, k); ctx.translate(-bb.x0 + 2, -bb.y0 + 2)
+    await drawContent(ctx, pick(c, selection))
+    onSaveElement?.(cv.toDataURL('image/png'))
+    onToast?.(t('Als Objekt gesichert'))
+  }
   const pad = 6 / zoom
   const lw = 1.6 / zoom
   const knob = 14 / zoom
@@ -135,6 +146,7 @@ export default function SelectionLayer({ store, selection, zoom, colors, pageW, 
           </div>
         )}
         {onLink && <Btn onClick={() => { onLink({ x: bb.x0, y: bb.y0, w: bb.x1 - bb.x0, h: bb.y1 - bb.y0 }); onChange(null) }}>{t('Link')}</Btn>}
+        {onSaveElement && <Btn onClick={() => void saveElement()}>{t('Als Objekt sichern')}</Btn>}
         <Btn onClick={() => void shot()}>{t('Screenshot')}</Btn>
         <Btn danger onClick={del}><Trash2 size={15} />{t('Löschen')}</Btn>
       </div>

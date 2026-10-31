@@ -40,6 +40,7 @@ interface Props {
   /** lasso tap on empty space (Goodnotes shows 'Einfügen' there) */
   onLassoTap?: (p: Pt, client: { x: number; y: number }) => void
   onEraseEnd?: () => void
+  playback?: { now: number; end: number; start: number } | null
   onActivate: () => void
 }
 interface Gesture {
@@ -74,7 +75,7 @@ function eraseStep(c: Content, x: number, y: number, r: number, kind: CanvasTool
   return changed ? { ...c, strokes } : c
 }
 
-export default function NoteCanvas({ pageId, store, tool, zoom, width, height, ruler, onSelect, onActivate, onLassoTap, onEraseEnd }: Props) {
+export default function NoteCanvas({ pageId, store, tool, zoom, width, height, ruler, onSelect, onActivate, onLassoTap, onEraseEnd, playback }: Props) {
   const baseRef = useRef<HTMLCanvasElement>(null)
   const liveRef = useRef<HTMLCanvasElement>(null)
   const act = useRef<Gesture | null>(null)
@@ -97,11 +98,14 @@ export default function NoteCanvas({ pageId, store, tool, zoom, width, height, r
   useEffect(() => {
     const ctx = setup(baseRef.current!)
     // Goodnotes layering: highlighter always sits under pen ink and shapes
-    for (const s of store.content.strokes) if (s.tool === 'highlighter') drawStroke(ctx, s)
-    for (const s of store.content.strokes) if (s.tool !== 'highlighter') drawStroke(ctx, s)
+    // stroke ids are creation timestamps (ms × 1000): during audio playback, ink written after the playhead is dimmed
+    const later = (s: { id: number }) => !!playback && s.id / 1000 > playback.now && s.id / 1000 <= playback.end
+    const paint = (s: Stroke) => { if (later(s)) { ctx.save(); ctx.globalAlpha = 0.18; drawStroke(ctx, s); ctx.restore() } else drawStroke(ctx, s) }
+    for (const s of store.content.strokes) if (s.tool === 'highlighter') paint(s)
+    for (const s of store.content.strokes) if (s.tool !== 'highlighter') paint(s)
     if (!act.current?.stroke) setup(liveRef.current!)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.content.strokes, scale, width, height])
+  }, [store.content.strokes, scale, width, height, playback?.now, playback?.end])
 
   const toPage = (e: { clientX: number; clientY: number }): Pt => {
     const r = baseRef.current!.getBoundingClientRect()

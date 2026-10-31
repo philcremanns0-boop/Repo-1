@@ -35,3 +35,10 @@ export function clipFor(pageId: string, at?: { x: number; y: number }): { add: C
   }
   return { add, sel }
 }
+
+/* ---------- page clipboard (More → Seite kopieren / Seite hinzufügen → Seite einfügen) ---------- */
+import type { Page } from '../store/types'
+let pageClip: Page | null = null
+export const copyPage = (p: Page) => { pageClip = JSON.parse(JSON.stringify(p)) }
+export const hasPageClip = () => !!pageClip
+export const pastedPage = (): Page | null => (pageClip ? JSON.parse(JSON.stringify(pageClip)) : null)

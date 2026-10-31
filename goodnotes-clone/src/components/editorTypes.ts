@@ -33,4 +33,7 @@ export interface EditorProps {
   flash: { pageId: string; needle: string } | null
   clearFlash: () => void
   onEraseEnd: () => void
+  /** audio playback position: ink written later during the same recording is dimmed (Goodnotes audio sync) */
+  playback: { now: number; end: number; start: number } | null
+  onSaveElement: (src: string) => void
 }

@@ -12,7 +12,8 @@ export type Where = 'before' | 'after' | 'last'
 export type ExportFormat = 'pdf' | 'png' | 'goodnotes'
 
 /* ------------------------------ Add page ------------------------------ */
-export function AddPagePopover({ current, onAdd, onMoreTemplates, onChoose, ...b }: Base & {
+export function AddPagePopover({ current, onAdd, onMoreTemplates, onChoose, onPastePage, ...b }: Base & {
+  onPastePage?: (w: Where) => void
   current: PageMeta; onAdd: (w: Where, m: Partial<PageMeta>) => void; onMoreTemplates: (w: Where) => void; onChoose: (k: 'file' | 'camera' | 'import', w: Where) => void
 }) {
   const t = useT()
@@ -35,6 +36,7 @@ export function AddPagePopover({ current, onAdd, onMoreTemplates, onChoose, ...b
       </div>
       <div className="h-4" />
       <Group>
+        {onPastePage && <Row icon={<Copy size={22} />} onClick={() => { onPastePage(where); b.onClose() }}>{t('Kopierte Seite einfügen')}</Row>}
         <Row icon={<LayoutTemplate size={22} />} onClick={() => { b.onClose(); onMoreTemplates(where) }}>{t('Mehr Vorlagen …')}</Row>
         <Row icon={<ImageIcon size={22} />} onClick={() => { onChoose('file', where); b.onClose() }}>{t('Bild')}</Row>
         <Row icon={<ScanLine size={22} />} onClick={() => { onChoose('camera', where); b.onClose() }}>{t('Dokumente scannen')}</Row>
@@ -48,8 +50,8 @@ export function AddPagePopover({ current, onAdd, onMoreTemplates, onChoose, ...b
 
 /* ------------------------------ More ------------------------------ */
 export type ClearKind = 'strokes' | 'highlighter' | 'texts' | 'images' | 'shapes'
-export function MorePopover({ page, index, total, onBookmark, onCopy, onRotate, onOutline, onTemplate, onGoto, onClearKinds, onClearPage, onDelete, onSettings, ...b }: Base & {
-  page: Page; index: number; total: number; onBookmark: () => void; onCopy: () => void; onRotate: (d: 1 | -1) => void; onOutline: () => void; onTemplate: () => void
+export function MorePopover({ page, index, total, onBookmark, onCopy, onDuplicate, onRotate, onOutline, onTemplate, onGoto, onClearKinds, onClearPage, onDelete, onSettings, ...b }: Base & {
+  page: Page; index: number; total: number; onBookmark: () => void; onCopy: () => void; onDuplicate: () => void; onRotate: (d: 1 | -1) => void; onOutline: () => void; onTemplate: () => void
   onGoto: (n: number) => void; onClearKinds: (k: ClearKind) => void; onClearPage: () => void; onDelete: () => void; onSettings: () => void
 }) {
   const t = useT()
@@ -80,6 +82,7 @@ export function MorePopover({ page, index, total, onBookmark, onCopy, onRotate, 
         </div>
         <Row icon={page.bookmarked ? <BookmarkCheck size={22} className="text-accent" /> : <Bookmark size={22} />} onClick={done(onBookmark)}>{t(page.bookmarked ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen')}</Row>
         <Row icon={<Copy size={22} />} onClick={done(onCopy)}>{t('Seite kopieren')}</Row>
+        <Row icon={<Copy size={22} />} onClick={done(onDuplicate)}>{t('Seite duplizieren')}</Row>
         <Row icon={<RotateCw size={22} />} chevron onClick={() => setView('rotate')}>{t('Seite drehen')}</Row>
         <Row icon={<List size={22} />} onClick={done(onOutline)}>{t('Seite zur Gliederung hinzufügen')}</Row>
         <Row icon={<Palette size={22} />} onClick={done(onTemplate)}>{t('Vorlage wechseln')}</Row>

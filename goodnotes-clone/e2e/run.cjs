@@ -49,7 +49,7 @@ function makePdf(file) {
       const r = indexedDB.open('gn-data')
       r.onsuccess = () => {
         const st = r.result.transaction('kv', 'readonly').objectStore('kv'), q = st.getAll()
-        q.onsuccess = () => { const all = q.result.map((x) => JSON.parse(x)); res(title ? all.find((d) => d.title === title) : all.find((d) => d.id !== 'old') ?? null) }
+        q.onsuccess = () => { const all = q.result.map((x) => JSON.parse(x)).filter((d) => d && Array.isArray(d.pages)); res(title ? all.find((d) => d.title === title) : all.find((d) => d.id !== 'old') ?? null) }
       }
     }), title)
     await p.getByRole('button', { name: 'Alt', exact: true }).click(); await p.waitForSelector('[data-page]'); await p.waitForTimeout(300)
@@ -81,8 +81,9 @@ function makePdf(file) {
     await p.getByRole('button', { name: 'Text', exact: true }).first().click()
     await p.getByRole('button', { name: 'Schrift', exact: true }).click(); await p.getByText('Weitere Schriften …').click()
     await p.getByPlaceholder('Suchen').fill('Marker Felt'); await p.locator('[data-popover] button', { hasText: 'Marker Felt' }).first().click()
-    await p.mouse.click(bx.x + 60, bx.y + 500); await p.keyboard.type('Hallo Goodnotes'); await p.keyboard.press('Escape'); await p.waitForTimeout(400)
+    await p.mouse.click(bx.x + 60, bx.y + 500); await p.keyboard.type('Hallo Goodnotes'); await p.keyboard.press('Escape'); await p.waitForTimeout(900)
     const txt = (await content()).texts[0]
+    if (!txt && process.env.DEBUG) { await p.screenshot({ path: '/tmp/claude-0/-home-user-Repo-1/9b4f1dfd-632e-5bde-9bdf-4596152885d8/scratchpad/txtfail.png' }); console.log('DOM texts', await p.locator('[data-text-id]').count(), 'tool', await p.evaluate(() => [...document.querySelectorAll('[aria-pressed=true]')].map((e) => e.getAttribute('aria-label')).join('|'))) }
     check('text box with chosen font', txt?.text === 'Hallo Goodnotes' && txt.font === 'Marker Felt', txt?.font)
     // lasso copy/paste
     await p.getByRole('button', { name: 'Lasso' }).click(); await p.keyboard.press('Escape')
@@ -90,6 +91,11 @@ function makePdf(file) {
     await p.mouse.move(bx.x + 60, bx.y + 270); await p.mouse.down(); for (const [x, y] of [[340, 270], [340, 450], [60, 450], [60, 272]]) await p.mouse.move(bx.x + x, bx.y + y, { steps: 5 }); await p.mouse.up()
     await p.keyboard.press('Control+c'); await p.keyboard.press('Control+v'); await p.waitForTimeout(400)
     check('lasso copy + paste', (await content()).strokes.length === 2)
+    // save selection as own object and re-insert it
+    await p.getByRole('button', { name: 'Als Objekt sichern' }).click(); await p.waitForTimeout(400)
+    await p.getByRole('button', { name: 'Objekte' }).first().click(); await p.getByRole('button', { name: 'Meine Objekte' }).click()
+    await p.locator('[data-popover] button[aria-label="object"]').first().click(); await p.waitForTimeout(400)
+    check('own object saved + inserted', (await content()).images.length === 1)
     // ruler
     await p.getByRole('button', { name: 'Zubehör' }).click(); await p.getByText('Lineal', { exact: true }).click(); await p.waitForTimeout(300)
     check('ruler opens', (await p.locator('[data-ruler]').count()) === 1)
@@ -123,6 +129,12 @@ function makePdf(file) {
     await p.getByRole('switch', { name: 'Dunkelmodus' }).click(); await p.waitForTimeout(700)
     await p.reload(); await p.waitForSelector('[data-page]')
     check('persists after reload', (await p.locator('[data-page]').count()) === 2 && (await p.evaluate(() => document.documentElement.classList.contains('dark'))))
+    // page copy → paste, and add-page tile at the end
+    await p.getByRole('button', { name: 'Mehr', exact: true }).first().click(); await p.getByText('Seite kopieren', { exact: true }).click()
+    await p.getByRole('button', { name: 'Seite hinzufügen' }).click(); await p.getByText('Kopierte Seite einfügen').click(); await p.waitForTimeout(500)
+    check('page copy + paste', (await p.locator('[data-page]').count()) === 3)
+    await p.getByLabel('Seite am Ende hinzufügen').click(); await p.waitForTimeout(500)
+    check('add page at end tile', (await p.locator('[data-page]').count()) === 4)
     // library: duplicate + search
     await p.getByRole('button', { name: 'Dokumente' }).first().click(); await p.waitForTimeout(300)
     await p.getByRole('button', { name: 'Menü' }).first().click(); await p.getByText('Duplizieren', { exact: true }).click(); await p.waitForTimeout(300)

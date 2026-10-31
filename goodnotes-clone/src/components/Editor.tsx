@@ -5,11 +5,12 @@ import { emptyContent, newId, type Content, type Selection } from '../lib/draw'
 import { ELEMENT_SIZE } from '../lib/elements'
 import { buildPdf, download, printPages, readImage, renderPage } from '../lib/export'
 import { importPdf, isPdf } from '../lib/files'
-import { clipFor, copySel, hasClip, remove } from '../lib/clipboard'
+import { clipFor, copyPage, copySel, hasClip, hasPageClip, pastedPage, remove } from '../lib/clipboard'
 
 import { useRecorder } from '../lib/recorder'
 import { useNotebook } from '../store/useNotebook'
-import type { NbMeta, NotebookData } from '../store/types'
+import { useMyElements } from '../lib/myElements'
+import type { NbMeta, NotebookData, Page } from '../store/types'
 import type { Library } from '../store/useLibrary'
 import { useSettings, useT } from '../context/Settings'
 import DocumentView from './DocumentView'
@@ -48,6 +49,7 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
   const floating = useSettings().toolbar === 'floating'
   const nb = useNotebook(meta.id, initial, useCallback((m) => lib.patch(meta.id, { pages: m.pages, title: m.title, updated: Date.now() }), [lib.patch, meta.id])) // eslint-disable-line react-hooks/exhaustive-deps
   const [prefs, setPrefsRaw] = useState<ToolPrefs>(loadPrefs)
+  const myEls = useMyElements()
   const set = useCallback((fn: (p: ToolPrefs) => ToolPrefs) => setPrefsRaw((p) => { const n = fn(p); savePrefs(n); return n }), [])
   const [tool, setToolRaw] = useState<ToolId>('pen')
   const prevTool = useRef<ToolId>('pen')
@@ -59,6 +61,7 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
   const [selText, setSelText] = useState<TextRef | null>(null)
   const [editText, setEditTextRaw] = useState<TextRef | null>(null)
   const [ruler, setRuler] = useState<Ruler | null>(null)
+  const [playback, setPlayback] = useState<{ now: number; end: number; start: number } | null>(null)
   const [flash, setFlash] = useState<{ pageId: string; needle: string } | null>(null)
   const clearFlash = useCallback(() => setFlash(null), [])
   const [linkReq, setLinkReq] = useState<{ pageId: string; box: { x: number; y: number; w: number; h: number } } | null>(null)
@@ -156,15 +159,20 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
     setTool('lasso'); setSelection({ pageId: page.id, strokes: [], texts: [], images: [id] })
   }
   const insertElement = (src: string) => {
+    if (src.startsWith('data:image/png')) {
+      // own object: keep its real size (it was drawn on a page), scaled from the 2× export
+      const im = new Image(); im.onload = () => place(src, im.naturalWidth / 2, im.naturalHeight / 2, 0.9); im.src = src
+      return
+    }
     place(src, ELEMENT_SIZE * 2, ELEMENT_SIZE * 2, 0.3)
-    set((p) => ({ ...p, recent: [src, ...p.recent.filter((r) => r !== src)].slice(0, 12) }))
+    if (!src.startsWith('data:image/png')) set((p) => ({ ...p, recent: [src, ...p.recent.filter((r) => r !== src)].slice(0, 12) }))
   }
   const choose = (kind: 'file' | 'camera' | 'import', where: Where = 'after', asPage = false) => {
     pending.current = asPage || kind === 'import' ? { kind: 'page', where } : { kind: 'insert' }
     ;(kind === 'camera' ? cameraRef : kind === 'import' ? importRef : fileRef).current?.click()
   }
-  const addPageWith = (where: Where, meta?: Partial<Parameters<typeof nb.addPage>[1]>, content?: Content) => {
-    const id = nb.addPage(where, meta as never, content)
+  const addPageWith = (where: Where, meta?: Partial<Parameters<typeof nb.addPage>[1]>, content?: Content, bg?: Page['bg']) => {
+    const id = nb.addPage(where, meta as never, content, bg)
     setScrollTo({ id, n: Date.now() })
     return id
   }
@@ -264,9 +272,10 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
     onAddLink: (pageId, box) => setLinkReq({ pageId, box }),
     goPage: (id) => goPage(id),
     pageNo: (id) => nb.pages.findIndex((p) => p.id === id) + 1,
-    zoomRegion, setZoomRegion, flash, clearFlash,
+    zoomRegion, setZoomRegion, flash, clearFlash, playback,
+    onSaveElement: (src) => myEls.add(src),
     onEraseEnd: () => { if (prefs.erAuto && prevTool.current && prevTool.current !== 'eraser') setTool(prevTool.current) },
-  }), [tool, canvasTool, selection, prefs.textStyle, selText, editText, ruler, prefs.colors, readOnly, nb.pages, zoomRegion, flash, prefs.erAuto]) // eslint-disable-line react-hooks/exhaustive-deps
+  }), [tool, canvasTool, selection, prefs.textStyle, selText, editText, ruler, prefs.colors, readOnly, nb.pages, zoomRegion, flash, prefs.erAuto, playback]) // eslint-disable-line react-hooks/exhaustive-deps
   const close = () => setPopover(null)
   const P = (name: PopName) => popover === name
   const tplInit: TemplateResult = { template: page.template, color: page.color, size: page.size, cover: meta.cover, coverColor: meta.coverColor, title: meta.title }
@@ -283,7 +292,7 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
           readOnly={readOnly} onReadOnly={() => { setReadOnly((v) => !v); setSelection(null) }} accActive={accActive} onAcc={onAcc} />
       )}
       <div className="relative flex min-h-0 flex-1">
-        {sidebar && !present && <Sidebar nb={nb} tab={sideTab} setTab={setSideTab} onClose={() => setSidebar(false)} onGo={goPage} recordings={rec.items} onRemoveRec={rec.remove} recording={rec.recording} secs={rec.secs} />}
+        {sidebar && !present && <Sidebar nb={nb} tab={sideTab} setTab={setSideTab} onClose={() => setSidebar(false)} onGo={goPage} recordings={rec.items} onRemoveRec={rec.remove} recording={rec.recording} secs={rec.secs} onPlayback={setPlayback} />}
         <div className="relative flex min-w-0 flex-1 flex-col">
           {!present && floating && (
             <div className="pointer-events-none absolute inset-x-0 top-2 z-30"><div className="pointer-events-auto">
@@ -329,7 +338,7 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
       <EraserPopover anchor={anchorFor('tool:eraser')} open={P('eraser')} onClose={close} prefs={prefs} set={set} onClearPage={() => store.commit(() => emptyContent())} />
       <LassoPopover anchor={anchorFor('tool:lasso')} open={P('lasso')} onClose={close} prefs={prefs} set={set} />
       <ShapesPopover anchor={anchorFor('tool:shapes')} open={P('shapes')} onClose={close} prefs={prefs} set={set} />
-      <ObjectsPopover anchor={anchorFor('tool:objects')} open={P('objects')} onClose={close} prefs={prefs} onInsert={insertElement} />
+      <ObjectsPopover anchor={anchorFor('tool:objects')} open={P('objects')} onClose={close} prefs={prefs} mine={myEls.items} onInsert={insertElement} />
       <ImagesPopover anchor={anchorFor('tool:images')} open={P('images')} onClose={close} onChoose={(k) => choose(k)} />
       <AccessoriesPopover anchor={anchorFor('acc')} open={P('acc')} onClose={close} prefs={prefs} onAcc={onAcc} onCustomize={() => setCustomize(true)} />
       <FontPopover anchor={anchorFor('font')} open={P('font')} onClose={close} prefs={prefs} onFont={(f) => onTextStyle({ font: f })} onMore={() => setFontSheet(true)} />
@@ -339,11 +348,12 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
       <TextStylesPopover anchor={anchorFor('textstyles')} open={P('textstyles')} onClose={close} prefs={prefs} set={set} onApply={onTextStyle} />
       <TextColorPopover anchor={anchorFor('textcolor')} open={P('textcolor')} onClose={close} prefs={prefs} onColor={(c) => onTextStyle({ color: c })} />
       <AddPagePopover anchor={anchorFor('add')} open={P('add')} onClose={close} current={{ size: page.size, template: page.template, color: page.color }}
-        onAdd={(w, m) => addPageWith(w, m)} onMoreTemplates={(w) => setTpl({ kind: 'add', where: w })} onChoose={(k, w) => choose(k, w, true)} />
+        onAdd={(w, m) => addPageWith(w, m)} onMoreTemplates={(w) => setTpl({ kind: 'add', where: w })} onChoose={(k, w) => choose(k, w, true)}
+        onPastePage={hasPageClip() ? (w) => { const pg = pastedPage(); if (pg) addPageWith(w, { size: pg.size, template: pg.template, color: pg.color }, pg.content, pg.bg) } : undefined} />
       <SharePopover anchor={anchorFor('share')} open={P('share')} onClose={close} onExport={exportAs} onPrint={async (all) => { if (!(await printPages(all ? nb.pages : [page]))) toast(t('Pop-ups sind blockiert')) }}
         present={present} onPresent={setPresent} onUnavailable={() => toast(t('Zusammenarbeit ist in dieser Web-Version nicht verfügbar.'))} />
       <MorePopover anchor={anchorFor('more')} open={P('more')} onClose={close} page={page} index={nb.index} total={nb.pages.length}
-        onBookmark={() => nb.toggleBookmark(page.id)} onCopy={() => nb.duplicatePage(page.id)} onRotate={(d) => nb.rotatePage(page.id, d)}
+        onBookmark={() => nb.toggleBookmark(page.id)} onCopy={() => { copyPage(page); toast(t('Seite kopiert – über „Seite hinzufügen“ einfügen')) }} onDuplicate={() => nb.duplicatePage(page.id)} onRotate={(d) => nb.rotatePage(page.id, d)}
         onOutline={() => { nb.addOutline(page.id, `${t('Seite')} ${nb.index + 1}`); toast(t('Zur Gliederung hinzugefügt')) }} onTemplate={() => setTpl({ kind: 'change' })}
         onGoto={(n) => goPage(nb.pages[n - 1].id)} onClearKinds={(k) => store.commit(kinds(k))} onClearPage={() => store.commit(() => emptyContent())}
         onDelete={() => nb.deletePage(page.id)} onSettings={() => setPopover('settings')} />

@@ -62,18 +62,18 @@ export function LassoPopover({ prefs, set, ...b }: Base & { prefs: ToolPrefs; se
 }
 
 /* ------------------------------ Objects ------------------------------ */
-export function ObjectsPopover({ prefs, onInsert, ...b }: Base & { prefs: ToolPrefs; onInsert: (src: string) => void }) {
+export function ObjectsPopover({ prefs, mine, onInsert, ...b }: Base & { prefs: ToolPrefs; mine: string[]; onInsert: (src: string) => void }) {
   const t = useT()
   const [cat, setCat] = useState<string>('recent')
-  const items = cat === 'recent' ? prefs.recent.map((src, i) => ({ id: String(i), label: '', src })) : ELEMENT_CATEGORIES.find((c) => c.id === cat)?.items ?? []
+  const items = cat === 'recent' ? prefs.recent.map((src, i) => ({ id: String(i), label: '', src })) : cat === 'mine' ? mine.map((src, i) => ({ id: `m${i}`, label: '', src })) : ELEMENT_CATEGORIES.find((c) => c.id === cat)?.items ?? []
   return (
     <Popover {...b} width={480}>
       <div className="flex h-[min(560px,70vh)] flex-col">
         <PopTitle>{t('Objekte')}</PopTitle>
         <div className="min-h-0 flex-1 overflow-y-auto px-3">
-          <div className="px-2 pb-2 pt-3 text-[19px] font-semibold text-sub">{cat === 'recent' ? t('Neueste') : t(ELEMENT_CATEGORIES.find((c) => c.id === cat)!.label)}</div>
+          <div className="px-2 pb-2 pt-3 text-[19px] font-semibold text-sub">{cat === 'recent' ? t('Neueste') : cat === 'mine' ? t('Meine Objekte') : t(ELEMENT_CATEGORIES.find((c) => c.id === cat)!.label)}</div>
           {items.length === 0 ? (
-            <p className="px-2 py-10 text-center text-[17px] text-sub">{t('Noch keine Objekte verwendet. Wähle unten eine Kategorie.')}</p>
+            <p className="px-2 py-10 text-center text-[17px] text-sub">{t(cat === 'mine' ? 'Wähle etwas mit dem Lasso aus und tippe auf „Als Objekt sichern“.' : 'Noch keine Objekte verwendet. Wähle unten eine Kategorie.')}</p>
           ) : (
             <div className="grid grid-cols-3 gap-2.5 pb-3">
               {items.map((it) => (
@@ -86,6 +86,7 @@ export function ObjectsPopover({ prefs, onInsert, ...b }: Base & { prefs: ToolPr
         </div>
         <div className="flex gap-2 overflow-x-auto bg-card/60 px-3 py-2.5 no-scrollbar">
           <button aria-label={t('Neueste')} onClick={() => setCat('recent')} className={`flex h-10 w-[72px] shrink-0 items-center justify-center rounded-full ${cat === 'recent' ? 'bg-accent text-white' : 'bg-chip'}`}><Clock size={20} /></button>
+          <button onClick={() => setCat('mine')} className={`h-10 shrink-0 rounded-full px-4 text-[15px] font-semibold ${cat === 'mine' ? 'bg-accent text-white' : 'bg-chip'}`}>{t('Meine Objekte')}</button>
           {ELEMENT_CATEGORIES.map((c) => (
             <button key={c.id} onClick={() => setCat(c.id)} className={`h-10 shrink-0 rounded-full px-4 text-[15px] font-semibold ${cat === c.id ? 'bg-accent text-white' : 'bg-chip'}`}>{t(c.label)}</button>
           ))}
