@@ -3,7 +3,7 @@ import { ArrowRightToLine, Bookmark, BookmarkCheck, Camera, Copy, FileDown, File
 import type { Page, OutlineItem, PageMeta } from '../../store/types'
 import { colorsFor, templateLabel, type PaperColor, type TemplateId } from '../../lib/paper'
 import { PageThumb, PaperThumb } from '../PaperThumb'
-import { BackBtn, Group, Popover, PopTitle, Row, Segmented, Toggle } from '../ui'
+import { BackBtn, Group, Popover, PopTitle, Push, Row, Segmented, Toggle } from '../ui'
 import { useT } from '../../context/Settings'
 
 type A = RefObject<HTMLElement | null>
@@ -61,15 +61,15 @@ export function MorePopover({ page, index, total, onBookmark, onCopy, onRotate, 
       ? [{ l: 'Im Uhrzeigersinn', f: () => onRotate(1) }, { l: 'Gegen den Uhrzeigersinn', f: () => onRotate(-1) }]
       : ([['strokes', 'Handschrift'], ['highlighter', 'Textmarker'], ['shapes', 'Formen'], ['texts', 'Text'], ['images', 'Bilder']] as [ClearKind, string][]).map(([k, l]) => ({ l, f: () => onClearKinds(k) }))
     return (
-      <Popover {...b} width={370} align="right">
+      <Popover {...b} width={370} align="right"><Push id={view} dir={1}>
         <PopTitle left={<BackBtn onClick={() => setView('main')} />}>{t(view === 'rotate' ? 'Seite drehen' : 'Bestimmte Objekte löschen')}</PopTitle>
         <Group>{rows.map((r) => <Row key={r.l} danger={view === 'objects'} onClick={done(r.f)}>{t(r.l)}</Row>)}</Group>
         <div className="h-4" />
-      </Popover>
+      </Push></Popover>
     )
   }
   return (
-    <Popover {...b} width={390} align="right">
+    <Popover {...b} width={390} align="right"><Push id="main" dir={-1}>
       <PopTitle>{t('Mehr')}</PopTitle>
       <div className="h-2" />
       <Group>
@@ -96,7 +96,7 @@ export function MorePopover({ page, index, total, onBookmark, onCopy, onRotate, 
       <div className="h-3" />
       <Group><Row icon={<Settings size={22} />} onClick={() => { b.onClose(); onSettings() }}>{t('Einstellungen')}</Row></Group>
       <div className="h-4" />
-    </Popover>
+    </Push></Popover>
   )
 }
 
@@ -109,11 +109,11 @@ export function SharePopover({ onExport, onPrint, present, onPresent, onUnavaila
   useEffect(() => { if (!b.open) setView('main') }, [b.open])
   const H = ({ children }: { children: React.ReactNode }) => <div className="px-4 pb-1.5 pt-4 text-[19px] font-semibold text-sub">{children}</div>
   if (view === 'print') return (
-    <Popover {...b} width={370} align="right">
+    <Popover {...b} width={370} align="right"><Push id="print" dir={1}>
       <PopTitle left={<BackBtn onClick={() => setView('main')} />}>{t('Drucken')}</PopTitle>
       <Group><Row onClick={() => { onPrint(false); b.onClose() }}>{t('Diese Seite')}</Row><Row onClick={() => { onPrint(true); b.onClose() }}>{t('Alle Seiten')}</Row></Group>
       <div className="h-4" />
-    </Popover>
+    </Push></Popover>
   )
   return (
     <Popover {...b} width={380} align="right">

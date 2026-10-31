@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
-import { Brush, Pencil, PenTool } from 'lucide-react'
+import { BallpointI, BrushI, FountainI } from '../icons'
 import { drawStroke, pointWeight, type PenType, type Stroke } from '../../lib/draw'
-import { BackBtn, Group, Popover, PopTitle, Row, Slider, Toggle } from '../ui'
+import { BackBtn, Group, Popover, PopTitle, Push, Row, Slider, Toggle } from '../ui'
 import { useSettings, useT } from '../../context/Settings'
 import type { ToolPrefs } from '../toolState'
 
@@ -29,8 +29,11 @@ interface Props { anchor: RefObject<HTMLElement | null>; open: boolean; onClose:
 export default function PenPopover({ anchor, open, onClose, prefs, set }: Props) {
   const t = useT()
   const { dark } = useSettings()
-  const [view, setView] = useState<View>('main')
-  useEffect(() => { if (!open) setView('main') }, [open])
+  const [view, setViewRaw] = useState<View>('main')
+  const [dir, setDir] = useState<1 | -1>(1)
+  const depth: Record<View, number> = { main: 0, settings: 1, help: 1, math: 1, hold: 2, gestures: 2 }
+  const setView = (v: View) => { setDir(depth[v] >= depth[view] ? 1 : -1); setViewRaw(v) }
+  useEffect(() => { if (!open) { setViewRaw('main'); setDir(1) } }, [open])
   const o = prefs.penOpts[prefs.penType]
   const setOpt = (patch: Partial<typeof o>) => set((p) => ({ ...p, penOpts: { ...p.penOpts, [p.penType]: { ...p.penOpts[p.penType], ...patch } } }))
   const Cap = ({ label, value, children, off }: { label: string; value: string; children: React.ReactNode; off?: boolean }) => (
@@ -47,14 +50,15 @@ export default function PenPopover({ anchor, open, onClose, prefs, set }: Props)
   const note = (s: string) => <p className="px-5 pb-5 pt-3 text-[16px] leading-snug text-sub">{t(s)}</p>
   return (
     <Popover anchor={anchor} open={open} onClose={onClose} width={370} align="left" className="!bg-pop">
+      <Push id={view} dir={dir}>
       {view === 'main' && (
         <>
           <PopTitle>{t(NAMES[prefs.penType])}</PopTitle>
           <PenPreview type={prefs.penType} opts={o} color={dark ? '#ffffff' : '#000000'} />
           <div className="mx-3 mt-1 grid grid-cols-3 gap-1">
-            {([['fountain', PenTool], ['ballpoint', Pencil], ['brush', Brush]] as const).map(([id, I]) => (
+            {([['fountain', FountainI], ['ballpoint', BallpointI], ['brush', BrushI]] as const).map(([id, I]) => (
               <button key={id} onClick={() => set((p) => ({ ...p, penType: id }))} className={`flex flex-col items-center gap-1.5 rounded-[18px] py-4 text-[16px] ${prefs.penType === id ? 'bg-card' : ''}`}>
-                <I size={26} strokeWidth={1.6} className={prefs.penType === id ? 'text-accent' : ''} />{t(NAMES[id])}
+                <I size={28} active={prefs.penType === id} />{t(NAMES[id])}
               </button>
             ))}
           </div>
@@ -114,6 +118,7 @@ export default function PenPopover({ anchor, open, onClose, prefs, set }: Props)
           {note('Die Gleichungserkennung ist in dieser Web-Version nicht enthalten.')}
         </>
       ))}
+      </Push>
     </Popover>
   )
 }

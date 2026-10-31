@@ -1,5 +1,6 @@
 import { type MutableRefObject, type ReactNode } from 'react'
 import { ChevronDown } from 'lucide-react'
+import { motion } from 'framer-motion'
 import {
   AccessoriesI, EraserI, ImageI, LassoI, LaserI, MicSparkI, MoreI, NoteI, ObjectsI, PagePlusI, PenI, ReadI, SearchI, ShapesI, ShareI, SidebarI, TextI,
 } from './icons'
@@ -29,15 +30,16 @@ export const ACC_META: Record<AccId, { label: string; Icon: (p: { size?: number 
   timer: { label: 'Zeitmesser', Icon: (p) => (<svg width={p.size ?? 22} height={p.size ?? 22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="8.5" /><path d="M12 7v5l3 2" /></svg>) },
 }
 
-interface BtnProps { active?: boolean; onClick: () => void; label: string; children: ReactNode; refFn?: (el: HTMLButtonElement | null) => void; chevron?: boolean; dim?: boolean; w?: number }
-export function BarBtn({ active, onClick, label, children, refFn, chevron, dim, w = 33 }: BtnProps) {
+interface BtnProps { active?: boolean; onClick: () => void; label: string; children: ReactNode; refFn?: (el: HTMLButtonElement | null) => void; chevron?: boolean; dim?: boolean; w?: number; slide?: string }
+/** Toolbar button. With `slide`, the active background is a shared layout element that springs between buttons. */
+export function BarBtn({ active, onClick, label, children, refFn, chevron, dim, w = 33, slide }: BtnProps) {
   return (
-    <button ref={refFn} aria-label={label} title={label} aria-pressed={active} onClick={onClick}
-      className={`relative flex h-[33px] shrink-0 items-center justify-center gap-0.5 rounded-[10px] transition-colors ${active ? 'bg-[var(--tool-active)] text-[var(--tool-active-ink)]' : `${dim ? 'text-white/85' : 'text-white'} active:bg-white/10`}`}
+    <motion.button ref={refFn} aria-label={label} title={label} aria-pressed={active} onClick={onClick} whileTap={{ scale: 0.88 }} transition={{ type: 'spring', stiffness: 600, damping: 30 }}
+      className={`relative flex h-[33px] shrink-0 items-center justify-center gap-0.5 rounded-[10px] transition-colors duration-150 ${active ? `${slide ? '' : 'bg-[var(--tool-active)]'} text-[var(--tool-active-ink)]` : `${dim ? 'text-white/85' : 'text-white'} hover:bg-white/10`}`}
       style={{ width: chevron ? w + 14 : w }}>
-      {children}
-      {chevron && <ChevronDown size={13} className="opacity-80" />}
-    </button>
+      {active && slide && <motion.span layoutId={slide} className="absolute inset-0 rounded-[10px] bg-[var(--tool-active)] shadow-[0_1px_2px_rgba(0,0,0,.15)]" transition={{ type: 'spring', stiffness: 520, damping: 36 }} />}
+      <span className="relative flex items-center gap-0.5">{children}{chevron && <ChevronDown size={13} className="opacity-80" />}</span>
+    </motion.button>
   )
 }
 const Sep = () => <span className="mx-1.5 h-[22px] w-px shrink-0 bg-white/20" />
@@ -55,8 +57,9 @@ interface Props {
   onReadOnly: () => void
   accActive: Record<AccId, boolean>
   onAcc: (a: AccId) => void
+  floating?: boolean
 }
-export default function Toolbar({ tool, onTool, prefs, anchors, popover, onPop, sidebar, onSidebar, readOnly, onReadOnly, accActive, onAcc }: Props) {
+export default function Toolbar({ tool, onTool, prefs, anchors, popover, onPop, sidebar, onSidebar, readOnly, onReadOnly, accActive, onAcc, floating }: Props) {
   const t = useT()
   const reg = (k: string) => (el: HTMLElement | null) => { anchors.current[k] = el }
   const tools: ToolId[] = prefs.visibleTools
@@ -64,7 +67,9 @@ export default function Toolbar({ tool, onTool, prefs, anchors, popover, onPop, 
   const shown = ALL_ACC.filter((a) => prefs.visibleAcc.includes(a))
   const Lasso = LassoI
   return (
-    <div className="relative z-30 flex h-[41px] shrink-0 items-center bg-bar px-[7px]">
+    <div className={floating
+      ? 'relative z-30 mx-auto flex h-[48px] w-[min(1120px,calc(100%-16px))] shrink-0 items-center rounded-full bg-[color-mix(in_srgb,var(--bar)_90%,transparent)] px-2 shadow-[0_10px_30px_rgba(16,24,40,.16),0_2px_6px_rgba(16,24,40,.10)] ring-1 ring-white/10 backdrop-blur-md backdrop-saturate-150'
+      : 'relative z-30 flex h-[41px] shrink-0 items-center bg-bar px-[7px]'}>
       <div className="flex w-[160px] shrink-0 items-center gap-1 lg:w-[240px]">
         <BarBtn label={t('Seitenleiste')} active={false} onClick={onSidebar}>
           <span className={`flex h-[33px] w-[33px] items-center justify-center rounded-[10px] ${sidebar ? 'bg-black/30' : ''}`}><SidebarI size={21} /></span>
@@ -74,13 +79,13 @@ export default function Toolbar({ tool, onTool, prefs, anchors, popover, onPop, 
       </div>
 
       <div className="no-scrollbar flex min-w-0 flex-1 items-center justify-center overflow-x-auto">
-        <BarBtn label={t('Lasso')} active={tool === 'lasso'} chevron={tool === 'lasso'} refFn={reg('tool:lasso')} onClick={() => onTool('lasso', tool === 'lasso')}><Lasso size={22} active={tool === 'lasso'} /></BarBtn>
+        <BarBtn slide="gn-tool" label={t('Lasso')} active={tool === 'lasso'} chevron={tool === 'lasso'} refFn={reg('tool:lasso')} onClick={() => onTool('lasso', tool === 'lasso')}><Lasso size={22} active={tool === 'lasso'} /></BarBtn>
         <Sep />
         {tools.map((id) => {
           const { Icon, label } = TOOL_META[id as Exclude<ToolId, 'lasso'>]
           const active = tool === id
           return (
-            <BarBtn key={id} label={t(label)} active={active} refFn={reg(`tool:${id}`)} onClick={() => onTool(id, active)}>
+            <BarBtn slide="gn-tool" key={id} label={t(label)} active={active} refFn={reg(`tool:${id}`)} onClick={() => onTool(id, active)}>
               <Icon size={22} active={active} />
             </BarBtn>
           )

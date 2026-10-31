@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject, type CSSProperties } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronRight, X } from 'lucide-react'
 
 /* ------------------------------ Popover ------------------------------ */
@@ -46,14 +47,31 @@ export function Popover({ anchor, open, onClose, width = 360, align = 'center', 
     document.addEventListener('keydown', key)
     return () => { document.removeEventListener('pointerdown', down, true); document.removeEventListener('keydown', key) }
   }, [open, onClose, anchor])
-  if (!open) return null
   return createPortal(
-    <div ref={ref} data-popover className={`fixed z-[60] flex flex-col rounded-[22px] bg-pop text-ink shadow-pop ${className}`}
-      style={{ left: pos.left, top: pos.top, width: Math.min(width, window.innerWidth - 16), maxHeight: pos.maxH, ...style }}>
-      {arrow && <div className="absolute -top-[7px] h-4 w-4 rotate-45 rounded-[3px] bg-pop" style={{ left: pos.ax - 8 }} />}
-      <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-[22px] no-scrollbar">{children}</div>
-    </div>,
+    <AnimatePresence>
+      {open && (
+        <motion.div ref={ref} data-popover key="pop" className={`fixed z-[60] flex flex-col rounded-[22px] bg-pop text-ink shadow-pop ${className}`}
+          style={{ left: pos.left, top: pos.top, width: Math.min(width, window.innerWidth - 16), maxHeight: pos.maxH, transformOrigin: `${pos.ax}px -8px`, ...style }}
+          initial={{ opacity: 0, scale: 0.82, y: -6 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.92, y: -4, pointerEvents: 'none', transition: { duration: 0.14, ease: 'easeIn' } }}
+          transition={SPRING}>
+          {arrow && <div className="absolute -top-[7px] h-4 w-4 rotate-45 rounded-[3px] bg-pop" style={{ left: pos.ax - 8 }} />}
+          <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain rounded-[22px] no-scrollbar">{children}</div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
     document.body,
+  )
+}
+
+/** Spring used for every popover / sheet – quick, slightly under-damped like UIKit's popover presentation. */
+export const SPRING = { type: 'spring', stiffness: 520, damping: 34, mass: 0.7 } as const
+
+/** Push / pop transition for nested menu pages (dir 1 = deeper, -1 = back). */
+export function Push({ id, dir, children }: { id: string; dir: 1 | -1; children: ReactNode }) {
+  return (
+    <motion.div key={id} initial={{ x: dir * 48, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: 'spring', stiffness: 460, damping: 38 }}>
+      {children}
+    </motion.div>
   )
 }
 
@@ -65,13 +83,18 @@ export function Sheet({ open, onClose, children, width = 680, className = '' }: 
     document.addEventListener('keydown', k)
     return () => document.removeEventListener('keydown', k)
   }, [open, onClose])
-  if (!open) return null
   return createPortal(
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-3" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div data-popover className={`relative flex max-h-[94vh] w-full flex-col overflow-hidden rounded-[30px] bg-pop text-ink shadow-pop ${className}`} style={{ maxWidth: width }}>
-        {children}
-      </div>
-    </div>,
+    <AnimatePresence>
+      {open && (
+        <motion.div key="sheet" className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-3" onPointerDown={(e) => e.target === e.currentTarget && onClose()}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, pointerEvents: 'none', transition: { duration: 0.16 } }} transition={{ duration: 0.18 }}>
+          <motion.div data-popover className={`relative flex max-h-[94vh] w-full flex-col overflow-hidden rounded-[30px] bg-pop text-ink shadow-pop ${className}`} style={{ maxWidth: width }}
+            initial={{ y: 36, scale: 0.97, opacity: 0.6 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={{ y: 24, scale: 0.98, opacity: 0, transition: { duration: 0.16 } }} transition={SPRING}>
+            {children}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
     document.body,
   )
 }
@@ -81,7 +104,7 @@ export function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boo
   return (
     <button role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)}
       className={`relative h-[29px] w-[54px] shrink-0 rounded-full transition-colors ${on ? 'bg-good' : 'bg-[#78788066] dark:bg-[#5c5c60]'}`}>
-      <span className={`absolute top-[2px] h-[25px] w-[33px] rounded-full bg-white shadow transition-all ${on ? 'left-[19px]' : 'left-[2px]'}`} />
+      <motion.span layout transition={{ type: 'spring', stiffness: 700, damping: 36 }} className="absolute top-[2px] h-[25px] w-[33px] rounded-full bg-white shadow" style={{ left: on ? 19 : 2 }} />
     </button>
   )
 }
@@ -109,12 +132,13 @@ export function Slider({ value, onChange, min = 0, max = 100, ticks = 0, step = 
 }
 
 export function Segmented<T extends string>({ value, options, onChange, className = '' }: { value: T; options: { id: T; label: ReactNode }[]; onChange: (v: T) => void; className?: string }) {
+  const id = useId()
   return (
     <div className={`flex gap-0.5 rounded-full bg-chip p-[3px] ${className}`}>
       {options.map((o) => (
-        <button key={o.id} onClick={() => onChange(o.id)}
-          className={`flex-1 rounded-full px-3 py-1.5 text-[15px] font-semibold transition-colors ${value === o.id ? 'bg-card text-ink shadow-[0_1px_3px_rgba(0,0,0,.2)]' : 'text-ink/90'}`}>
-          {o.label}
+        <button key={o.id} onClick={() => onChange(o.id)} className="relative flex-1 rounded-full px-3 py-1.5 text-[15px] font-semibold text-ink">
+          {value === o.id && <motion.span layoutId={`seg-${id}`} className="absolute inset-0 rounded-full bg-card shadow-[0_1px_3px_rgba(0,0,0,.2)]" transition={{ type: 'spring', stiffness: 520, damping: 38 }} />}
+          <span className="relative">{o.label}</span>
         </button>
       ))}
     </div>

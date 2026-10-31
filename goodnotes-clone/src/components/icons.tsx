@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 interface P { size?: number; active?: boolean; className?: string }
-const ACC = '#46c9e6'
+const ACC = 'var(--gn-teal-1)'
 const Svg = ({ size = 22, className, children }: { size?: number; className?: string; children: ReactNode }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
     {children}
@@ -9,13 +9,36 @@ const Svg = ({ size = 22, className, children }: { size?: number; className?: st
 )
 const f = (a?: boolean) => (a ? ACC : 'none')
 
+/** Fountain pen: tilted barrel, split nib with breather hole, writing squiggle (GN6 toolbar glyph). */
 export const PenI = ({ active, ...p }: P) => (
   <Svg {...p}>
-    <path d="M5 19.2l1.1-4.3L16.4 4.6a2 2 0 012.8 0l.2.2a2 2 0 010 2.8L9.2 17.9z" fill={f(active)} />
-    <path d="M14.2 6.8l3 3M5 19.2l4.2-1.3" />
-    <path d="M12.4 20.6c1.5 0 2-1.1 3.1-1.1s1.6 1.1 3.1 1.1" />
+    <path d="M6.3 15.3L15.9 5.7a2.1 2.1 0 013 0l.2.2a2.1 2.1 0 010 3l-9.6 9.6-4.8 1.4z" fill={f(active)} />
+    <path d="M13.7 7.9l3.1 3.1M4.7 20l3.1-3.1" />
+    <circle cx="8.3" cy="16.4" r=".7" fill="currentColor" stroke="none" />
+    <path d="M12.6 20.7c1.4-.1 1.9-1.3 3-1.3s1.5 1.2 2.9 1.2" />
   </Svg>
 )
+export const FountainI = (p: P) => (
+  <Svg {...p}>
+    <path d="M7 14.6L16 5.6a2 2 0 012.8 0l.1.1a2 2 0 010 2.8L9.9 17.5l-4.9 1.5z" fill={f(p.active)} />
+    <path d="M14 7.6l2.9 2.9M5 19l3-3" /><circle cx="8.9" cy="15.9" r=".7" fill="currentColor" stroke="none" />
+  </Svg>
+)
+export const BallpointI = (p: P) => (
+  <Svg {...p}>
+    <path d="M7.2 15.6l9.3-9.3a1.9 1.9 0 012.7 2.7l-9.3 9.3z" fill={f(p.active)} />
+    <path d="M7.2 15.6l-1.6 1.6-.8 2.4 2.4-.8 1.6-1.6M14.6 8.2l2.7 2.7" />
+  </Svg>
+)
+export const BrushI = (p: P) => (
+  <Svg {...p}>
+    <path d="M14.2 10.4l5.3-5.3a1.4 1.4 0 012 2l-5.3 5.3" />
+    <path d="M12.6 9.6l3.3 3.3-1.6 1.6-3.3-3.3z" fill={f(p.active)} />
+    <path d="M11 11.6c-2.5-.5-4.5.9-4.9 3.3-.3 1.6-1.2 2.6-2.6 3.1 3.6 1.1 7.3.4 8.5-2.3.5-1.1.4-2.4-1-4.1z" fill={f(p.active)} />
+  </Svg>
+)
+export const UndoI = (p: P) => (<Svg {...p}><path d="M9.4 6.8L5.2 11l4.2 4.2" /><path d="M5.6 11h9a4.6 4.6 0 010 9.2h-2.4" /></Svg>)
+export const RedoI = (p: P) => (<Svg {...p}><path d="M14.6 6.8l4.2 4.2-4.2 4.2" /><path d="M18.4 11h-9a4.6 4.6 0 000 9.2h2.4" /></Svg>)
 export const EraserI = (p: P) => (
   <Svg {...p}>
     <path d="M8.6 20.2l-4.5-4.5a2 2 0 010-2.8l9.3-9.3a2 2 0 012.8 0l4.5 4.5a2 2 0 010 2.8l-8.2 8.2" fill={f(p.active)} />
@@ -63,11 +86,12 @@ export const LaserI = (p: P) => (
     <path d="M17.2 3.2v2.2M20.4 6.4h-2.2M19.4 4.2l-1.5 1.5M14.8 4.4l.9.9M20 9.4l-.9-.9" />
   </Svg>
 )
+/** Lasso: dashed rope loop with a short solid tail and a filled cursor arrow. */
 export const LassoI = ({ active, ...p }: P) => (
   <Svg {...p}>
-    <path d="M9.4 4C5.6 4.6 3.2 7.4 4 10.2c.8 2.6 3.6 3.4 5.8 3.2" strokeDasharray="2.4 2.4" fill={f(active)} />
-    <path d="M9.4 4c3.4-.8 7 .8 7.6 3.4.3 1.4-.1 2.6-.9 3.6M5.8 11.8c.2 2.2 1.4 3.4 3.4 4" strokeDasharray="2.4 2.4" />
-    <path d="M11.8 10.4l8.2 3.6-3.7 1.5-1.5 3.8z" fill="currentColor" />
+    <path d="M8.6 15.1C5.2 14.6 3.1 12.4 3.5 9.7 4 6.5 7.8 4.3 12 4.5c4.2.2 7.3 2.6 6.8 5.6" strokeDasharray="2.3 2.3" fill={active ? ACC : 'none'} fillOpacity={active ? 0.9 : 0} />
+    <path d="M8.6 15.1c.9 1.2.3 2.6-1.1 3.4" />
+    <path d="M12.4 11.1l7.4 3.2-3.3 1.2-1.3 3.4z" fill="currentColor" />
   </Svg>
 )
 export const MicSparkI = (p: P) => (

@@ -4,7 +4,7 @@ import type { Library as Lib } from '../store/useLibrary'
 import type { Folder, NbMeta } from '../store/types'
 import { coverUri } from '../lib/covers'
 import { download } from '../lib/export'
-import { Group, Popover, PopTitle, Row, Sheet, BackBtn, CloseBtn } from './ui'
+import { Group, Popover, PopTitle, Push, Row, Sheet, BackBtn, CloseBtn } from './ui'
 import { SettingsBody } from './popovers/SimplePopovers'
 import { SidebarI, ShareI } from './icons'
 import { FolderGlyph } from './FolderGlyph'
@@ -204,7 +204,7 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
 
       <Popover anchor={gear} open={acct} onClose={() => setAcct(false)} width={400} align="right">
         {view === 'settings' ? (
-          <><PopTitle left={<BackBtn onClick={() => setView('menu')} />}>{t('Einstellungen')}</PopTitle><SettingsBody /></>
+          <Push id="settings" dir={1}><PopTitle left={<BackBtn onClick={() => setView('menu')} />}>{t('Einstellungen')}</PopTitle><SettingsBody /></Push>
         ) : (
           <div className="pb-3 pt-3">
             <Group><Row as="div" icon={<span className="flex h-11 w-11 items-center justify-center rounded-full bg-chip"><User size={24} /></span>} sub={t('Lokal in diesem Browser gespeichert')}><span className="text-[22px] font-semibold">{t('Gast')}</span></Row></Group>

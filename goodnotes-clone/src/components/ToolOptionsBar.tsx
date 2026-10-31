@@ -1,6 +1,7 @@
 import { type MutableRefObject, type ReactNode } from 'react'
-import { ChevronDown, Redo2, Undo2 } from 'lucide-react'
-import { AlignI, EraserI, HighlighterI, LineSpacingI, PenI, PinI, PixelEraserI, ShapeAutoI, StrokeEraserI, WashiI } from './icons'
+import { ChevronDown } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { AlignI, RedoI, UndoI, EraserI, HighlighterI, LineSpacingI, PenI, PinI, PixelEraserI, ShapeAutoI, StrokeEraserI, WashiI } from './icons'
 import type { ToolId } from './editorTypes'
 import { useT } from '../context/Settings'
 import { colorKey, WIDTHS, type PenMode, type ToolPrefs } from './toolState'
@@ -12,19 +13,23 @@ export function UndoPill({ canUndo, canRedo, onUndo, onRedo }: { canUndo: boolea
   const t = useT()
   const cls = (on: boolean) => `flex h-[33px] w-[36px] items-center justify-center rounded-[10px] ${on ? 'text-ink' : 'text-sub/70'}`
   return (
-    <div className="flex h-[40px] items-center gap-0.5 rounded-full border border-hair bg-float px-1.5 shadow-pill backdrop-blur">
-      <button aria-label={t('Rückgängig')} disabled={!canUndo} onClick={onUndo} className={cls(canUndo)}><Undo2 size={21} strokeWidth={1.8} /></button>
-      <button aria-label={t('Wiederholen')} disabled={!canRedo} onClick={onRedo} className={cls(canRedo)}><Redo2 size={21} strokeWidth={1.8} /></button>
+    <div className="flex h-[42px] items-center gap-0.5 rounded-full bg-float px-1.5 shadow-pill backdrop-blur-md backdrop-saturate-150">
+      <motion.button whileTap={{ scale: 0.85 }} aria-label={t('Rückgängig')} disabled={!canUndo} onClick={onUndo} className={cls(canUndo)}><UndoI size={22} /></motion.button>
+      <motion.button whileTap={{ scale: 0.85 }} aria-label={t('Wiederholen')} disabled={!canRedo} onClick={onRedo} className={cls(canRedo)}><RedoI size={22} /></motion.button>
     </div>
   )
 }
 
-const Opt = ({ active, onClick, label, children, refFn, w = 42, tone = 'tool' }: { active?: boolean; onClick: () => void; label: string; children: ReactNode; refFn?: (el: HTMLButtonElement | null) => void; w?: number; tone?: 'tool' | 'sel' }) => (
-  <button ref={refFn} aria-label={label} title={label} aria-pressed={active} onClick={onClick}
-    className={`flex h-[33px] shrink-0 items-center justify-center gap-0.5 rounded-[10px] text-ink ${active ? (tone === 'tool' ? 'bg-[var(--opt-active)]' : 'bg-[var(--opt-sel)]') : ''}`} style={{ width: w }}>
-    {children}
-  </button>
-)
+const Opt = ({ active, onClick, label, children, refFn, w = 42, tone = 'tool', group }: { active?: boolean; onClick: () => void; label: string; children: ReactNode; refFn?: (el: HTMLButtonElement | null) => void; w?: number; tone?: 'tool' | 'sel'; group?: string }) => {
+  const bg = tone === 'tool' ? 'bg-[var(--opt-active)]' : 'bg-[var(--opt-sel)]'
+  return (
+    <motion.button ref={refFn} aria-label={label} title={label} aria-pressed={active} onClick={onClick} whileTap={{ scale: 0.88 }}
+      className={`relative flex h-[33px] shrink-0 items-center justify-center gap-0.5 rounded-[10px] text-ink ${active && !group ? bg : ''}`} style={{ width: w }}>
+      {active && group && <motion.span layoutId={group} className={`absolute inset-0 rounded-[10px] ${bg}`} transition={{ type: 'spring', stiffness: 520, damping: 36 }} />}
+      <span className="relative flex items-center gap-0.5">{children}</span>
+    </motion.button>
+  )
+}
 const Sep = () => <span className="mx-1.5 h-[22px] w-px shrink-0 bg-hair" />
 const isDark = (hex: string) => { const n = parseInt(hex.slice(1), 16); return ((n >> 16) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 < 140 }
 
@@ -33,7 +38,7 @@ export function Thickness({ value, onChange, labels }: { value: number; onChange
   return (
     <>
       {[0, 1, 2].map((i) => (
-        <Opt key={i} active={value === i} tone="sel" w={34} label={labels[i]} onClick={() => onChange(i as 0 | 1 | 2)}>
+        <Opt key={i} group="gn-thick" active={value === i} tone="sel" w={34} label={labels[i]} onClick={() => onChange(i as 0 | 1 | 2)}>
           <span className="block rounded-full bg-ink" style={{ width: 20, height: hs[i] }} />
         </Opt>
       ))}
@@ -47,8 +52,9 @@ export function Swatches({ colors, idx, onPick, onOpen, anchor }: { colors: stri
         const sel = i === idx
         return (
           <button key={i} ref={sel ? anchor : undefined} aria-label={c} aria-pressed={sel} onClick={() => (sel ? onOpen() : onPick(i))}
-            className={`flex h-[36px] w-[38px] shrink-0 items-center justify-center rounded-full ${sel ? 'bg-[var(--opt-sel)]' : ''}`}>
-            <span className="flex h-[27px] w-[27px] items-center justify-center rounded-full" style={{ background: c, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.14)' }}>
+            className="relative flex h-[36px] w-[38px] shrink-0 items-center justify-center rounded-full">
+            {sel && <motion.span layoutId="gn-swatch" className="absolute inset-0 rounded-full bg-[var(--opt-sel)]" transition={{ type: 'spring', stiffness: 520, damping: 36 }} />}
+            <span className="relative flex h-[27px] w-[27px] items-center justify-center rounded-full" style={{ background: c, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.14)' }}>
               {sel && <ChevronDown size={13} strokeWidth={3} color={isDark(c) ? '#fff' : '#111'} />}
             </span>
           </button>
@@ -71,7 +77,8 @@ export function OptionsBar({ tool, prefs, set, anchors, popover, onPop, onTextSt
   const t = useT()
   const reg = (k: string) => (el: HTMLElement | null) => { anchors.current[k] = el }
   const wrap = (children: ReactNode) => (
-    <div className="flex h-[40px] max-w-full items-center rounded-full border border-hair bg-float px-1.5 shadow-pill backdrop-blur">{children}</div>
+    <motion.div key={tool} initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 480, damping: 34 }}
+      className="flex h-[42px] max-w-full items-center rounded-full bg-float px-1.5 shadow-pill backdrop-blur-md backdrop-saturate-150">{children}</motion.div>
   )
   const th = (k: ReturnType<typeof colorKey>) => (
     <Thickness value={prefs.thick[k]} labels={[t('Dünn'), t('Mittel'), t('Dick')]} onChange={(v) => set((p) => ({ ...p, thick: { ...p.thick, [k]: v } }))} />
@@ -85,11 +92,11 @@ export function OptionsBar({ tool, prefs, set, anchors, popover, onPop, onTextSt
     const m = prefs.penMode
     const pick = (mode: PenMode) => set((p) => ({ ...p, penMode: mode }))
     return wrap(<>
-      <Opt label={t('Stift')} active={m === 'pen'} w={m === 'pen' ? 58 : 42} refFn={reg('opt:pen')} onClick={() => (m === 'pen' ? onPop(popover === 'pen' ? null : 'pen') : pick('pen'))}>
+      <Opt group="gn-penmode" label={t('Stift')} active={m === 'pen'} w={m === 'pen' ? 58 : 42} refFn={reg('opt:pen')} onClick={() => (m === 'pen' ? onPop(popover === 'pen' ? null : 'pen') : pick('pen'))}>
         <PenI size={23} />{m === 'pen' && <ChevronDown size={13} />}
       </Opt>
-      <Opt label={t('Textmarker')} active={m === 'highlighter'} onClick={() => pick('highlighter')}><HighlighterI size={23} /></Opt>
-      <Opt label={t('Washi-Tape')} active={m === 'tape'} onClick={() => pick('tape')}><WashiI size={23} /></Opt>
+      <Opt group="gn-penmode" label={t('Textmarker')} active={m === 'highlighter'} onClick={() => pick('highlighter')}><HighlighterI size={23} /></Opt>
+      <Opt group="gn-penmode" label={t('Washi-Tape')} active={m === 'tape'} onClick={() => pick('tape')}><WashiI size={23} /></Opt>
       <Opt label={t('Formen automatisch erkennen (Zeichnen und halten)')} active={prefs.autoShape} onClick={() => set((p) => ({ ...p, autoShape: !p.autoShape }))}><ShapeAutoI size={23} /></Opt>
       <Sep />{th(m)}<Sep />{sw(m)}
     </>)
@@ -100,12 +107,12 @@ export function OptionsBar({ tool, prefs, set, anchors, popover, onPop, onTextSt
       <Opt key={k} tone="sel" w={34} active={flt[k]} label={`${t('Radierfilter')}: ${t(label)}`} onClick={() => set((p) => ({ ...p, erFilter: { ...p.erFilter, [k]: !p.erFilter[k] } }))}><I size={20} /></Opt>
     )
     return wrap(<>
-      <Opt label={t('Präzisionsradierer')} active={prefs.eraser === 'precision'} onClick={() => set((p) => ({ ...p, eraser: 'precision' }))}><PixelEraserI size={23} /></Opt>
-      <Opt label={t('Standardradierer')} active={prefs.eraser === 'standard'} onClick={() => set((p) => ({ ...p, eraser: 'standard' }))}><EraserI size={23} /></Opt>
-      <Opt label={t('Strichradierer')} active={prefs.eraser === 'stroke'} onClick={() => set((p) => ({ ...p, eraser: 'stroke' }))}><StrokeEraserI size={23} /></Opt>
+      <Opt group="gn-er" label={t('Präzisionsradierer')} active={prefs.eraser === 'precision'} onClick={() => set((p) => ({ ...p, eraser: 'precision' }))}><PixelEraserI size={23} /></Opt>
+      <Opt group="gn-er" label={t('Standardradierer')} active={prefs.eraser === 'standard'} onClick={() => set((p) => ({ ...p, eraser: 'standard' }))}><EraserI size={23} /></Opt>
+      <Opt group="gn-er" label={t('Strichradierer')} active={prefs.eraser === 'stroke'} onClick={() => set((p) => ({ ...p, eraser: 'stroke' }))}><StrokeEraserI size={23} /></Opt>
       <Sep />
       {[0, 1, 2].map((i) => (
-        <Opt key={i} tone="sel" w={34} active={prefs.eraserSize === i} label={`${t('Größe')} ${i + 1}`} onClick={() => set((p) => ({ ...p, eraserSize: i as 0 | 1 | 2 }))}>
+        <Opt key={i} group="gn-ersize" tone="sel" w={34} active={prefs.eraserSize === i} label={`${t('Größe')} ${i + 1}`} onClick={() => set((p) => ({ ...p, eraserSize: i as 0 | 1 | 2 }))}>
           <span className="block rounded-full border-2 border-ink" style={{ width: 9 + i * 5, height: 9 + i * 5 }} />
         </Opt>
       ))}
@@ -118,7 +125,7 @@ export function OptionsBar({ tool, prefs, set, anchors, popover, onPop, onTextSt
       <div className="no-scrollbar flex min-w-0 items-center overflow-x-auto">
         {(Object.keys(SHAPE_ICONS) as ShapeKind[]).filter((k) => k !== 'tape').map((k) => {
           const I = SHAPE_ICONS[k]
-          return <Opt key={k} active={prefs.shape === k} label={t(k)} onClick={() => set((p) => ({ ...p, shape: k }))}><I /></Opt>
+          return <Opt key={k} group="gn-shape" active={prefs.shape === k} label={t(k)} onClick={() => set((p) => ({ ...p, shape: k }))}><I /></Opt>
         })}
       </div>
       <Opt label={t('Füllung')} active={prefs.fill} onClick={() => set((p) => ({ ...p, fill: !p.fill }))}><span className="h-[16px] w-[16px] rounded-[4px] border-2 border-ink" style={{ background: prefs.fill ? 'currentColor' : 'transparent', opacity: prefs.fill ? 0.5 : 1 }} /></Opt>

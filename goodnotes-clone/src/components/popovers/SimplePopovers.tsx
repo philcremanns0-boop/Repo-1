@@ -172,7 +172,7 @@ export function TextColorPopover({ prefs, onColor, ...b }: Base & { prefs: ToolP
 /* ------------------------------ Settings content ------------------------------ */
 export function SettingsBody() {
   const t = useT()
-  const { theme, dark, scroll, lang, set } = useSettings()
+  const { theme, dark, scroll, lang, toolbar, set } = useSettings()
   return (
     <>
       <div className="px-4 pb-1.5 pt-2 text-[16px] uppercase tracking-wide text-sub">{t('Darstellung')}</div>
@@ -182,6 +182,8 @@ export function SettingsBody() {
       </Group>
       <div className="px-4 pb-1.5 pt-4 text-[16px] uppercase tracking-wide text-sub">{t('Scrollrichtung')}</div>
       <div className="px-3"><Segmented value={scroll} onChange={(v) => set({ scroll: v })} options={[{ id: 'vertical', label: t('Vertikal') }, { id: 'horizontal', label: t('Horizontal') }]} /></div>
+      <div className="px-4 pb-1.5 pt-4 text-[16px] uppercase tracking-wide text-sub">{t('Werkzeugleiste')}</div>
+      <div className="px-3"><Segmented value={toolbar} onChange={(v) => set({ toolbar: v })} options={[{ id: 'docked', label: t('Angedockt') }, { id: 'floating', label: t('Schwebend') }]} /></div>
       <div className="px-4 pb-1.5 pt-4 text-[16px] uppercase tracking-wide text-sub">{t('Sprache')}</div>
       <div className="px-3"><Segmented value={lang} onChange={(v) => set({ lang: v })} options={[{ id: 'de', label: 'Deutsch' }, { id: 'en', label: 'English' }]} /></div>
       <div className="h-4" />

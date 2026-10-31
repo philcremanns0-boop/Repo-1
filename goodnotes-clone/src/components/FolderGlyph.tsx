@@ -1,7 +1,8 @@
 import { Book, BookOpen, Briefcase, GraduationCap, Heart, Music, Star, type LucideIcon } from 'lucide-react'
 
 export const FOLDER_ICONS: Record<string, LucideIcon | null> = { none: null, star: Star, book: Book, read: BookOpen, school: GraduationCap, work: Briefcase, heart: Heart, music: Music }
-export const FOLDER_COLORS = ['#a3222a', '#f0807f', '#f59a2c', '#f2c94c', '#6cc12a', '#1fa6a0', '#0a7aff', '#7d2e8f', '#7d4e30', '#8e8e93']
+/** strong tones + the soft GN tones (Matcha, Sky, Lavender, Candy Floss) */
+export const FOLDER_COLORS = ['#a3222a', '#f59a2c', '#f2c94c', '#6cc12a', '#45bfdb', '#0a7aff', '#7d2e8f', '#8e8e93', '#cfe6b8', '#bfdcf5', '#b4aed0', '#f6c6d8']
 
 /** Folder illustration (tab + body), tinted with the folder colour. */
 export function FolderGlyph({ color, icon, className = '', width = 150 }: { color: string; icon?: string; className?: string; width?: number }) {

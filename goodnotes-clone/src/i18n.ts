@@ -66,6 +66,7 @@ export const EN: Record<string, string> = {
   'Menü': 'Menu', 'In den Papierkorb': 'Move to trash', 'Name, Farbe oder Symbol ändern': 'Change name, colour or icon', 'Ordner löschen': 'Delete folder',
   'Ordner gelöscht – Inhalt wurde eine Ebene nach oben verschoben': 'Folder deleted – its content moved up one level', 'Dieser Ordner ist leer': 'This folder is empty',
   'Erstelle ein Notizbuch mit Umschlag und Papiervorlage oder lege einen farbigen Ordner an.': 'Create a notebook with a cover and paper template, or add a coloured folder.', 'Listenansicht': 'List view', 'Rasteransicht': 'Grid view', 'Zurück': 'Back',
+  'Werkzeugleiste': 'Toolbar', 'Angedockt': 'Docked', 'Schwebend': 'Floating',
   // sidebar & library
   'Seiten': 'Pages', 'Gliederungen': 'Outlines', 'Audio': 'Audio', 'Favoriten': 'Favourites', 'Favorit': 'Favourite', 'Seitenmenü': 'Page menu', 'Nach oben': 'Move up', 'Nach unten': 'Move down', 'Seite löschen': 'Delete page',
   'Gliederungen – Übersichten über deine Dokumente': 'Outlines – overviews of your documents',

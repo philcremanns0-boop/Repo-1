@@ -8,7 +8,7 @@ import { useRecorder } from '../lib/recorder'
 import { useNotebook } from '../store/useNotebook'
 import type { NbMeta } from '../store/types'
 import type { Library } from '../store/useLibrary'
-import { useT } from '../context/Settings'
+import { useSettings, useT } from '../context/Settings'
 import DocumentView from './DocumentView'
 import Sidebar, { type SideTab } from './Sidebar'
 import Toolbar, { type PopName } from './Toolbar'
@@ -39,6 +39,7 @@ interface Props {
 }
 export default function Editor({ meta, lib, present, setPresent, toast, hideToast }: Props) {
   const t = useT()
+  const floating = useSettings().toolbar === 'floating'
   const nb = useNotebook(meta.id, meta.title, useCallback((m) => lib.patch(meta.id, { pages: m.pages, title: m.title, updated: Date.now() }), [lib.patch, meta.id])) // eslint-disable-line react-hooks/exhaustive-deps
   const [prefs, setPrefsRaw] = useState<ToolPrefs>(loadPrefs)
   const set = useCallback((fn: (p: ToolPrefs) => ToolPrefs) => setPrefsRaw((p) => { const n = fn(p); savePrefs(n); return n }), [])
@@ -179,17 +180,23 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
 
   return (
     <>
-      {!present && (
+      {!present && !floating && (
         <Toolbar tool={tool} onTool={onTool} prefs={prefs} anchors={anchors} popover={popover} onPop={setPopover} sidebar={sidebar} onSidebar={() => setSidebar((s) => !s)}
           readOnly={readOnly} onReadOnly={() => { setReadOnly((v) => !v); setSelection(null) }} accActive={accActive} onAcc={onAcc} />
       )}
       <div className="relative flex min-h-0 flex-1">
         {sidebar && !present && <Sidebar nb={nb} tab={sideTab} setTab={setSideTab} onClose={() => setSidebar(false)} onGo={goPage} recordings={rec.items} onRemoveRec={rec.remove} recording={rec.recording} secs={rec.secs} />}
         <div className="relative flex min-w-0 flex-1 flex-col">
-          <DocumentView nb={nb} ed={ed} zoom={zoomSet} setZoom={setZoom} scrollTo={scrollTo} topInset={present ? 8 : 58} onZoomValue={(z) => { zoomNow.current = z }}
+          {!present && floating && (
+            <div className="pointer-events-none absolute inset-x-0 top-2 z-30"><div className="pointer-events-auto">
+              <Toolbar floating tool={tool} onTool={onTool} prefs={prefs} anchors={anchors} popover={popover} onPop={setPopover} sidebar={sidebar} onSidebar={() => setSidebar((s) => !s)}
+                readOnly={readOnly} onReadOnly={() => { setReadOnly((v) => !v); setSelection(null) }} accActive={accActive} onAcc={onAcc} />
+            </div></div>
+          )}
+          <DocumentView nb={nb} ed={ed} zoom={zoomSet} setZoom={setZoom} scrollTo={scrollTo} topInset={present ? 8 : floating ? 116 : 58} onZoomValue={(z) => { zoomNow.current = z }}
             laser={{ on: tool === 'laser' && !readOnly, color: prefs.laserColor, trail: prefs.laserTrail, size: 9 }} />
           {!present && (
-            <div className="pointer-events-none absolute inset-x-0 top-2 z-20 grid grid-cols-[88px_minmax(0,1fr)_88px] items-start px-2">
+            <div className={`pointer-events-none absolute inset-x-0 ${floating ? 'top-[66px]' : 'top-2'} z-20 grid grid-cols-[88px_minmax(0,1fr)_88px] items-start px-2`}>
               <div className="pointer-events-auto w-fit"><UndoPill canUndo={nb.canUndo(page.id)} canRedo={nb.canRedo(page.id)} onUndo={store.undo} onRedo={store.redo} /></div>
               <div className="pointer-events-auto flex min-w-0 justify-center"><OptionsBar tool={tool} prefs={prefs} set={set} anchors={anchors} popover={popover} onPop={setPopover} onTextStyle={onTextStyle} /></div>
             </div>

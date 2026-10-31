@@ -4,7 +4,8 @@ import { EN } from '../i18n'
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type Lang = 'de' | 'en'
 export type ScrollDir = 'vertical' | 'horizontal'
-interface Stored { theme: ThemeMode; lang: Lang; scroll: ScrollDir }
+export type ToolbarStyle = 'docked' | 'floating'
+interface Stored { theme: ThemeMode; lang: Lang; scroll: ScrollDir; toolbar: ToolbarStyle }
 interface Ctx extends Stored {
   dark: boolean
   set: (p: Partial<Stored>) => void
@@ -18,9 +19,9 @@ export const useT = () => useContext(Context).t
 function load(): Stored {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) || '{}')
-    return { theme: v.theme ?? 'system', lang: v.lang ?? 'de', scroll: v.scroll ?? 'vertical' }
+    return { theme: v.theme ?? 'system', lang: v.lang ?? 'de', scroll: v.scroll ?? 'vertical', toolbar: v.toolbar === 'floating' ? 'floating' : 'docked' }
   } catch {
-    return { theme: 'system', lang: 'de', scroll: 'vertical' }
+    return { theme: 'system', lang: 'de', scroll: 'vertical', toolbar: 'docked' }
   }
 }
 

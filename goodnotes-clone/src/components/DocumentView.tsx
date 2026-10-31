@@ -1,11 +1,31 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Minus, Plus } from 'lucide-react'
+import { motion, useAnimate } from 'framer-motion'
 import { SIZES } from '../lib/paper'
 import type { Notebook } from '../store/useNotebook'
 import PageView from './PageView'
 import { LaserLayer } from './Widgets'
 import type { EditorProps } from './editorTypes'
 import { useSettings } from '../context/Settings'
+
+/** Wraps a page: new pages slide/fade in; navigating to a page (sidebar, go-to) replays a subtle slide-and-fade
+ *  along the active scroll axis. */
+function PageSlot({ children, fresh, flash, horizontal }: { children: React.ReactNode; fresh: boolean; flash: number; horizontal: boolean }) {
+  const [scope, animate] = useAnimate()
+  const first = useRef(true)
+  useEffect(() => {
+    if (first.current) { first.current = false; return }
+    if (!flash || !scope.current) return
+    void animate(scope.current, horizontal ? { opacity: [0.3, 1], x: [36, 0] } : { opacity: [0.3, 1], y: [28, 0] }, { type: 'spring', stiffness: 260, damping: 30 })
+  }, [flash]) // eslint-disable-line react-hooks/exhaustive-deps
+  const off = horizontal ? { x: 48 } : { y: 36 }
+  return (
+    <motion.div ref={scope} className="shrink-0" style={{ scrollSnapAlign: horizontal ? 'center' : undefined }}
+      initial={fresh ? { opacity: 0, scale: 0.98, ...off } : false} animate={{ opacity: 1, scale: 1, x: 0, y: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 30 }}>
+      {children}
+    </motion.div>
+  )
+}
 
 interface Props {
   nb: Notebook
@@ -70,6 +90,7 @@ export default function DocumentView({ nb, ed, zoom, setZoom, scrollTo, laser, t
     return () => el.removeEventListener('wheel', w)
   }, [z, setZoom])
 
+  const known = useRef(new Set(nb.pages.map((p) => p.id)))
   const full: EditorProps = { ...ed, zoom: z }
   const ids = nb.pages.map((p) => p.id)
   return (
@@ -78,9 +99,9 @@ export default function DocumentView({ nb, ed, zoom, setZoom, scrollTo, laser, t
         style={{ scrollSnapType: horizontal ? 'x proximity' : undefined }}>
         <div className={`flex min-h-full min-w-full gap-6 ${horizontal ? 'w-max flex-row items-center px-10' : 'w-max flex-col items-center px-6 pb-24'}`} style={{ paddingTop: topInset + 8, paddingBottom: horizontal ? 24 : 96 }}>
           {nb.pages.map((p) => (
-            <div key={p.id} style={{ scrollSnapAlign: horizontal ? 'center' : undefined }} className="shrink-0">
+            <PageSlot key={p.id} fresh={!known.current.has(p.id)} flash={scrollTo?.id === p.id ? scrollTo.n : 0} horizontal={horizontal}>
               <PageView page={p} store={nb.store(p.id)} ed={full} onActivate={nb.setCurrent} />
-            </div>
+            </PageSlot>
           ))}
         </div>
       </div>
