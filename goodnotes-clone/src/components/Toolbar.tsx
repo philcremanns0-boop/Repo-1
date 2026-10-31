@@ -1,4 +1,4 @@
-import { type MutableRefObject, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type MutableRefObject, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronDown } from './glyphs'
 import {
@@ -9,7 +9,7 @@ import { useT } from '../context/Settings'
 import { ALL_ACC, type ToolPrefs } from './toolState'
 import { GN_SPRING, GN_TAP } from './motion'
 
-export type PopName = 'pen' | 'eraser' | 'lasso' | 'shapes' | 'objects' | 'images' | 'acc' | 'add' | 'share' | 'more' | 'search' | 'color' | 'font' | 'size' | 'spacing' | 'textcolor' | 'textbox' | 'textstyles' | 'tab' | 'settings'
+export type PopName = 'overflow' | 'pen' | 'eraser' | 'lasso' | 'shapes' | 'objects' | 'images' | 'acc' | 'add' | 'share' | 'more' | 'search' | 'color' | 'font' | 'size' | 'spacing' | 'textcolor' | 'textbox' | 'textstyles' | 'tab' | 'settings'
 type IconC = (p: { size?: number; active?: boolean }) => JSX.Element
 
 /** Lasso: fluid rope loop, dashed 3,3, short solid tail, filled pointer. 1.5 stroke = the thin GN line weight. */
@@ -110,6 +110,7 @@ interface Props {
   accActive: Record<AccId, boolean>
   onAcc: (a: AccId) => void
   floating?: boolean
+  overflowRef: MutableRefObject<ToolId[]>
 }
 
 /**
@@ -118,13 +119,29 @@ interface Props {
  * - floating: pill – rounded-full, px-4 py-2, pure #FFFFFF panel (dark #1E1E1E) with a 0 4px 30px rgba(0,0,0,.03) shadow.
  * Left group (sidebar · search · read mode), centred tool cluster (lasso │ tools │ accessories), right group (add page · share · more).
  */
-export default function Toolbar({ tool, onTool, prefs, anchors, popover, onPop, sidebar, onSidebar, readOnly, onReadOnly, accActive, onAcc, floating }: Props) {
+export default function Toolbar({ tool, onTool, prefs, anchors, popover, onPop, sidebar, onSidebar, readOnly, onReadOnly, accActive, onAcc, floating, overflowRef }: Props) {
   const t = useT()
   const glass = !!floating
   const reg = (k: string) => (el: HTMLElement | null) => { anchors.current[k] = el }
   const hiddenAcc = ALL_ACC.filter((a) => !prefs.visibleAcc.includes(a))
   const shown = ALL_ACC.filter((a) => prefs.visibleAcc.includes(a))
   const toggle = (p: PopName) => onPop(popover === p ? null : p)
+  // Goodnotes: tools that do not fit move into an overflow menu (narrow windows, portrait iPad mini …)
+  const centre = useRef<HTMLDivElement>(null)
+  const [cw, setCw] = useState(2000)
+  useLayoutEffect(() => {
+    const el = centre.current; if (!el) return
+    const f = () => setCw(el.clientWidth)
+    f(); const ro = new ResizeObserver(f); ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const STEP = 50 // 36 pt tile + 14 pt gap
+  const fixed = STEP /* lasso */ + 2 * 23 /* separators */ + (shown.length + 1) * STEP + 14
+  const fit = Math.max(1, Math.floor((cw - fixed) / STEP))
+  const all = prefs.visibleTools
+  const inBar = all.length <= fit ? all : all.slice(0, fit - 1)
+  const overflow = all.filter((x) => !inBar.includes(x))
+  overflowRef.current = overflow
 
   const shell = glass
     ? 'relative z-30 mx-auto flex w-[min(1120px,calc(100%-16px))] shrink-0 items-center rounded-full bg-gn-panel-light px-4 py-2 shadow-gn-float dark:bg-gn-panel-dark dark:shadow-gn-float-dark'
@@ -141,12 +158,12 @@ export default function Toolbar({ tool, onTool, prefs, anchors, popover, onPop, 
       </div>
 
       {/* centre: tool cluster */}
-      <div className="no-scrollbar flex min-w-0 flex-1 items-center justify-center gap-[14px] overflow-x-auto">
+      <div ref={centre} className="flex min-w-0 flex-1 items-center justify-center gap-[14px]">
         <BarBtn glass={glass} slide="gn-tool" label={t('Lasso')} active={tool === 'lasso'} chevron={tool === 'lasso'} refFn={reg('tool:lasso')} onClick={() => onTool('lasso', tool === 'lasso')}>
           <LassoGlyph size={27} active={tool === 'lasso'} />
         </BarBtn>
         <Sep glass={glass} />
-        {prefs.visibleTools.map((id) => {
+        {inBar.map((id) => {
           const { Icon, label } = TOOL_META[id as Exclude<ToolId, 'lasso'>]
           const active = tool === id
           return (
@@ -155,6 +172,11 @@ export default function Toolbar({ tool, onTool, prefs, anchors, popover, onPop, 
             </BarBtn>
           )
         })}
+        {overflow.length > 0 && (
+          <BarBtn glass={glass} label={t('Weitere Werkzeuge')} active={overflow.includes(tool) || popover === 'overflow'} refFn={reg('overflow')} onClick={() => toggle('overflow')}>
+            <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 7l5 5-5 5M13 7l5 5-5 5" /></svg>
+          </BarBtn>
+        )}
         {(shown.length > 0 || hiddenAcc.length > 0) && <Sep glass={glass} />}
         {shown.map((a) => {
           const { Icon, label } = ACC_META[a]

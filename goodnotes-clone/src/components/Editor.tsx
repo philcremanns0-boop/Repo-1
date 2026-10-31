@@ -15,7 +15,8 @@ import type { Library } from '../store/useLibrary'
 import { useSettings, useT } from '../context/Settings'
 import DocumentView from './DocumentView'
 import Sidebar, { type SideTab } from './Sidebar'
-import Toolbar, { type PopName } from './Toolbar'
+import Toolbar, { TOOL_ICON, TOOL_LABEL, type PopName } from './Toolbar'
+import { Group, Popover, PopTitle, Row } from './ui'
 import { OptionsBar, UndoPill } from './ToolOptionsBar'
 import { TimerWidget } from './Widgets'
 import ZoomWindow from './ZoomWindow'
@@ -57,6 +58,7 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
   const setTool = useCallback((t: ToolId) => setToolRaw((cur) => { if (cur !== t) prevTool.current = cur; return t }), [])
   const [popover, setPopover] = useState<PopName | null>(null)
   const anchors = useRef<Record<string, HTMLElement | null>>({})
+  const overflowTools = useRef<ToolId[]>([])
   const anchorFor = (...keys: string[]) => ({ get current() { for (const k of keys) if (anchors.current[k]) return anchors.current[k]; return null } }) as React.RefObject<HTMLElement | null>
   const [selection, setSelection] = useState<Selection | null>(null)
   const [selText, setSelText] = useState<TextRef | null>(null)
@@ -292,7 +294,7 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
     <>
       {!present && !floating && (
         <Toolbar tool={tool} onTool={onTool} prefs={prefs} anchors={anchors} popover={popover} onPop={setPopover} sidebar={sidebar} onSidebar={() => setSidebar((s) => !s)}
-          readOnly={readOnly} onReadOnly={() => { setReadOnly((v) => !v); setSelection(null) }} accActive={accActive} onAcc={onAcc} />
+          readOnly={readOnly} onReadOnly={() => { setReadOnly((v) => !v); setSelection(null) }} accActive={accActive} onAcc={onAcc} overflowRef={overflowTools} />
       )}
       <div className="relative flex min-h-0 flex-1">
         {sidebar && !present && <Sidebar nb={nb} tab={sideTab} setTab={setSideTab} onClose={() => setSidebar(false)} onGo={goPage} recordings={rec.items} onRemoveRec={rec.remove} recording={rec.recording} secs={rec.secs} onPlayback={setPlayback} />}
@@ -300,7 +302,7 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
           {!present && floating && (
             <div className="pointer-events-none absolute inset-x-0 top-2 z-30"><div className="pointer-events-auto">
               <Toolbar floating tool={tool} onTool={onTool} prefs={prefs} anchors={anchors} popover={popover} onPop={setPopover} sidebar={sidebar} onSidebar={() => setSidebar((s) => !s)}
-                readOnly={readOnly} onReadOnly={() => { setReadOnly((v) => !v); setSelection(null) }} accActive={accActive} onAcc={onAcc} />
+                readOnly={readOnly} onReadOnly={() => { setReadOnly((v) => !v); setSelection(null) }} accActive={accActive} onAcc={onAcc} overflowRef={overflowTools} />
             </div></div>
           )}
           <DocumentView nb={nb} ed={ed} zoom={zoomSet} setZoom={setZoom} scrollTo={scrollTo} topInset={present ? 8 : floating ? 116 : 58} onZoomValue={(z) => { zoomNow.current = z }} onUndo={() => nb.store(nb.page.id).undo()} onRedo={() => nb.store(nb.page.id).redo()}
@@ -329,6 +331,11 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
         </div>
       )}
 
+      <Popover anchor={anchorFor('overflow')} open={P('overflow')} onClose={close} width={300}>
+        <PopTitle>{t('Weitere Werkzeuge')}</PopTitle>
+        <Group>{overflowTools.current.map((id) => { const I = TOOL_ICON(id); return <Row key={id} icon={<I size={24} active={tool === id} />} onClick={() => { close(); onTool(id, tool === id) }} trailing={tool === id ? <span className="text-accent">✓</span> : null}>{t(TOOL_LABEL(id))}</Row> })}</Group>
+        <div className="h-4" />
+      </Popover>
       <PenPopover anchor={anchorFor('opt:pen', 'tool:pen')} open={P('pen')} onClose={close} prefs={prefs} set={set} />
       <ColorPopover anchor={anchorFor('color')} open={P('color')} onClose={close} color={currentColor(tool, prefs)}
         onChange={(hex) => set((p) => { const k = tool === 'shapes' ? 'shape' : p.penMode; const colors = [...p.colors]; colors[p.colorIdx[k]] = hex; return { ...p, colors } })}

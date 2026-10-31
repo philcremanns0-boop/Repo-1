@@ -82,7 +82,7 @@ export function OptionsBar({ tool, prefs, set, anchors, popover, onPop, onTextSt
   const reg = (k: string) => (el: HTMLElement | null) => { anchors.current[k] = el }
   const wrap = (children: ReactNode) => (
     <motion.div key={tool} initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={GN_SPRING}
-      className="gn-opt flex h-[44px] max-w-full items-center rounded-full border border-hair bg-gn-panel-light px-1.5 shadow-gn-float dark:bg-gn-panel-dark dark:shadow-gn-float-dark">{children}</motion.div>
+      className="gn-opt no-scrollbar flex h-[44px] max-w-full items-center overflow-x-auto rounded-full border border-hair bg-gn-panel-light px-1.5 shadow-gn-float dark:bg-gn-panel-dark dark:shadow-gn-float-dark">{children}</motion.div>
   )
   const th = (k: ReturnType<typeof colorKey>) => (
     <Thickness value={prefs.thick[k]} labels={[t('Dünn'), t('Mittel'), t('Dick')]} onChange={(v) => set((p) => ({ ...p, thick: { ...p.thick, [k]: v } }))} />
@@ -178,9 +178,9 @@ export function OptionsBar({ tool, prefs, set, anchors, popover, onPop, onTextSt
       <Sep />
       <Opt refFn={reg('textbox')} label={t('Textfeld-Stil')} w={40} active={!!(s.fill || s.border)} tone="sel" onClick={() => onPop(popover === 'textbox' ? null : 'textbox')}><TextBoxStyleI size={24} /></Opt>
       <Opt refFn={reg('textstyles')} label={t('Textstile')} w={40} onClick={() => onPop(popover === 'textstyles' ? null : 'textstyles')}><TextStylesI size={24} /></Opt>
-      <button aria-pressed={prefs.pinText} onClick={() => set((p) => ({ ...p, pinText: !p.pinText }))}
+      <button aria-label={t('Textwerkzeug fixieren')} aria-pressed={prefs.pinText} onClick={() => set((p) => ({ ...p, pinText: !p.pinText }))}
         className={`mr-1 flex h-[34px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[10px] px-2.5 text-[15px] font-medium text-ink ${prefs.pinText ? 'bg-[var(--opt-active)]' : 'bg-chip'}`}>
-        <PinI size={20} />{t('Textwerkzeug fixieren')}
+        <PinI size={20} /><span className="hidden lg:inline">{t('Textwerkzeug fixieren')}</span>
       </button>
     </>)
   }
