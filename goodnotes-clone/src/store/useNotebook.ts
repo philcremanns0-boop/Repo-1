@@ -50,6 +50,7 @@ export async function loadNotebookData(id: string): Promise<NotebookData | null>
       id: typeof p.id === 'string' ? p.id : newPageId(),
       size: SIZES[p.size as SizeId] ? p.size : 'a4p', template: p.template ?? 'wide', color: p.color ?? 'white',
       bookmarked: !!p.bookmarked,
+      card: p.card && typeof p.card.due === 'number' ? p.card : undefined,
       bg: p.bg && typeof p.bg.key === 'string' ? { key: p.bg.key, w: +p.bg.w, h: +p.bg.h, text: typeof p.bg.text === 'string' ? p.bg.text : undefined } : undefined,
       content: {
         strokes: Array.isArray(p.content?.strokes) ? p.content.strokes.filter(isStroke) : [],
@@ -104,6 +105,7 @@ export function useNotebook(id: string, initial: NotebookData, onMeta: (m: { pag
       }
       return next
     }),
+    setCard: (pid: string, card: Page['card']) => upd(pid, (p) => ({ ...p, card })),
     toggleBookmark: (pid: string) => upd(pid, (p) => ({ ...p, bookmarked: !p.bookmarked })),
     addPage: (where: 'before' | 'after' | 'last', meta?: Partial<PageMeta>, content?: Content, bg?: Page['bg']) => {
       const nid = newPageId()

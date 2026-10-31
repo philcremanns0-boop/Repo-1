@@ -1,5 +1,5 @@
 import { useEffect, useState, type RefObject } from 'react'
-import { ArrowRightToLine, Bookmark, BookmarkCheck, Camera, Copy, FileDown, FilePen, Image as ImageIcon, Import, LayoutTemplate, List, Palette, Printer, RotateCw, ScanLine, Search as SearchIcon, Trash2, Users, Presentation, Settings, Shapes } from '../glyphs'
+import { ArrowRightToLine, BookOpen, Bookmark, BookmarkCheck, Camera, Copy, FileDown, FilePen, Image as ImageIcon, Import, LayoutTemplate, List, Palette, Printer, RotateCw, ScanLine, Search as SearchIcon, Trash2, Users, Presentation, Settings, Shapes } from '../glyphs'
 import type { Page, OutlineItem, PageMeta } from '../../store/types'
 import { colorsFor, templateLabel, type PaperColor, type TemplateId } from '../../lib/paper'
 import { PageThumb, PaperThumb } from '../PaperThumb'
@@ -50,9 +50,9 @@ export function AddPagePopover({ current, onAdd, onMoreTemplates, onChoose, onPa
 
 /* ------------------------------ More ------------------------------ */
 export type ClearKind = 'strokes' | 'highlighter' | 'texts' | 'images' | 'shapes'
-export function MorePopover({ page, index, total, onBookmark, onCopy, onDuplicate, onRotate, onOutline, onTemplate, onGoto, onClearKinds, onClearPage, onDelete, onSettings, ...b }: Base & {
+export function MorePopover({ page, index, total, onBookmark, onCopy, onDuplicate, onRotate, onOutline, onTemplate, onGoto, onClearKinds, onClearPage, onDelete, onSettings, onStudy, ...b }: Base & {
   page: Page; index: number; total: number; onBookmark: () => void; onCopy: () => void; onDuplicate: () => void; onRotate: (d: 1 | -1) => void; onOutline: () => void; onTemplate: () => void
-  onGoto: (n: number) => void; onClearKinds: (k: ClearKind) => void; onClearPage: () => void; onDelete: () => void; onSettings: () => void
+  onGoto: (n: number) => void; onClearKinds: (k: ClearKind) => void; onClearPage: () => void; onDelete: () => void; onSettings: () => void; onStudy?: () => void
 }) {
   const t = useT()
   const [view, setView] = useState<'main' | 'rotate' | 'objects'>('main')
@@ -98,6 +98,7 @@ export function MorePopover({ page, index, total, onBookmark, onCopy, onDuplicat
         <Row danger icon={<Trash2 size={22} />} onClick={done(onDelete)}>{t('Seite in den Papierkorb legen')}</Row>
       </Group>
       <div className="h-3" />
+      {onStudy && <><Group><Row icon={<BookOpen size={22} />} onClick={() => { b.onClose(); onStudy() }}>{t('Lernkarten lernen')}</Row></Group><div className="h-3" /></>}
       <Group><Row icon={<Settings size={22} />} onClick={() => { b.onClose(); onSettings() }}>{t('Einstellungen')}</Row></Group>
       <div className="h-4" />
     </Push></Popover>

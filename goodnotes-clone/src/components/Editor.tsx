@@ -30,6 +30,7 @@ import { AddPagePopover, MorePopover, SearchPopover, SharePopover, type ClearKin
 import CustomizeToolbar from './sheets/CustomizeToolbar'
 import FontPicker from './sheets/FontPicker'
 import LinkSheet from './sheets/LinkSheet'
+import StudyMode from './sheets/StudyMode'
 import TemplatePicker, { type TemplateResult } from './sheets/TemplatePicker'
 
 const HINT = 'Tippe, um ein Textfeld hinzuzufügen. Halte gedrückt, um Text zur ganzen Seite hinzuzufügen.'
@@ -62,6 +63,7 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
   const [editText, setEditTextRaw] = useState<TextRef | null>(null)
   const [ruler, setRuler] = useState<Ruler | null>(null)
   const [playback, setPlayback] = useState<{ now: number; end: number; start: number } | null>(null)
+  const [study, setStudy] = useState(false)
   const [flash, setFlash] = useState<{ pageId: string; needle: string } | null>(null)
   const clearFlash = useCallback(() => setFlash(null), [])
   const [linkReq, setLinkReq] = useState<{ pageId: string; box: { x: number; y: number; w: number; h: number } } | null>(null)
@@ -357,12 +359,13 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
         onBookmark={() => nb.toggleBookmark(page.id)} onCopy={() => { copyPage(page); toast(t('Seite kopiert – über „Seite hinzufügen“ einfügen')) }} onDuplicate={() => nb.duplicatePage(page.id)} onRotate={(d) => nb.rotatePage(page.id, d)}
         onOutline={() => { nb.addOutline(page.id, `${t('Seite')} ${nb.index + 1}`); toast(t('Zur Gliederung hinzugefügt')) }} onTemplate={() => setTpl({ kind: 'change' })}
         onGoto={(n) => goPage(nb.pages[n - 1].id)} onClearKinds={(k) => store.commit(kinds(k))} onClearPage={() => store.commit(() => emptyContent())}
-        onDelete={() => nb.deletePage(page.id)} onSettings={() => setPopover('settings')} />
+        onDelete={() => nb.deletePage(page.id)} onSettings={() => setPopover('settings')} onStudy={nb.pages.some((p) => p.template === 'flashcard') ? () => setStudy(true) : undefined} />
       <SettingsPopover anchor={anchorFor('more')} open={P('settings')} onClose={close} />
       <SearchPopover anchor={anchorFor('search')} open={P('search')} onClose={close} pages={nb.pages} outline={nb.outline} onGo={goPage} onHit={(pageId, needle) => setFlash({ pageId, needle })} />
 
       <LinkSheet open={!!linkReq} pages={nb.pages} onClose={() => setLinkReq(null)}
         onDone={(to) => { if (linkReq) { const { pageId, box } = linkReq; nb.store(pageId).commit((c) => ({ ...c, links: [...(c.links ?? []), { id: newId(), ...box, to }] })); toast(t('Link hinzugefügt')) } setLinkReq(null) }} />
+      <StudyMode open={study} pages={nb.pages} onClose={() => setStudy(false)} onGrade={(id, card) => nb.setCard(id, card)} />
       <FontPicker open={fontSheet} onClose={() => setFontSheet(false)} current={prefs.textStyle.font} recent={prefs.recentFonts} onPick={(f) => onTextStyle({ font: f })} />
       <CustomizeToolbar open={customize} onClose={() => setCustomize(false)} prefs={prefs} set={set} onCustomizePen={() => { setTool('pen'); setTimeout(() => setPopover('pen'), 50) }} />
       <TemplatePicker open={!!tpl} mode="page" initial={tplInit} onClose={() => setTpl(null)}

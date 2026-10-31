@@ -86,6 +86,9 @@ export const EN: Record<string, string> = {
   'Wähle etwas mit dem Lasso aus und tippe auf „Als Objekt sichern“.': 'Select something with the lasso and tap “Save as object”.',
   'Seite duplizieren': 'Duplicate page', 'Kopierte Seite einfügen': 'Paste copied page', 'Seite kopiert – über „Seite hinzufügen“ einfügen': 'Page copied – paste it via “Add page”',
   'Zuschneiden': 'Crop', 'Whiteboard': 'Whiteboard',
+  'Lernen': 'Study', 'Lernkarte': 'Flashcard', 'Lernkarten': 'Flashcards', 'Lernkarten lernen': 'Study flashcards', 'Nochmal': 'Again', 'Gut': 'Good',
+  'Antwort zeigen': 'Show answer', 'Tippen, um die Antwort zu zeigen': 'Tap to show the answer', 'Alle fälligen Karten gelernt!': 'All due cards done!',
+  'Noch keine Lernkarten. Füge über „Seite hinzufügen → Mehr Vorlagen“ die Vorlage „Lernkarte“ hinzu: oben die Frage, unten die Antwort.': 'No flashcards yet. Add the “Flashcard” template via “Add page → More templates”: question on top, answer below.',
   // sidebar & library
   'Seiten': 'Pages', 'Gliederungen': 'Outlines', 'Audio': 'Audio', 'Favoriten': 'Favourites', 'Favorit': 'Favourite', 'Seitenmenü': 'Page menu', 'Nach oben': 'Move up', 'Nach unten': 'Move down', 'Seite löschen': 'Delete page',
   'Gliederungen – Übersichten über deine Dokumente': 'Outlines – overviews of your documents',

@@ -5,7 +5,9 @@ import type { CoverId } from '../lib/covers'
 export interface PageMeta { size: SizeId; template: TemplateId; color: PaperColor }
 /** Imported PDF page: rendered background stored in IndexedDB under `key`, page size in 96-dpi units. */
 export interface PageBg { key: string; w: number; h: number; /** extracted PDF text (search) */ text?: string }
-export interface Page extends PageMeta { id: string; content: Content; bookmarked: boolean; bg?: PageBg }
+/** spaced-repetition state of a flashcard page (Lernmodus) */
+export interface CardState { due: number; interval: number; ease: number; reps: number }
+export interface Page extends PageMeta { id: string; content: Content; bookmarked: boolean; bg?: PageBg; card?: CardState }
 export interface OutlineItem { id: string; pageId: string; title: string }
 export interface NotebookData { id: string; title: string; pages: Page[]; currentId: string; outline: OutlineItem[] }
 export interface NbMeta {

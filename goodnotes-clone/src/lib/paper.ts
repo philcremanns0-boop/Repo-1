@@ -3,7 +3,7 @@ export type SizeId = 'a4p' | 'a4l' | 'a5p' | 'a5l' | 'lp' | 'll' | 'wb'
 export type TemplateId =
   | 'blank' | 'dots' | 'grid' | 'narrow' | 'wide'
   | 'cornell' | 'notepad' | 'mixed' | 'onecol' | 'twocolL' | 'twocolR' | 'twocol' | 'threecol'
-  | 'todo' | 'monthly' | 'music' | 'guitar' | 'tabs'
+  | 'todo' | 'monthly' | 'music' | 'guitar' | 'tabs' | 'flashcard'
 
 export const SIZES: Record<SizeId, { w: number; h: number; label: string }> = {
   a4p: { w: 794, h: 1123, label: 'A4, Hochformat' },
@@ -34,6 +34,7 @@ export const TEMPLATE_GROUPS: { title: string; items: { id: TemplateId; label: s
     { id: 'onecol', label: 'Eine Spalte' }, { id: 'twocolL', label: 'Zwei Spalten links' }, { id: 'twocolR', label: 'Zwei Spalten rechts' },
     { id: 'twocol', label: 'Zwei Spalten' }, { id: 'threecol', label: 'Drei Spalten' } ] },
   { title: 'Planung', items: [{ id: 'todo', label: 'To-Dos' }, { id: 'monthly', label: 'Monatsplaner C' }] },
+  { title: 'Lernen', items: [{ id: 'flashcard', label: 'Lernkarte' }] },
   { title: 'Musik', items: [{ id: 'music', label: 'Musikpapier' }, { id: 'guitar', label: 'Noten für Gitarre' }, { id: 'tabs', label: 'Tabs für Gitarre' }] },
 ]
 export const templateLabel = (id: TemplateId) => TEMPLATE_GROUPS.flatMap((g) => g.items).find((i) => i.id === id)?.label ?? id
@@ -69,6 +70,13 @@ export function paperInner(t: TemplateId, c: PaperColor, w: number, h: number, u
     case 'twocolR': d = rows(60, 28, h - 40, 0, w) + V(Math.round(w * 0.7), 0, h); break
     case 'twocol': d = rows(60, 28, h - 40, 0, w) + V(Math.round(w / 2), 0, h); break
     case 'threecol': d = rows(60, 28, h - 40, 0, w) + V(Math.round(w / 3), 0, h) + V(Math.round((2 * w) / 3), 0, h); break
+    case 'flashcard': {
+      // front (question) top half, back (answer) bottom half – used by the study mode
+      const m = Math.round(h / 2)
+      d = `M24 24h${w - 48}v${h - 48}h-${w - 48}z` + H(m, 24, w - 24)
+      extra = `<text x="40" y="58" font-family="-apple-system,sans-serif" font-size="18" fill="${line}" font-weight="600">VORDERSEITE</text><text x="40" y="${m + 34}" font-family="-apple-system,sans-serif" font-size="18" fill="${line}" font-weight="600">RÜCKSEITE</text>`
+      break
+    }
     case 'todo': {
       d = H(70, 40, w - 40)
       for (let y = 106; y < h - 40; y += 36) { d += H(y + 16, 70, w - 40); d += `M40 ${y}h14v14h-14z` }

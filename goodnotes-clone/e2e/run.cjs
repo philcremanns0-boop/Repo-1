@@ -141,6 +141,13 @@ function makePdf(file) {
     check('page copy + paste', (await p.locator('[data-page]').count()) === 3)
     await p.getByLabel('Seite am Ende hinzufügen').click(); await p.waitForTimeout(500)
     check('add page at end tile', (await p.locator('[data-page]').count()) === 4)
+    // flashcards: switch the current page to the flashcard template, study it
+    await p.getByRole('button', { name: 'Mehr', exact: true }).first().click(); await p.getByText('Vorlage wechseln').click(); await p.waitForTimeout(300)
+    await p.getByRole('button', { name: 'Lernkarte', exact: true }).click(); await p.getByRole('button', { name: 'Fertig' }).click(); await p.waitForTimeout(400)
+    await p.getByRole('button', { name: 'Mehr', exact: true }).first().click(); await p.getByText('Lernkarten lernen').click(); await p.waitForTimeout(500)
+    await p.getByRole('button', { name: 'Antwort zeigen' }).last().click(); await p.getByRole('button', { name: 'Gut', exact: true }).click(); await p.waitForTimeout(500)
+    check('flashcard study + scheduling', (await p.getByText('Alle fälligen Karten gelernt!').count()) === 1 && (await nbData()).pages.some((x) => x.card && x.card.reps === 1))
+    await p.locator('[data-popover]').getByRole('button', { name: 'Fertig' }).click(); await p.waitForTimeout(300)
     // library: duplicate + search
     await p.getByRole('button', { name: 'Dokumente' }).first().click(); await p.waitForTimeout(300)
     await p.getByRole('button', { name: 'Menü' }).first().click(); await p.getByText('Duplizieren', { exact: true }).click(); await p.waitForTimeout(300)
