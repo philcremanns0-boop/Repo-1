@@ -14,7 +14,7 @@ export function UndoPill({ canUndo, canRedo, onUndo, onRedo }: { canUndo: boolea
   const t = useT()
   const cls = (on: boolean) => `flex h-[33px] w-[36px] items-center justify-center rounded-[10px] ${on ? 'text-ink' : 'text-sub/70'}`
   return (
-    <div className="flex h-[40px] items-center gap-0.5 rounded-full bg-white/80 px-1.5 py-[3.5px] shadow-gn-float backdrop-blur-xl backdrop-saturate-150 dark:bg-gn-ui-toast/70 dark:shadow-gn-float-dark">
+    <div className="flex h-[40px] items-center gap-0.5 rounded-full bg-gn-panel-light px-1.5 py-[3.5px] shadow-gn-float dark:bg-gn-panel-dark dark:shadow-gn-float-dark">
       <motion.button whileTap={{ scale: 0.85 }} aria-label={t('Rückgängig')} disabled={!canUndo} onClick={onUndo} className={cls(canUndo)}><UndoI size={22} /></motion.button>
       <motion.button whileTap={{ scale: 0.85 }} aria-label={t('Wiederholen')} disabled={!canRedo} onClick={onRedo} className={cls(canRedo)}><RedoI size={22} /></motion.button>
     </div>
@@ -79,7 +79,7 @@ export function OptionsBar({ tool, prefs, set, anchors, popover, onPop, onTextSt
   const reg = (k: string) => (el: HTMLElement | null) => { anchors.current[k] = el }
   const wrap = (children: ReactNode) => (
     <motion.div key={tool} initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={GN_SPRING}
-      className="flex h-[40px] max-w-full items-center rounded-full bg-white/80 px-1.5 py-[3.5px] shadow-gn-float backdrop-blur-xl backdrop-saturate-150 dark:bg-gn-ui-toast/70 dark:shadow-gn-float-dark">{children}</motion.div>
+      className="flex h-[40px] max-w-full items-center rounded-full bg-gn-panel-light px-1.5 py-[3.5px] shadow-gn-float dark:bg-gn-panel-dark dark:shadow-gn-float-dark">{children}</motion.div>
   )
   const th = (k: ReturnType<typeof colorKey>) => (
     <Thickness value={prefs.thick[k]} labels={[t('Dünn'), t('Mittel'), t('Dick')]} onChange={(v) => set((p) => ({ ...p, thick: { ...p.thick, [k]: v } }))} />

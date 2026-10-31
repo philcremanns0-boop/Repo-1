@@ -4,7 +4,7 @@
 
 :root {
   /* GN tokens (mirrors tailwind.config.js `gn`) */
-  --gn-navy: #0a192f;
+  --gn-navy: #0b1c33;        /* brand navy / title ink */
   --gn-teal-1: #02bde4;
   --gn-teal-2: #7fddf1;
   --gn-teal-3: #ccf2fa;
@@ -18,42 +18,44 @@
   /* semantic (light) */
   --tab: #284d83;
   --bar: #3262a6;
-  --canvas: var(--gn-eraser-1);
+  --canvas: #f3f4f6;          /* app background */
   --pop: #f4f4f5;
   --card: var(--gn-white);
-  --ink: var(--gn-ink-1);
+  --ink: var(--gn-navy);
   --sub: var(--gn-ink-3);
   --hair: rgba(15, 16, 16, 0.12);
   --accent: #1a82e0;
   --chip: rgba(15, 16, 16, 0.07);
-  --float: rgba(255, 255, 255, 0.8);
+  --float: #ffffff;           /* floating containers: pure white */
   --danger: #e5372e;
   --good: #07b97f;
   --tool-active: var(--gn-white);
   --tool-active-ink: var(--gn-navy);
   --opt-active: var(--gn-teal-3);
   --opt-sel: var(--gn-eraser-2);
-  --shadow-float: 0 0 0 .5px rgba(15,16,16,.08), 0 2px 6px rgba(15,16,16,.06), 0 10px 28px -6px rgba(15,16,16,.14);
+  --shadow-float: 0 4px 30px rgba(0, 0, 0, 0.03);
+  --halo: rgba(11, 28, 51, 0.06);
 }
 .dark {
   --gn-logo-ink: #f5f5f7;
   --tab: #1f3260;
   --bar: #284a85;
-  --canvas: #1a1a1a;
-  --pop: #1c1c1e;
+  --canvas: #121212;          /* app background (dark) */
+  --pop: #1e1e1e;
   --card: #2c2c2e;
   --ink: #f5f5f7;
   --sub: #98989f;
   --hair: rgba(255, 255, 255, 0.12);
   --accent: #3b9bff;
-  --chip: rgba(255, 255, 255, 0.1);
-  --float: rgba(28, 28, 30, 0.72);
+  --chip: rgba(255, 255, 255, 0.08);
+  --float: #1e1e1e;           /* toolbar panel (dark) */
   --danger: #ff5a4d;
   --tool-active: #d4d8e1;
   --tool-active-ink: var(--gn-navy);
-  --opt-active: rgba(2, 189, 228, 0.38);
-  --opt-sel: #3a3a3c;
-  --shadow-float: 0 0 0 .5px rgba(255,255,255,.10), 0 2px 6px rgba(0,0,0,.30), 0 12px 32px -6px rgba(0,0,0,.50);
+  --opt-active: rgba(255, 255, 255, 0.08);
+  --opt-sel: rgba(255, 255, 255, 0.08);   /* active selection halo */
+  --shadow-float: 0 4px 30px rgba(0, 0, 0, 0.3);
+  --halo: rgba(255, 255, 255, 0.08);
 }
 
 /* Roobert is a commercial typeface (Displaay) – used when installed locally, otherwise Inter
@@ -62,14 +64,17 @@
 @font-face { font-family: 'Roobert'; src: local('Roobert Medium'), local('Roobert-Medium'); font-weight: 500; font-display: swap; }
 @font-face { font-family: 'Roobert'; src: local('Roobert SemiBold'), local('Roobert-SemiBold'); font-weight: 600; font-display: swap; }
 @font-face { font-family: 'Roobert'; src: local('Roobert Bold'), local('Roobert-Bold'); font-weight: 700 800; font-display: swap; }
+@font-face { font-family: 'Inter'; src: local('Inter'), local('Inter Variable'); font-weight: 100 900; font-display: swap; }
 @font-face { font-family: 'Goodnotes Hand'; src: local('Goodnotes Hand'), local('GoodnotesHand-Regular'); font-display: swap; }
 
 @layer base {
   html, body, #root { height: 100%; }
   body {
-    @apply bg-canvas font-sans text-ink antialiased;
+    @apply bg-canvas text-ink;
+    font-family: 'Inter', -apple-system, sans-serif;
+    letter-spacing: -0.025em;
+    -webkit-font-smoothing: antialiased;
     /* Roobert footprint: tight tracking, compact leading, grayscale AA like iPadOS */
-    letter-spacing: -0.02em;
     line-height: 1.2;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -86,7 +91,7 @@
   input, textarea { -webkit-user-select: text; user-select: text; }
 }
 @layer utilities {
-  .gn-text { letter-spacing: -0.02em; line-height: 1.2; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  .gn-text { letter-spacing: -0.025em; line-height: 1.2; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
   .gn-title { letter-spacing: -0.03em; line-height: 1.05; font-weight: 700; }
   .gn-glass { background: var(--float); -webkit-backdrop-filter: blur(24px) saturate(1.6); backdrop-filter: blur(24px) saturate(1.6); }
   .no-scrollbar { scrollbar-width: none; }

@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef, useState } from 'react'
-import { paperStyle, SIZES } from '../lib/paper'
+import { PAPER_COLORS, SIZES } from '../lib/paper'
+import PaperLayer from './PaperLayer'
 import type { Page } from '../store/types'
 import type { PageStore } from '../store/useNotebook'
 import NoteCanvas from './NoteCanvas'
@@ -27,7 +28,8 @@ function PageViewImpl({ page, store, ed, onActivate }: Props) {
     <div ref={host} data-page={page.id} className="relative shrink-0 rounded-[2px] shadow-page" style={{ width: w * z, height: h * z }}
       onPointerDownCapture={() => onActivate(page.id)}>
       <div data-page-inner data-zoom={z} className="absolute left-0 top-0 origin-top-left overflow-hidden rounded-[2px]"
-        style={{ width: w, height: h, transform: `scale(${z})`, ...paperStyle(page.template, page.color, w, h) }}>
+        style={{ width: w, height: h, transform: `scale(${z})`, backgroundColor: PAPER_COLORS[page.color].bg }}>
+        <PaperLayer template={page.template} color={page.color} width={w} height={h} />
         {near && (
           <>
             <ImagesLayer images={c.images} />

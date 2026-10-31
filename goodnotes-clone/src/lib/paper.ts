@@ -15,9 +15,9 @@ export const SIZES: Record<SizeId, { w: number; h: number; label: string }> = {
 }
 export const PAPER_COLORS: Record<PaperColor, { bg: string; line: string; label: string }> = {
   yellow: { bg: '#fbf6dc', line: '#d8d0ac', label: 'Gelb' },
-  white: { bg: '#ffffff', line: '#cdd3dc', label: 'Weiß' },
+  white: { bg: '#ffffff', line: '#e5e7eb', label: 'Weiß' },
   black: { bg: '#17171a', line: '#46464c', label: 'Schwarz' },
-  blue: { bg: '#e6f0fb', line: '#b3cae6', label: 'Blau' },
+  blue: { bg: '#e6f0fb', line: '#c9dcef', label: 'Blau' },
   pink: { bg: '#fbe8ec', line: '#e3bcc6', label: 'Rosa' },
   green: { bg: '#e7f5e4', line: '#b9d8b4', label: 'Grün' },
 }
@@ -39,19 +39,24 @@ export const templateLabel = (id: TemplateId) => TEMPLATE_GROUPS.flatMap((g) => 
 
 const H = (y: number, x0: number, x1: number) => `M${x0} ${y + 0.5}H${x1}`
 const V = (x: number, y0: number, y1: number) => `M${x + 0.5} ${y0}V${y1}`
-const rows = (start: number, step: number, end: number, x0: number, x1: number) => { let d = ''; for (let y = start; y <= end; y += step) d += H(Math.round(y), x0, x1); return d }
+const rows = (start: number, step: number, end: number, x0: number, x1: number) => { let d = ''; for (let k = 0, y = start; y <= end; k++, y = start + k * step) d += H(Math.round(y), x0, x1); return d }
+/** 96 dpi page units per millimetre – lets every template use real stationery measurements. */
+export const MM = 96 / 25.4
+/** Line pitch of real notebook paper: college/narrow 7.1 mm, wide 8.7 mm, grid 5 mm, dot grid 5 mm. */
+export const PITCH = { narrow: 7.1 * MM, wide: 8.7 * MM, grid: 5 * MM, dots: 5 * MM }
 
-export function paperSvg(t: TemplateId, c: PaperColor, w: number, h: number): string {
+/** Inner SVG markup of a template (no outer <svg>). `uid` keeps pattern ids unique when many pages share a document. */
+export function paperInner(t: TemplateId, c: PaperColor, w: number, h: number, uid = 'p'): string {
   const { line } = PAPER_COLORS[c]
   let d = ''
   let extra = ''
   switch (t) {
     case 'dots':
-      extra = `<pattern id="p" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="14" cy="14" r="1.2" fill="${line}"/></pattern><rect width="${w}" height="${h}" fill="url(#p)"/>`; break
+      { const g = PITCH.dots; extra = `<pattern id="${uid}" width="${g}" height="${g}" patternUnits="userSpaceOnUse"><circle cx="${g / 2}" cy="${g / 2}" r="1.1" fill="${line}"/></pattern><rect width="${w}" height="${h}" fill="url(#${uid})"/>` } break
     case 'grid':
-      extra = `<pattern id="p" width="19" height="19" patternUnits="userSpaceOnUse"><path d="M19 0H0V19" fill="none" stroke="${line}" stroke-width=".7"/></pattern><rect width="${w}" height="${h}" fill="url(#p)"/>`; break
-    case 'narrow': d = rows(54, 27, h - 30, 0, w); break
-    case 'wide': d = rows(66, 33, h - 30, 0, w); break
+      { const g = PITCH.grid; extra = `<pattern id="${uid}" width="${g}" height="${g}" patternUnits="userSpaceOnUse"><path d="M${g} 0H0V${g}" fill="none" stroke="${line}" stroke-width=".75"/></pattern><rect width="${w}" height="${h}" fill="url(#${uid})"/>` } break
+    case 'narrow': d = rows(PITCH.narrow * 2, PITCH.narrow, h - 30, 0, w); break
+    case 'wide': d = rows(PITCH.wide * 2, PITCH.wide, h - 30, 0, w); break
     case 'cornell': {
       const hy = Math.round(h * 0.1), sy = Math.round(h * 0.8), cx = Math.round(w * 0.27)
       d = H(hy, 0, w) + H(sy, 0, w) + V(cx, hy, sy) + rows(hy + 28, 28, sy - 10, 0, w) + rows(sy + 28, 28, h - 20, 0, w); break
@@ -80,8 +85,10 @@ export function paperSvg(t: TemplateId, c: PaperColor, w: number, h: number): st
     case 'tabs': for (let g = 0; g < Math.floor((h - 120) / 100); g++) for (let k = 0; k < 6; k++) d += H(80 + g * 100 + k * 11, 40, w - 40); break
     default: break
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${extra}${d ? `<path d="${d}" fill="none" stroke="${line}" stroke-width="1"/>` : ''}</svg>`
+  return `${extra}${d ? `<path d="${d}" fill="none" stroke="${line}" stroke-width="1"/>` : ''}`
 }
+export const paperSvg = (t: TemplateId, c: PaperColor, w: number, h: number) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${paperInner(t, c, w, h)}</svg>`
 export const paperUri = (t: TemplateId, c: PaperColor, w: number, h: number) => `data:image/svg+xml;utf8,${encodeURIComponent(paperSvg(t, c, w, h))}`
 export function paperStyle(t: TemplateId, c: PaperColor, w: number, h: number): React.CSSProperties {
   return { backgroundColor: PAPER_COLORS[c].bg, backgroundImage: t === 'blank' ? undefined : `url("${paperUri(t, c, w, h)}")`, backgroundSize: '100% 100%' }

@@ -94,7 +94,7 @@ export const LaserI = (p: P) => (
 /** Lasso: dashed rope loop with a short solid tail and a filled cursor arrow. */
 export const LassoI = ({ active, ...p }: P) => (
   <Svg {...p}>
-    <path d="M8.6 15.1C5.2 14.6 3.1 12.4 3.5 9.7 4 6.5 7.8 4.3 12 4.5c4.2.2 7.3 2.6 6.8 5.6" strokeDasharray="2.3 2.3" fill={active ? ACC : 'none'} fillOpacity={active ? 0.9 : 0} />
+    <path d="M8.6 15.1C5.2 14.6 3.1 12.4 3.5 9.7 4 6.5 7.8 4.3 12 4.5c4.2.2 7.3 2.6 6.8 5.6" strokeDasharray="3,3" fill={active ? ACC : 'none'} fillOpacity={active ? 0.9 : 0} />
     <path d="M8.6 15.1c.9 1.2.3 2.6-1.1 3.4" />
     <path d="M12.4 11.1l7.4 3.2-3.3 1.2-1.3 3.4z" fill="currentColor" />
   </Svg>

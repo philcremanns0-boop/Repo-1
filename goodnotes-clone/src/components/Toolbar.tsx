@@ -2,7 +2,7 @@ import { type MutableRefObject, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronDown } from './glyphs'
 import {
-  AccessoriesI, EraserI, ImageI, LassoI, LaserI, MicSparkI, MoreI, NoteI, ObjectsI, PagePlusI, PenI, ReadI, SearchI, ShapesI, ShareI, SidebarI, TextI,
+  AccessoriesI, EraserI, ImageI, LaserI, MicSparkI, MoreI, NoteI, ObjectsI, PagePlusI, ReadI, SearchI, ShapesI, ShareI, SidebarI, TextI,
 } from './icons'
 import type { AccId, ToolId } from './editorTypes'
 import { useT } from '../context/Settings'
@@ -12,8 +12,27 @@ import { GN_SPRING, GN_TAP } from './motion'
 export type PopName = 'pen' | 'eraser' | 'lasso' | 'shapes' | 'objects' | 'images' | 'acc' | 'add' | 'share' | 'more' | 'search' | 'color' | 'font' | 'size' | 'spacing' | 'textcolor' | 'tab' | 'settings'
 type IconC = (p: { size?: number; active?: boolean }) => JSX.Element
 
+/** Lasso: fluid rope loop, dashed 3,3, short solid tail, filled pointer. 1.5 stroke = the thin GN line weight. */
+const LassoGlyph: IconC = ({ size = 22, active }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M8.7 15.2c-3.5-.5-5.6-2.8-5.2-5.5C4 6.4 7.9 4.2 12.1 4.4c4.2.2 7.3 2.7 6.7 5.7" strokeDasharray="3,3" fill={active ? 'var(--gn-teal-1)' : 'none'} />
+    <path d="M8.7 15.2c.9 1.3.2 2.7-1.2 3.5" />
+    <path d="M12.5 11.1l7.3 3.2-3.3 1.2-1.3 3.4z" fill="currentColor" />
+  </svg>
+)
+/** Fountain pen: barrel at 45°, split nib (slit + breather hole) pointing bottom-left, ink squiggle. */
+const PenGlyph: IconC = ({ size = 22, active }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M15.9 5.7a2.1 2.1 0 013 0l.2.2a2.1 2.1 0 010 3L11.4 16.6l-3.2-3.2z" fill={active ? 'var(--gn-teal-1)' : 'none'} />
+    <path d="M8.2 13.4l-2.6 1.3-1.3 5.1 5.1-1.3 1.3-2.6" fill={active ? 'var(--gn-teal-1)' : 'none'} />
+    <path d="M4.4 19.7l3.2-3.2M13.8 7.8l3.1 3.1" />
+    <circle cx="8.3" cy="15.8" r=".75" fill="currentColor" stroke="none" />
+    <path d="M12.6 20.7c1.4-.1 1.9-1.3 3-1.3s1.5 1.2 2.9 1.2" />
+  </svg>
+)
+
 const TOOL_META: Record<Exclude<ToolId, 'lasso'>, { label: string; Icon: IconC }> = {
-  pen: { label: 'Schreibwerkzeug', Icon: PenI },
+  pen: { label: 'Schreibwerkzeug', Icon: PenGlyph },
   eraser: { label: 'Radierer', Icon: EraserI },
   text: { label: 'Text', Icon: TextI },
   objects: { label: 'Objekte', Icon: ObjectsI },
@@ -23,7 +42,7 @@ const TOOL_META: Record<Exclude<ToolId, 'lasso'>, { label: string; Icon: IconC }
   laser: { label: 'Laserpointer', Icon: LaserI },
 }
 export const TOOL_LABEL = (id: ToolId) => (id === 'lasso' ? 'Lasso' : TOOL_META[id].label)
-export const TOOL_ICON = (id: ToolId): IconC => (id === 'lasso' ? LassoI : TOOL_META[id].Icon)
+export const TOOL_ICON = (id: ToolId): IconC => (id === 'lasso' ? LassoGlyph : TOOL_META[id].Icon)
 
 const Svg = ({ size = 22, children }: { size?: number; children: ReactNode }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{children}</svg>
@@ -57,9 +76,9 @@ interface BtnProps {
  * Glass:  ink icons on frosted white, active = Teal III tile + ink icon.
  */
 export function BarBtn({ active, onClick, label, children, refFn, chevron, w = 33, slide, glass }: BtnProps) {
-  const tile = glass ? 'bg-gn-teal-3 dark:bg-gn-teal-1/30' : 'bg-[var(--tool-active)] shadow-[0_1px_2px_rgba(10,25,47,.18)]'
-  const idle = glass ? 'text-gn-ink-1 dark:text-gn-white hover:bg-gn-ink-1/[.06] dark:hover:bg-white/10' : 'text-gn-white hover:bg-white/10'
-  const on = glass ? 'text-gn-ink-1 dark:text-gn-white' : 'text-[var(--tool-active-ink)]'
+  const tile = glass ? 'bg-gn-teal-3 dark:bg-gn-halo' : 'bg-[var(--tool-active)] shadow-[0_1px_2px_rgba(11,28,51,.18)]'
+  const idle = glass ? 'text-gn-navy dark:text-gn-white hover:bg-[var(--halo)]' : 'text-gn-white hover:bg-white/10'
+  const on = glass ? 'text-gn-navy dark:text-gn-white' : 'text-[var(--tool-active-ink)]'
   return (
     <motion.button ref={refFn} type="button" aria-label={label} title={label} aria-pressed={active} onClick={onClick} whileTap={{ scale: 0.88 }} transition={GN_TAP}
       className={`relative flex h-[33px] shrink-0 items-center justify-center rounded-[10px] transition-colors duration-150 ${active ? `${slide ? '' : tile} ${on}` : idle}`}
@@ -96,7 +115,7 @@ interface Props {
 /**
  * Main document toolbar.
  * - docked (default, as in the reference screenshots): full-width 41 pt navy bar under the tab strip, 7 pt side insets.
- * - floating: frosted pill – rounded-full, px-4 py-2, backdrop-blur-xl, bg-white/80 (light) and a soft layered shadow.
+ * - floating: pill – rounded-full, px-4 py-2, pure #FFFFFF panel (dark #1E1E1E) with a 0 4px 30px rgba(0,0,0,.03) shadow.
  * Left group (sidebar · search · read mode), centred tool cluster (lasso │ tools │ accessories), right group (add page · share · more).
  */
 export default function Toolbar({ tool, onTool, prefs, anchors, popover, onPop, sidebar, onSidebar, readOnly, onReadOnly, accActive, onAcc, floating }: Props) {
@@ -108,7 +127,7 @@ export default function Toolbar({ tool, onTool, prefs, anchors, popover, onPop, 
   const toggle = (p: PopName) => onPop(popover === p ? null : p)
 
   const shell = glass
-    ? 'relative z-30 mx-auto flex w-[min(1120px,calc(100%-16px))] shrink-0 items-center rounded-full bg-white/80 px-4 py-2 shadow-gn-float backdrop-blur-xl backdrop-saturate-150 dark:bg-gn-ui-toast/70 dark:shadow-gn-float-dark'
+    ? 'relative z-30 mx-auto flex w-[min(1120px,calc(100%-16px))] shrink-0 items-center rounded-full bg-gn-panel-light px-4 py-2 shadow-gn-float dark:bg-gn-panel-dark dark:shadow-gn-float-dark'
     : 'relative z-30 flex h-[41px] shrink-0 items-center bg-bar px-[7px]'
 
   return (
@@ -124,7 +143,7 @@ export default function Toolbar({ tool, onTool, prefs, anchors, popover, onPop, 
       {/* centre: tool cluster */}
       <div className="no-scrollbar flex min-w-0 flex-1 items-center justify-center gap-[13px] overflow-x-auto">
         <BarBtn glass={glass} slide="gn-tool" label={t('Lasso')} active={tool === 'lasso'} chevron={tool === 'lasso'} refFn={reg('tool:lasso')} onClick={() => onTool('lasso', tool === 'lasso')}>
-          <LassoI size={22} active={tool === 'lasso'} />
+          <LassoGlyph size={22} active={tool === 'lasso'} />
         </BarBtn>
         <Sep glass={glass} />
         {prefs.visibleTools.map((id) => {
