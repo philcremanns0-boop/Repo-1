@@ -48,7 +48,8 @@ function drawText(ctx: CanvasRenderingContext2D, t: TextObj) {
 
 export async function drawContent(ctx: CanvasRenderingContext2D, c: Content) {
   for (const im of c.images) { try { ctx.drawImage(await loadImg(im.src), im.x, im.y, im.w, im.h) } catch { /* skip broken image */ } }
-  c.strokes.forEach((s) => drawStroke(ctx, s))
+  c.strokes.filter((s) => s.tool === 'highlighter').forEach((s) => drawStroke(ctx, s))
+  c.strokes.filter((s) => s.tool !== 'highlighter').forEach((s) => drawStroke(ctx, s))
   c.texts.forEach((t) => drawText(ctx, t))
 }
 

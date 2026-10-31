@@ -36,6 +36,8 @@ export function EraserPopover({ prefs, set, onClearPage, ...b }: Base & { prefs:
         ))}
       </Group>
       <div className="h-3" />
+      <Group><Row as="div" trailing={<Toggle on={prefs.erAuto} onChange={(v) => set((p) => ({ ...p, erAuto: v }))} />}>{t('Radierer automatisch abwählen')}</Row></Group>
+      <div className="h-3" />
       <Group><Row danger onClick={() => { onClearPage(); b.onClose() }}>{t('Seite leeren')}</Row></Group>
       <div className="h-4" />
     </Popover>

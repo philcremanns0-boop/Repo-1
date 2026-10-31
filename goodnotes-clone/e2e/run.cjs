@@ -87,13 +87,34 @@ function makePdf(file) {
     // add page + link
     await p.getByRole('button', { name: 'Seite hinzufügen' }).click(); await p.getByText('Leer', { exact: true }).first().click(); await p.waitForTimeout(500)
     check('add page', (await p.locator('[data-page]').count()) === 2)
-    // dark mode + persistence
+    // add colour swatch
+    await p.getByRole('button', { name: 'Schreibwerkzeug' }).click(); await p.keyboard.press('Escape')
+    const nColors = await p.evaluate(() => JSON.parse(localStorage.getItem('gn:tools')).colors.length)
+    await p.getByLabel('Farbe hinzufügen').click(); await p.waitForTimeout(300); await p.keyboard.press('Escape')
+    check('add colour swatch', (await p.evaluate(() => JSON.parse(localStorage.getItem('gn:tools')).colors.length)) === nColors + 1)
+    // template on all pages
+    await p.getByRole('button', { name: 'Mehr', exact: true }).first().click(); await p.getByText('Vorlage wechseln').click(); await p.waitForTimeout(300)
+    await p.getByRole('button', { name: 'Kariert', exact: true }).click(); await p.getByRole('switch', { name: 'Auf alle Seiten anwenden' }).click(); await p.getByRole('button', { name: 'Fertig' }).click(); await p.waitForTimeout(500)
+    check('template applied to all pages', await p.evaluate(() => { const k = Object.keys(localStorage).find((k) => k.startsWith('gn:nb:')); return JSON.parse(localStorage.getItem(k)).pages.every((x) => x.template === 'grid') }))
+    // outline add + rename
+    await p.getByRole('button', { name: 'Mehr', exact: true }).first().click(); await p.getByText('Seite zur Gliederung hinzufügen').click()
+    await p.getByRole('button', { name: 'Seitenleiste' }).first().click(); await p.getByRole('button', { name: 'Gliederungen' }).click()
+    await p.getByRole('button', { name: 'Umbenennen', exact: true }).first().click(); await p.keyboard.press('Control+a'); await p.keyboard.type('Kapitel 1'); await p.keyboard.press('Enter'); await p.waitForTimeout(400)
+    if (process.env.DEBUG) { await p.screenshot({ path: '/tmp/claude-0/-home-user-Repo-1/9b4f1dfd-632e-5bde-9bdf-4596152885d8/scratchpad/outline.png' }); console.log(await p.evaluate(() => { const k = Object.keys(localStorage).find((k) => k.startsWith('gn:nb:')); return JSON.stringify(JSON.parse(localStorage.getItem(k)).outline) })) }
+    check('outline rename', await p.evaluate(() => { const k = Object.keys(localStorage).find((k) => k.startsWith('gn:nb:')); return JSON.parse(localStorage.getItem(k)).outline[0]?.title === 'Kapitel 1' }))
+    await p.locator('aside').getByRole('button', { name: 'Schließen' }).click()
     await p.getByRole('button', { name: 'Mehr', exact: true }).first().click(); await p.getByText('Einstellungen', { exact: true }).last().click()
     await p.getByRole('switch', { name: 'Dunkelmodus' }).click(); await p.waitForTimeout(700)
     await p.reload(); await p.waitForSelector('[data-page]')
     check('persists after reload', (await p.locator('[data-page]').count()) === 2 && (await p.evaluate(() => document.documentElement.classList.contains('dark'))))
+    // library: duplicate + search
+    await p.getByRole('button', { name: 'Dokumente' }).first().click(); await p.waitForTimeout(300)
+    await p.getByRole('button', { name: 'Menü' }).first().click(); await p.getByText('Duplizieren', { exact: true }).click(); await p.waitForTimeout(300)
+    check('duplicate notebook', (await p.evaluate(() => JSON.parse(localStorage.getItem('gn:library')).notebooks.length)) === 2)
+    await p.getByLabel('Notizbücher suchen').fill('kopie'); await p.waitForTimeout(200)
+    check('library search filters', (await p.locator('main button[aria-label$="Kopie"], main button[aria-label$="kopie"]').count()) === 1)
+    await p.getByLabel('Notizbücher suchen').fill('')
     // PDF import + search
-    await p.getByRole('button', { name: 'Dokumente' }).first().click()
     await p.getByRole('button', { name: 'Neu', exact: true }).click()
     const [fc] = await Promise.all([p.waitForEvent('filechooser'), p.getByText('Importieren', { exact: true }).click()]); await fc.setFiles(pdf)
     await p.waitForFunction(() => document.querySelectorAll('[data-page] img').length >= 1, null, { timeout: 20000 })
@@ -107,7 +128,8 @@ function makePdf(file) {
     check('export PDF', /\.pdf$/.test(dl.suggestedFilename()), dl.suggestedFilename())
     check('no console errors', errors.length === 0, errors.join(' | '))
   } catch (e) {
-    check('run without exception', false, e.message.split('\n')[0])
+    check('run without exception', false, e.message.split('\n').slice(0, 3).join(' '))
+    if (process.env.DEBUG) await p.screenshot({ path: '/tmp/claude-0/-home-user-Repo-1/9b4f1dfd-632e-5bde-9bdf-4596152885d8/scratchpad/fail.png' })
   } finally {
     await b.close(); try { process.kill(-server.pid) } catch { /* ignore */ }
   }

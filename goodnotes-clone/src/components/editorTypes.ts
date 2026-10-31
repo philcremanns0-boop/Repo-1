@@ -32,4 +32,5 @@ export interface EditorProps {
   setZoomRegion: (r: ZoomRegion | null) => void
   flash: { pageId: string; needle: string } | null
   clearFlash: () => void
+  onEraseEnd: () => void
 }

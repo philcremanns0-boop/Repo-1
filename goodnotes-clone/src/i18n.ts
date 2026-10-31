@@ -79,6 +79,8 @@ export const EN: Record<string, string> = {
   'Link': 'Link', 'Link hinzufügen': 'Add link', 'Link hinzugefügt': 'Link added', 'Link öffnen': 'Open link', 'Link entfernen': 'Remove link', 'Webadresse': 'Web address',
   'Herauszoomen': 'Zoom out', 'Hineinzoomen': 'Zoom in', 'Weiter': 'Advance', 'Neue Zeile': 'New line',
   'ausgewählt': 'selected',
+  'Farbe entfernen': 'Remove colour', 'Radierer automatisch abwählen': 'Auto-deselect eraser', 'Auf alle Seiten anwenden': 'Apply to all pages', 'Umschlag ändern': 'Change cover',
+  'Kopie': 'copy', 'Sortieren nach': 'Sort by', 'Name': 'Name', 'Erstellt': 'Created', 'Zuletzt bearbeitet': 'Last edited', 'Notizbücher suchen': 'Search notebooks',
   // sidebar & library
   'Seiten': 'Pages', 'Gliederungen': 'Outlines', 'Audio': 'Audio', 'Favoriten': 'Favourites', 'Favorit': 'Favourite', 'Seitenmenü': 'Page menu', 'Nach oben': 'Move up', 'Nach unten': 'Move down', 'Seite löschen': 'Delete page',
   'Gliederungen – Übersichten über deine Dokumente': 'Outlines – overviews of your documents',

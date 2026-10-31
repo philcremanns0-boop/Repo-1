@@ -29,6 +29,7 @@ export default function Sidebar({ nb, tab, setTab, onClose, onGo, recordings, on
   const filtBtn = useRef<HTMLButtonElement>(null)
   const [filtOpen, setFiltOpen] = useState(false)
   const [picking, setPicking] = useState(false)
+  const [editing, setEditing] = useState<string | null>(null)
   const [picked, setPicked] = useState<string[]>([])
   const [drag, setDrag] = useState<{ id: string; over: number } | null>(null)
   const dragged = useRef(false)
@@ -120,7 +121,20 @@ export default function Sidebar({ nb, tab, setTab, onClose, onGo, recordings, on
               <p className="mt-4 text-[19px] leading-snug text-sub">{t('Navigiere mit Hilfe einer Gliederung schnell durch dein Dokument oder füge deine eigene Gliederung hinzu, um Struktur und Hierarchie zu schaffen.')}</p>
             </div>
           ) : (
-            <Group className="!mx-0">{nb.outline.map((o) => { const idx = nb.pages.findIndex((p) => p.id === o.pageId) + 1; return <Row key={o.id} onClick={() => onGo(o.pageId)} trailing={<button aria-label={t('Entfernen')} onClick={(e) => { e.stopPropagation(); nb.removeOutline(o.id) }}><Trash2 size={18} className="text-sub" /></button>} sub={`${t('Seite')} ${idx}`}>{o.title}</Row> })}</Group>
+            <Group className="!mx-0">{nb.outline.map((o) => {
+              const idx = nb.pages.findIndex((p) => p.id === o.pageId) + 1
+              return editing === o.id ? (
+                <div key={o.id} className="flex items-center gap-2 px-3.5 py-2.5 [&:not(:first-child)]:border-t [&:not(:first-child)]:border-hair">
+                  <input autoFocus defaultValue={o.title} aria-label={t('Titel')} className="min-w-0 flex-1 rounded-lg bg-chip px-2 py-1.5 text-[17px] outline-none"
+                    onKeyDown={(e) => { if (e.key === 'Enter') { nb.renameOutline(o.id, (e.target as HTMLInputElement).value.trim() || o.title); setEditing(null) } if (e.key === 'Escape') setEditing(null) }}
+                    onBlur={(e) => { nb.renameOutline(o.id, e.target.value.trim() || o.title); setEditing(null) }} />
+                </div>
+              ) : (
+                <Row key={o.id} onClick={() => onGo(o.pageId)} sub={`${t('Seite')} ${idx}`}
+                  trailing={<span className="flex items-center gap-3"><span role="button" tabIndex={0} aria-label={t('Umbenennen')} onClick={(e) => { e.stopPropagation(); setEditing(o.id) }} className="text-[15px] text-accent">{t('Umbenennen')}</span>
+                    <span role="button" tabIndex={0} aria-label={t('Entfernen')} onClick={(e) => { e.stopPropagation(); nb.removeOutline(o.id) }}><Trash2 size={18} className="text-sub" /></span></span>}>{o.title}</Row>
+              )
+            })}</Group>
           )}
         </div>
       )}

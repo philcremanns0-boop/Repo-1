@@ -3,10 +3,10 @@ import { Check, ChevronDown, Plus } from '../glyphs'
 import { COVERS, COVER_COLORS, coverUri, type CoverId } from '../../lib/covers'
 import { PAPER_COLORS, SIZES, TEMPLATE_GROUPS, colorsFor, templateLabel, type PaperColor, type SizeId, type TemplateId } from '../../lib/paper'
 import { PaperThumb } from '../PaperThumb'
-import { CloseBtn, Segmented, Sheet } from '../ui'
+import { CloseBtn, Segmented, Sheet, Toggle } from '../ui'
 import { useT } from '../../context/Settings'
 
-export interface TemplateResult { template: TemplateId; color: PaperColor; size: SizeId; cover: CoverId; coverColor: string; title: string }
+export interface TemplateResult { template: TemplateId; color: PaperColor; size: SizeId; cover: CoverId; coverColor: string; title: string; applyAll?: boolean }
 interface Props {
   open: boolean
   mode: 'new' | 'page'
@@ -14,13 +14,16 @@ interface Props {
   onClose: () => void
   onConfirm: (r: TemplateResult) => void
   onImportImage?: (file: File, r: TemplateResult) => void
+  initialTab?: 'cover' | 'paper'
+  /** 'cover' = only change the cover of an existing notebook */
+  coverOnly?: boolean
 }
-export default function TemplatePicker({ open, mode, initial, onClose, onConfirm, onImportImage }: Props) {
+export default function TemplatePicker({ open, mode, initial, onClose, onConfirm, onImportImage, initialTab = 'paper', coverOnly }: Props) {
   const t = useT()
   const [tab, setTab] = useState<'cover' | 'paper'>('paper')
   const [r, setR] = useState(initial)
   const file = useRef<HTMLInputElement>(null)
-  useEffect(() => { if (open) { setR(initial); setTab('paper') } }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (open) { setR(initial); setTab(coverOnly ? 'cover' : initialTab) } }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
   const pickTpl = (template: TemplateId) => setR((x) => ({ ...x, template, color: colorsFor(template).includes(x.color) ? x.color : 'white' }))
   const Dot = ({ c, on, onClick }: { c: string; on?: boolean; onClick?: () => void }) => (
     <span role="button" tabIndex={0} aria-label={c} onClick={(e) => { e.stopPropagation(); onClick?.() }} className={`h-[15px] w-[15px] rounded-full ${on ? 'ring-2 ring-accent ring-offset-1 ring-offset-pop' : ''}`} style={{ background: c, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.2)' }} />
@@ -32,7 +35,7 @@ export default function TemplatePicker({ open, mode, initial, onClose, onConfirm
     <Sheet open={open} onClose={onClose} width={700} className="h-[min(900px,94vh)]">
       <div className="relative flex h-[76px] shrink-0 items-center justify-center bg-pop">
         <div className="absolute left-3 top-3"><CloseBtn onClick={onClose} /></div>
-        {mode === 'new' ? <Segmented value={tab} onChange={setTab} className="min-w-[320px]" options={[{ id: 'cover', label: t('Umschlag') }, { id: 'paper', label: t('Papier') }]} /> : <h2 className="text-[22px] font-semibold">{t('Vorlage wechseln')}</h2>}
+        {coverOnly ? <h2 className="text-[22px] font-semibold">{t('Umschlag ändern')}</h2> : mode === 'new' ? <Segmented value={tab} onChange={setTab} className="min-w-[320px]" options={[{ id: 'cover', label: t('Umschlag') }, { id: 'paper', label: t('Papier') }]} /> : <h2 className="text-[22px] font-semibold">{t('Vorlage wechseln')}</h2>}
         <button aria-label={t('Fertig')} onClick={() => onConfirm(r)} className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-gn-ui-action text-white shadow-pill"><Check size={26} strokeWidth={3} /></button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -51,6 +54,10 @@ export default function TemplatePicker({ open, mode, initial, onClose, onConfirm
               <label className="relative flex items-center justify-between border-t border-hair px-4 py-3 text-[19px] first:border-t-0">{t('Größe')}
                 <span className="flex items-center gap-1 text-sub">{t(SIZES[r.size].label)}<ChevronDown size={18} /></span>
                 <select aria-label={t('Größe')} value={r.size} onChange={(e) => setR({ ...r, size: e.target.value as SizeId })} className="absolute inset-0 opacity-0">{(Object.keys(SIZES) as SizeId[]).map((k) => <option key={k} value={k}>{t(SIZES[k].label)}</option>)}</select></label>
+              {mode === 'page' && (
+                <label className="flex items-center justify-between px-4 py-3 text-[19px]">{t('Auf alle Seiten anwenden')}
+                  <Toggle on={!!r.applyAll} onChange={(v) => setR({ ...r, applyAll: v })} label={t('Auf alle Seiten anwenden')} /></label>
+              )}
               <label className="relative flex items-center justify-between border-t border-hair px-4 py-3 text-[19px]">{t('Farbe')}
                 <span className="flex items-center gap-2 text-sub"><span className="h-[22px] w-[22px] rounded-full" style={{ background: PAPER_COLORS[r.color].bg, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.2)' }} />{t(PAPER_COLORS[r.color].label)}<ChevronDown size={18} /></span>
                 <select aria-label={t('Farbe')} value={r.color} onChange={(e) => setR({ ...r, color: e.target.value as PaperColor })} className="absolute inset-0 opacity-0">{(Object.keys(PAPER_COLORS) as PaperColor[]).map((k) => <option key={k} value={k}>{t(PAPER_COLORS[k].label)}</option>)}</select></label>

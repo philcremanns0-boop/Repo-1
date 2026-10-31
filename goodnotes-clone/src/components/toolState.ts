@@ -32,6 +32,8 @@ export interface ToolPrefs {
   recentFonts: string[]
   lowLat: boolean
   hlStraight: boolean
+  /** Goodnotes: 'Radierer automatisch abwählen' – back to the previous tool after one erase gesture */
+  erAuto: boolean
   textPresets: { name: string; style: Partial<TextStyle> }[]
   spell: boolean
   mathSug: boolean
@@ -59,7 +61,7 @@ export const DEFAULT_PREFS: ToolPrefs = {
   lassoMode: 'free', lassoStrokes: true, lassoObjects: true,
   laserColor: '#ff3b30', laserTrail: true,
   textStyle: DEFAULT_TEXT, pinText: false,
-  visibleTools: DEFAULT_TOOLS, visibleAcc: DEFAULT_ACC, recent: [], recentFonts: ['Chalkboard SE'], lowLat: false, hlStraight: false, textPresets: DEFAULT_PRESETS, spell: false, mathSug: false,
+  visibleTools: DEFAULT_TOOLS, visibleAcc: DEFAULT_ACC, recent: [], recentFonts: ['Chalkboard SE'], lowLat: false, hlStraight: false, erAuto: false, textPresets: DEFAULT_PRESETS, spell: false, mathSug: false,
 }
 const KEY = 'gn:tools'
 export function loadPrefs(): ToolPrefs {

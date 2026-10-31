@@ -48,7 +48,9 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
   const nb = useNotebook(meta.id, meta.title, useCallback((m) => lib.patch(meta.id, { pages: m.pages, title: m.title, updated: Date.now() }), [lib.patch, meta.id])) // eslint-disable-line react-hooks/exhaustive-deps
   const [prefs, setPrefsRaw] = useState<ToolPrefs>(loadPrefs)
   const set = useCallback((fn: (p: ToolPrefs) => ToolPrefs) => setPrefsRaw((p) => { const n = fn(p); savePrefs(n); return n }), [])
-  const [tool, setTool] = useState<ToolId>('pen')
+  const [tool, setToolRaw] = useState<ToolId>('pen')
+  const prevTool = useRef<ToolId>('pen')
+  const setTool = useCallback((t: ToolId) => setToolRaw((cur) => { if (cur !== t) prevTool.current = cur; return t }), [])
   const [popover, setPopover] = useState<PopName | null>(null)
   const anchors = useRef<Record<string, HTMLElement | null>>({})
   const anchorFor = (...keys: string[]) => ({ get current() { for (const k of keys) if (anchors.current[k]) return anchors.current[k]; return null } }) as React.RefObject<HTMLElement | null>
@@ -113,7 +115,7 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
   const [fontSheet, setFontSheet] = useState(false)
   const [customize, setCustomize] = useState(false)
   const autoSwitch = useRef(false)
-  const rec = useRecorder(useCallback(() => toast(t('Mikrofonzugriff nicht möglich')), [toast, t]))
+  const rec = useRecorder(meta.id, useCallback(() => toast(t('Mikrofonzugriff nicht möglich')), [toast, t]))
   const fileRef = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
   const importRef = useRef<HTMLInputElement>(null)
@@ -262,7 +264,8 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
     goPage: (id) => goPage(id),
     pageNo: (id) => nb.pages.findIndex((p) => p.id === id) + 1,
     zoomRegion, setZoomRegion, flash, clearFlash,
-  }), [tool, canvasTool, selection, prefs.textStyle, selText, editText, ruler, prefs.colors, readOnly, nb.pages, zoomRegion, flash]) // eslint-disable-line react-hooks/exhaustive-deps
+    onEraseEnd: () => { if (prefs.erAuto && prevTool.current && prevTool.current !== 'eraser') setTool(prevTool.current) },
+  }), [tool, canvasTool, selection, prefs.textStyle, selText, editText, ruler, prefs.colors, readOnly, nb.pages, zoomRegion, flash, prefs.erAuto]) // eslint-disable-line react-hooks/exhaustive-deps
   const close = () => setPopover(null)
   const P = (name: PopName) => popover === name
   const tplInit: TemplateResult = { template: page.template, color: page.color, size: page.size, cover: meta.cover, coverColor: meta.coverColor, title: meta.title }
@@ -315,7 +318,13 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
 
       <PenPopover anchor={anchorFor('opt:pen', 'tool:pen')} open={P('pen')} onClose={close} prefs={prefs} set={set} />
       <ColorPopover anchor={anchorFor('color')} open={P('color')} onClose={close} color={currentColor(tool, prefs)}
-        onChange={(hex) => set((p) => { const k = tool === 'shapes' ? 'shape' : p.penMode; const colors = [...p.colors]; colors[p.colorIdx[k]] = hex; return { ...p, colors } })} />
+        onChange={(hex) => set((p) => { const k = tool === 'shapes' ? 'shape' : p.penMode; const colors = [...p.colors]; colors[p.colorIdx[k]] = hex; return { ...p, colors } })}
+        onRemove={prefs.colors.length > 1 ? () => set((p) => {
+          const k = tool === 'shapes' ? 'shape' : p.penMode, i = p.colorIdx[k]
+          const colors = p.colors.filter((_, j) => j !== i)
+          const fix = (n: number) => Math.max(0, Math.min(colors.length - 1, n > i ? n - 1 : n))
+          return { ...p, colors, colorIdx: { pen: fix(p.colorIdx.pen), highlighter: fix(p.colorIdx.highlighter), tape: fix(p.colorIdx.tape), shape: fix(p.colorIdx.shape) } }
+        }) : undefined} />
       <EraserPopover anchor={anchorFor('tool:eraser')} open={P('eraser')} onClose={close} prefs={prefs} set={set} onClearPage={() => store.commit(() => emptyContent())} />
       <LassoPopover anchor={anchorFor('tool:lasso')} open={P('lasso')} onClose={close} prefs={prefs} set={set} />
       <ShapesPopover anchor={anchorFor('tool:shapes')} open={P('shapes')} onClose={close} prefs={prefs} set={set} />
@@ -345,7 +354,7 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
       <FontPicker open={fontSheet} onClose={() => setFontSheet(false)} current={prefs.textStyle.font} recent={prefs.recentFonts} onPick={(f) => onTextStyle({ font: f })} />
       <CustomizeToolbar open={customize} onClose={() => setCustomize(false)} prefs={prefs} set={set} onCustomizePen={() => { setTool('pen'); setTimeout(() => setPopover('pen'), 50) }} />
       <TemplatePicker open={!!tpl} mode="page" initial={tplInit} onClose={() => setTpl(null)}
-        onConfirm={(r) => { if (tpl?.kind === 'add') addPageWith(tpl.where, { template: r.template, color: r.color, size: r.size }); else nb.setMeta(page.id, { template: r.template, color: r.color, size: r.size }); setTpl(null) }}
+        onConfirm={(r) => { if (tpl?.kind === 'add') addPageWith(tpl.where, { template: r.template, color: r.color, size: r.size }); else if (r.applyAll) nb.pages.filter((p) => !p.bg).forEach((p) => nb.setMeta(p.id, { template: r.template, color: r.color, size: r.size })); else nb.setMeta(page.id, { template: r.template, color: r.color, size: r.size }); setTpl(null) }}
         onImportImage={(f) => { pending.current = { kind: 'page', where: tpl?.kind === 'add' ? tpl.where : 'after' }; setTpl(null); void onFile(f, 'page', tpl?.kind === 'add' ? tpl.where : 'after') }} />
 
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; const p = pending.current; void onFile(f, p.kind, p.kind === 'page' ? p.where : 'after') }} />

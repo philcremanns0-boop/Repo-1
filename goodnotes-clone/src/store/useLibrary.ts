@@ -5,17 +5,18 @@ import type { Folder, NbMeta, NewNotebookOpts, PageBg } from './types'
 
 export type View = 'home' | 'favorites' | 'shared' | 'trash' | 'cloud' | string // string = notebook id
 export type Layout = 'grid' | 'list'
-interface Lib { notebooks: NbMeta[]; folders: Folder[]; tabs: string[]; view: View; folder: string | null; layout: Layout }
+export type SortBy = 'date' | 'name' | 'created'
+interface Lib { notebooks: NbMeta[]; folders: Folder[]; tabs: string[]; view: View; folder: string | null; layout: Layout; sort: SortBy }
 const KEY = 'gn:library'
 function load(): Lib {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) || 'null')
     if (v && Array.isArray(v.notebooks)) {
       const folders: Folder[] = Array.isArray(v.folders) ? v.folders : []
-      return { notebooks: v.notebooks, folders, tabs: v.tabs ?? [], view: v.view ?? 'home', folder: folders.some((f) => f.id === v.folder) ? v.folder : null, layout: v.layout === 'list' ? 'list' : 'grid' }
+      return { notebooks: v.notebooks, folders, tabs: v.tabs ?? [], view: v.view ?? 'home', folder: folders.some((f) => f.id === v.folder) ? v.folder : null, layout: v.layout === 'list' ? 'list' : 'grid', sort: ['date', 'name', 'created'].includes(v.sort) ? v.sort : 'date' }
     }
   } catch { /* ignore */ }
-  return { notebooks: [], folders: [], tabs: [], view: 'home', folder: null, layout: 'grid' }
+  return { notebooks: [], folders: [], tabs: [], view: 'home', folder: null, layout: 'grid', sort: 'date' }
 }
 const persist = (l: Lib) => { try { localStorage.setItem(KEY, JSON.stringify(l)) } catch { /* ignore */ } }
 
@@ -54,6 +55,19 @@ export function useLibrary() {
   const moveNotebook = useCallback((id: string, folder: string | null) => set((l) => ({ ...l, notebooks: l.notebooks.map((n) => (n.id === id ? { ...n, folder } : n)) })), [set])
   const enterFolder = useCallback((folder: string | null) => set((l) => ({ ...l, folder, view: 'home' })), [set])
   const toggleStar = useCallback((id: string) => set((l) => ({ ...l, notebooks: l.notebooks.map((n) => (n.id === id ? { ...n, starred: !n.starred } : n)) })), [set])
+  const setSort = useCallback((sort: SortBy) => set((l) => ({ ...l, sort })), [set])
+  /** Duplicate a notebook (pages, ink, outline); imported PDF backgrounds are shared read-only blobs. */
+  const duplicate = useCallback((id: string, copyLabel: string) => {
+    const raw = localStorage.getItem(nbKey(id))
+    if (!raw) return
+    const nid = `nb_${Date.now().toString(36)}`
+    const d = JSON.parse(raw); d.id = nid; d.title = `${d.title || ''} ${copyLabel}`.trim()
+    try { localStorage.setItem(nbKey(nid), JSON.stringify(d)) } catch { return }
+    set((l) => {
+      const src = l.notebooks.find((n) => n.id === id)!
+      return { ...l, notebooks: [{ ...src, id: nid, title: d.title, created: Date.now(), updated: Date.now(), starred: false }, ...l.notebooks] }
+    })
+  }, [set])
   const setLayout = useCallback((layout: Layout) => set((l) => ({ ...l, layout })), [set])
 
   const backup = useCallback(() => {
@@ -76,6 +90,6 @@ export function useLibrary() {
       folders: [...(Array.isArray(b.folders) ? (b.folders as Folder[]).filter((f) => !l.folders.some((m) => m.id === f.id)) : []), ...l.folders],
     }))
   }, [set])
-  return { ...lib, create, open, close, go, patch, trash, restore, purge, createFolder, patchFolder, toggleStar, deleteFolder, moveNotebook, enterFolder, setLayout, backup, backupOne, restoreBackup, defaultCover: COVERS[0].id as CoverId }
+  return { ...lib, create, open, close, go, patch, trash, restore, purge, createFolder, patchFolder, toggleStar, deleteFolder, moveNotebook, enterFolder, setLayout, setSort, duplicate, backup, backupOne, restoreBackup, defaultCover: COVERS[0].id as CoverId }
 }
 export type Library = ReturnType<typeof useLibrary>

@@ -44,7 +44,7 @@ export function Thickness({ value, onChange, labels }: { value: number; onChange
     </>
   )
 }
-export function Swatches({ colors, idx, onPick, onOpen, anchor }: { colors: string[]; idx: number; onPick: (i: number) => void; onOpen: () => void; anchor: (el: HTMLElement | null) => void }) {
+export function Swatches({ colors, idx, onPick, onOpen, anchor, onAdd }: { colors: string[]; idx: number; onPick: (i: number) => void; onOpen: () => void; anchor: (el: HTMLElement | null) => void; onAdd?: () => void }) {
   return (
     <div className="no-scrollbar flex min-w-0 items-center gap-0.5 overflow-x-auto">
       {colors.map((c, i) => {
@@ -59,6 +59,11 @@ export function Swatches({ colors, idx, onPick, onOpen, anchor }: { colors: stri
           </button>
         )
       })}
+      {onAdd && colors.length < 16 && (
+        <button aria-label="Farbe hinzufügen" onClick={onAdd} className="flex h-[36px] w-[40px] shrink-0 items-center justify-center">
+          <span className="flex h-[21px] w-[21px] items-center justify-center rounded-full border border-dashed border-sub text-[15px] leading-none text-sub">+</span>
+        </button>
+      )}
     </div>
   )
 }
@@ -84,7 +89,8 @@ export function OptionsBar({ tool, prefs, set, anchors, popover, onPop, onTextSt
   )
   const sw = (k: ReturnType<typeof colorKey>) => (
     <Swatches colors={prefs.colors} idx={prefs.colorIdx[k]} anchor={reg('color')}
-      onPick={(i) => set((p) => ({ ...p, colorIdx: { ...p.colorIdx, [k]: i } }))} onOpen={() => onPop(popover === 'color' ? null : 'color')} />
+      onPick={(i) => set((p) => ({ ...p, colorIdx: { ...p.colorIdx, [k]: i } }))} onOpen={() => onPop(popover === 'color' ? null : 'color')}
+      onAdd={() => { set((p) => ({ ...p, colors: [...p.colors, p.colors[p.colorIdx[k]] ?? '#000000'], colorIdx: { ...p.colorIdx, [k]: p.colors.length } })); setTimeout(() => onPop('color'), 60) }} />
   )
 
   if (tool === 'pen') {

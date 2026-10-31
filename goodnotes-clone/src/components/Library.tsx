@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ChevronDown, ChevronLeft, Import, Star, Cloud, Download, Folder as FolderIcon, FolderPlus, Info, LayoutGrid, List as ListIcon, NotebookPen, Plus, Settings, Trash2, Upload, User } from './glyphs'
+import { ChevronDown, ChevronLeft, Import, Search, Star, Cloud, Download, Folder as FolderIcon, FolderPlus, Info, LayoutGrid, List as ListIcon, NotebookPen, Plus, Settings, Trash2, Upload, User } from './glyphs'
 import type { Library as Lib } from '../store/useLibrary'
 import type { Folder, NbMeta } from '../store/types'
 import { coverUri } from '../lib/covers'
@@ -10,6 +10,7 @@ import { SidebarI, ShareI } from './icons'
 import { FolderGlyph } from './FolderGlyph'
 import { GoodnotesLogo } from './Logo'
 import FolderSheet, { type FolderForm } from './sheets/FolderSheet'
+import TemplatePicker from './sheets/TemplatePicker'
 import { useSettings, useT } from '../context/Settings'
 import { importPdf, isPdf } from '../lib/files'
 
@@ -53,8 +54,16 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
   const cur = lib.folder
   const curFolder = lib.folders.find((f) => f.id === cur)
   const fav = lib.view === 'favorites'
-  const folders = fav ? [] : lib.folders.filter((f) => f.parent === cur)
-  const nbs = lib.notebooks.filter((n) => !n.deleted && (fav ? n.starred : (n.folder ?? null) === cur))
+  const folders = (fav ? [] : lib.folders.filter((f) => f.parent === cur)).filter((f) => !query.trim() || f.name.toLowerCase().includes(query.trim().toLowerCase()))
+  const [query, setQuery] = useState('')
+  const [sortOpen, setSortOpen] = useState(false)
+  const [coverFor, setCoverFor] = useState<NbMeta | null>(null)
+  const sortBtn = useRef<HTMLButtonElement>(null)
+  const needle = query.trim().toLowerCase()
+  const byName = (a: { name?: string; title?: string }, b: { name?: string; title?: string }) => (a.title ?? a.name ?? '').localeCompare(b.title ?? b.name ?? '', undefined, { numeric: true })
+  const nbs = lib.notebooks
+    .filter((n) => !n.deleted && (needle ? (n.title || '').toLowerCase().includes(needle) : fav ? n.starred : (n.folder ?? null) === cur))
+    .sort((a, b) => (lib.sort === 'name' ? byName(a, b) : lib.sort === 'created' ? b.created - a.created : b.updated - a.updated))
   const trashed = lib.notebooks.filter((n) => n.deleted)
   const v = lib.view === 'shared' || lib.view === 'trash' || lib.view === 'cloud' ? lib.view : 'home'
   const title = fav ? t('Favoriten') : v === 'home' ? (curFolder?.name ?? t('Dokumente')) : t(v === 'shared' ? 'Geteilt' : v === 'trash' ? 'Papierkorb' : 'Cloud & Backup')
@@ -68,7 +77,7 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
   const menuNb: NbMeta | undefined = menu?.kind === 'nb' ? lib.notebooks.find((n) => n.id === menu.id) : undefined
   const menuFolder: Folder | undefined = menu?.kind === 'folder' ? lib.folders.find((f) => f.id === menu.id) : undefined
 
-  const Chevron = ({ m }: { m: Menu }) => <button aria-label={t('Menü')} onClick={(e) => openMenu(e, m)} className="inline-flex h-6 w-6 items-center justify-center text-sub"><ChevronDown size={16} /></button>
+  const Chevron = ({ m }: { m: Menu }) => <span role="button" tabIndex={0} aria-label={t('Menü')} onClick={(e) => openMenu(e, m)} className="inline-flex h-6 w-6 cursor-pointer items-center justify-center text-sub"><ChevronDown size={16} /></span>
 
   return (
     <div className="flex min-h-0 flex-1 bg-canvas">
@@ -96,7 +105,9 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
         {v === 'home' && (
           <>
             <div className="mb-8 flex items-center justify-between text-[22px] font-medium text-sub">
-              <span className="flex items-center gap-3"><LayoutGrid size={26} />{t('Alle')}</span>
+              <button ref={sortBtn} onClick={() => setSortOpen(true)} className="flex items-center gap-3"><LayoutGrid size={26} />{t('Alle')} · {t(lib.sort === 'name' ? 'Name' : lib.sort === 'created' ? 'Erstellt' : 'Zuletzt bearbeitet')}<ChevronDown size={18} /></button>
+              <label className="mx-4 flex min-w-0 max-w-[340px] flex-1 items-center gap-2 rounded-full bg-chip px-3.5 py-2 text-[17px] text-ink"><Search size={18} className="text-sub" />
+                <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('Suchen')} aria-label={t('Notizbücher suchen')} className="min-w-0 flex-1 bg-transparent outline-none" /></label>
               <button aria-label={t(lib.layout === 'grid' ? 'Listenansicht' : 'Rasteransicht')} onClick={() => lib.setLayout(lib.layout === 'grid' ? 'list' : 'grid')} className="flex h-10 w-10 items-center justify-center text-ink">{lib.layout === 'grid' ? <ListIcon size={26} /> : <LayoutGrid size={26} />}</button>
             </div>
             {folders.length === 0 && nbs.length === 0 ? (
@@ -202,6 +213,8 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
               {menuNb && <>
                 <Row onClick={() => { lib.toggleStar(menuNb.id); setMenu(null) }}>{t(menuNb.starred ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen')}</Row>
                 <Row onClick={() => { setRename({ id: menuNb.id, title: menuNb.title }); setMenu(null) }}>{t('Umbenennen')}</Row>
+                <Row onClick={() => { setCoverFor(menuNb); setMenu(null) }}>{t('Umschlag ändern')}</Row>
+                <Row onClick={() => { lib.duplicate(menuNb.id, t('Kopie')); setMenu(null) }}>{t('Duplizieren')}</Row>
                 <Row chevron onClick={() => setMenuView('move')}>{t('Verschieben')}</Row>
                 <Row danger onClick={() => { lib.trash(menuNb.id); setMenu(null) }}>{t('In den Papierkorb')}</Row>
               </>}
@@ -215,6 +228,17 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
         )}
       </Popover>
 
+      <Popover anchor={sortBtn} open={sortOpen} onClose={() => setSortOpen(false)} width={280} align="left">
+        <PopTitle>{t('Sortieren nach')}</PopTitle>
+        <Group>
+          {(['date', 'created', 'name'] as const).map((k) => (
+            <Row key={k} onClick={() => { lib.setSort(k); setSortOpen(false) }} trailing={lib.sort === k ? <span className="text-accent">✓</span> : null}>{t(k === 'name' ? 'Name' : k === 'created' ? 'Erstellt' : 'Zuletzt bearbeitet')}</Row>
+          ))}
+        </Group>
+        <div className="h-4" />
+      </Popover>
+      <TemplatePicker open={!!coverFor} mode="new" coverOnly initial={{ template: 'wide', color: 'white', size: 'a4p', cover: coverFor?.cover ?? 'hell', coverColor: coverFor?.coverColor ?? '#02BDE4', title: coverFor?.title ?? '' }}
+        onClose={() => setCoverFor(null)} onConfirm={(r) => { if (coverFor) lib.patch(coverFor.id, { cover: r.cover, coverColor: r.coverColor, title: r.title.trim() || coverFor.title }); setCoverFor(null) }} />
       <FolderSheet open={!!fsheet} mode={fsheet?.mode ?? 'create'} initial={formInit} onClose={() => setFsheet(null)}
         onDone={(f) => { if (fsheet?.mode === 'edit' && fsheet.id) lib.patchFolder(fsheet.id, f); else lib.createFolder(f); setFsheet(null) }} />
       <Sheet open={!!rename} onClose={() => setRename(null)} width={420}>

@@ -39,6 +39,7 @@ interface Props {
   onSelect: (s: Selection | null) => void
   /** lasso tap on empty space (Goodnotes shows 'Einfügen' there) */
   onLassoTap?: (p: Pt, client: { x: number; y: number }) => void
+  onEraseEnd?: () => void
   onActivate: () => void
 }
 interface Gesture {
@@ -73,7 +74,7 @@ function eraseStep(c: Content, x: number, y: number, r: number, kind: CanvasTool
   return changed ? { ...c, strokes } : c
 }
 
-export default function NoteCanvas({ pageId, store, tool, zoom, width, height, ruler, onSelect, onActivate, onLassoTap }: Props) {
+export default function NoteCanvas({ pageId, store, tool, zoom, width, height, ruler, onSelect, onActivate, onLassoTap, onEraseEnd }: Props) {
   const baseRef = useRef<HTMLCanvasElement>(null)
   const liveRef = useRef<HTMLCanvasElement>(null)
   const act = useRef<Gesture | null>(null)
@@ -95,7 +96,9 @@ export default function NoteCanvas({ pageId, store, tool, zoom, width, height, r
   }
   useEffect(() => {
     const ctx = setup(baseRef.current!)
-    for (const s of store.content.strokes) drawStroke(ctx, s)
+    // Goodnotes layering: highlighter always sits under pen ink and shapes
+    for (const s of store.content.strokes) if (s.tool === 'highlighter') drawStroke(ctx, s)
+    for (const s of store.content.strokes) if (s.tool !== 'highlighter') drawStroke(ctx, s)
     if (!act.current?.stroke) setup(liveRef.current!)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.content.strokes, scale, width, height])
@@ -271,6 +274,7 @@ export default function NoteCanvas({ pageId, store, tool, zoom, width, height, r
     } else if (a.kind === 'erase') {
       if (a.erased && a.base) st.checkpoint(a.base)
       setup(liveRef.current!)
+      onEraseEnd?.()
     } else if (a.kind === 'lasso') {
       const poly = a.lasso ?? []
       setup(liveRef.current!)

@@ -46,8 +46,8 @@ export function Wheel({ hsv, onChange }: { hsv: [number, number, number]; onChan
   )
 }
 
-interface Props { anchor: RefObject<HTMLElement | null>; open: boolean; onClose: () => void; color: string; onChange: (hex: string) => void; title?: string }
-export default function ColorPopover({ anchor, open, onClose, color, onChange, title }: Props) {
+interface Props { anchor: RefObject<HTMLElement | null>; open: boolean; onClose: () => void; color: string; onChange: (hex: string) => void; title?: string; onRemove?: () => void }
+export default function ColorPopover({ anchor, open, onClose, color, onChange, title, onRemove }: Props) {
   const t = useT()
   const [hsv, setHsv] = useState<[number, number, number]>(() => hex2hsv(color))
   const [text, setText] = useState(color)
@@ -70,6 +70,7 @@ export default function ColorPopover({ anchor, open, onClose, color, onChange, t
         <div className="mt-3 grid grid-cols-8 gap-1.5">
           {QUICK.map((c) => <button key={c} aria-label={c} onClick={() => { setHsv(hex2hsv(c)); setText(c); onChange(c) }} className="h-7 w-7 rounded-full" style={{ background: c, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.18)' }} />)}
         </div>
+        {onRemove && <button onClick={() => { onRemove(); onClose() }} className="mt-3 w-full rounded-xl bg-card py-2.5 text-[16px] text-danger">{t('Farbe entfernen')}</button>}
       </div>
     </Popover>
   )

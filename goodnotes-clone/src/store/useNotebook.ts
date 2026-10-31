@@ -144,6 +144,7 @@ export function useNotebook(id: string, fallbackTitle: string, onMeta: (m: { pag
       return { ...p, size: swap[p.size], content, past: cap([...p.past, p.content]), future: [] }
     }),
     addOutline: (pid: string, title: string) => setState((s) => ({ ...s, outline: [...s.outline.filter((o) => o.pageId !== pid), { id: newPageId(), pageId: pid, title }] })),
+    renameOutline: (oid: string, title: string) => setState((s) => ({ ...s, outline: s.outline.map((o) => (o.id === oid ? { ...o, title } : o)) })),
     removeOutline: (oid: string) => setState((s) => ({ ...s, outline: s.outline.filter((o) => o.id !== oid) })),
     movePage: (pid: string, to: number) => setState((s) => {
       const i = s.pages.findIndex((p) => p.id === pid)
