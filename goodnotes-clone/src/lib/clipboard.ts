@@ -16,6 +16,7 @@ export function remove(c: Content, s: Selection): Content {
     strokes: c.strokes.filter((x) => !s.strokes.includes(x.id)),
     texts: c.texts.filter((x) => !s.texts.includes(x.id)),
     images: c.images.filter((x) => !s.images.includes(x.id)),
+    links: c.links,
   }
 }
 export const copySel = (c: Content, s: Selection) => { clip = JSON.parse(JSON.stringify(pick(c, s))) }

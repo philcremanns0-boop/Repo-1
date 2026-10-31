@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Bookmark, ChevronDown, ListTree, MoreHorizontal, Plus, Trash2, X } from './glyphs'
+import { Bookmark, Check, ChevronDown, Copy, ListTree, MoreHorizontal, Plus, RotateCw, Trash2, X } from './glyphs'
 import type { Notebook } from '../store/useNotebook'
 import type { Recording } from '../lib/recorder'
 import { PageThumb } from './PaperThumb'
@@ -28,6 +28,34 @@ export default function Sidebar({ nb, tab, setTab, onClose, onGo, recordings, on
   const topBtn = useRef<HTMLButtonElement>(null)
   const filtBtn = useRef<HTMLButtonElement>(null)
   const [filtOpen, setFiltOpen] = useState(false)
+  const [picking, setPicking] = useState(false)
+  const [picked, setPicked] = useState<string[]>([])
+  const [drag, setDrag] = useState<{ id: string; over: number } | null>(null)
+  const dragged = useRef(false)
+  const grid = useRef<HTMLDivElement>(null)
+  /** Long-press (350 ms) then drag a thumbnail to reorder – drop indicator shows the target slot. */
+  const startDrag = (e: React.PointerEvent, id: string) => {
+    if (picking || (e.pointerType === 'mouse' && e.button !== 0)) return
+    dragged.current = false
+    const sx = e.clientX, sy = e.clientY
+    let active = false
+    let over = -1
+    const timer = setTimeout(() => { active = true; dragged.current = true; setDrag({ id, over: -1 }) }, 350)
+    const mv = (ev: PointerEvent) => {
+      if (!active) { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) > 8) cleanup(); return }
+      ev.preventDefault()
+      const el = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('[data-thumb]') as HTMLElement | null
+      if (el) { over = +el.dataset.thumb!; setDrag({ id, over }) }
+    }
+    const cleanup = () => { clearTimeout(timer); window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cleanup) }
+    const up = () => {
+      cleanup()
+      if (active && over >= 0) nb.movePage(id, over)
+      setDrag(null)
+      setTimeout(() => { dragged.current = false }, 0)
+    }
+    window.addEventListener('pointermove', mv, { passive: false }); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', cleanup)
+  }
   const pages = nb.pages.map((p, i) => ({ p, i })).filter(({ p }) => filter === 'all' || p.bookmarked)
   const title = tab === 'pages' ? 'Seiten' : tab === 'outline' ? 'Gliederungen' : 'Audio'
   const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
@@ -46,25 +74,41 @@ export default function Sidebar({ nb, tab, setTab, onClose, onGo, recordings, on
 
       {tab === 'pages' && (
         <>
-          <div className="shrink-0 px-3 pb-3">
+          <div className="flex shrink-0 items-center justify-between px-3 pb-3">
             <button ref={filtBtn} onClick={() => setFiltOpen(true)} className="flex items-center gap-1.5 rounded-full bg-accent/15 px-3.5 py-2 text-[20px] font-medium text-accent">{t(filter === 'all' ? 'Alle Seiten' : 'Favoriten')}<ChevronDown size={18} /></button>
+            <button onClick={() => { setPicking((v) => !v); setPicked([]) }} className="rounded-full px-3 py-2 text-[18px] font-medium text-accent">{t(picking ? 'Fertig' : 'Auswählen')}</button>
           </div>
-          <div className="grid min-h-0 flex-1 grid-cols-2 content-start gap-x-4 gap-y-6 overflow-y-auto border-t border-hair px-4 pb-8 pt-5">
+          <div ref={grid} className="grid min-h-0 flex-1 grid-cols-2 content-start gap-x-4 gap-y-6 overflow-y-auto border-t border-hair px-4 pb-8 pt-5">
             {pages.map(({ p, i }) => {
               const sel = p.id === nb.page.id
+              const on = picked.includes(p.id)
               return (
-                <div key={p.id} className="flex flex-col">
-                  <button onClick={() => onGo(p.id)} className={`relative rounded-[3px] bg-white ${sel ? 'ring-[3px] ring-gn-ui-select' : 'ring-1 ring-hair'}`} aria-label={`${t('Seite')} ${i + 1}`}>
+                <div key={p.id} data-thumb={i} className={`flex flex-col transition-opacity ${drag?.id === p.id ? 'opacity-40' : ''}`}>
+                  {drag && drag.over === i && drag.id !== p.id && <div className="pointer-events-none -mt-3 mb-1.5 h-1 rounded-full bg-gn-ui-select" />}
+                  <button onPointerDown={(e) => startDrag(e, p.id)} onClick={() => { if (dragged.current) return; if (picking) setPicked((l) => (on ? l.filter((x) => x !== p.id) : [...l, p.id])); else onGo(p.id) }}
+                    className={`relative touch-pan-y rounded-[3px] bg-white ${on ? 'ring-[3px] ring-gn-ui-select' : sel && !picking ? 'ring-[3px] ring-gn-ui-select' : 'ring-1 ring-hair'}`} aria-label={`${t('Seite')} ${i + 1}`} aria-pressed={picking ? on : undefined}>
                     <PageThumb page={p} className="block w-full" />
-                    <span role="button" aria-label={t('Favorit')} onClick={(e) => { e.stopPropagation(); nb.toggleBookmark(p.id) }} className="absolute right-1.5 top-0 text-black/60"><Bookmark size={24} fill={p.bookmarked ? '#1a82e0' : 'none'} color={p.bookmarked ? '#1a82e0' : 'currentColor'} strokeWidth={1.6} /></span>
+                    {picking ? (
+                      <span className={`absolute bottom-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white shadow ${on ? 'bg-gn-ui-select' : 'bg-black/20'}`}>{on && <Check size={14} color="#fff" strokeWidth={3} />}</span>
+                    ) : (
+                      <span role="button" aria-label={t('Favorit')} onClick={(e) => { e.stopPropagation(); nb.toggleBookmark(p.id) }} className="absolute right-1.5 top-0 text-black/60"><Bookmark size={24} fill={p.bookmarked ? '#1a82e0' : 'none'} color={p.bookmarked ? '#1a82e0' : 'currentColor'} strokeWidth={1.6} /></span>
+                    )}
                   </button>
                   <div className="mt-1.5 flex items-center justify-between px-1 text-[19px]"><span className="tabular-nums">{i + 1}</span>
-                    <button aria-label={t('Seitenmenü')} onClick={(e) => { anchor.current = e.currentTarget; setMenu(menu === p.id ? null : p.id) }}><ChevronDown size={20} /></button></div>
+                    {!picking && <button aria-label={t('Seitenmenü')} onClick={(e) => { anchor.current = e.currentTarget; setMenu(menu === p.id ? null : p.id) }}><ChevronDown size={20} /></button>}</div>
                 </div>
               )
             })}
-            <button onClick={() => nb.addPage('last')} aria-label={t('Seite hinzufügen')} className="flex aspect-[0.707] items-center justify-center self-start rounded-[8px] border-[1.5px] border-dashed border-accent text-accent"><Plus size={30} strokeWidth={1.6} /></button>
+            {!picking && <button onClick={() => nb.addPage('last')} aria-label={t('Seite hinzufügen')} className="flex aspect-[0.707] items-center justify-center self-start rounded-[8px] border-[1.5px] border-dashed border-accent text-accent"><Plus size={30} strokeWidth={1.6} /></button>}
           </div>
+          {picking && (
+            <div className="flex shrink-0 items-center justify-around border-t border-hair px-2 py-2.5 text-[16px]">
+              <span className="text-sub">{picked.length} {t('ausgewählt')}</span>
+              <button disabled={!picked.length} onClick={() => { picked.forEach((id) => nb.duplicatePage(id)); setPicked([]) }} className="flex items-center gap-1 text-accent disabled:opacity-40"><Copy size={18} />{t('Kopieren')}</button>
+              <button disabled={!picked.length} onClick={() => picked.forEach((id) => nb.rotatePage(id, 1))} className="flex items-center gap-1 text-accent disabled:opacity-40"><RotateCw size={18} />{t('Drehen')}</button>
+              <button disabled={!picked.length} onClick={() => { picked.forEach((id) => nb.deletePage(id)); setPicked([]) }} className="flex items-center gap-1 text-danger disabled:opacity-40"><Trash2 size={18} />{t('Löschen')}</button>
+            </div>
+          )}
         </>
       )}
       {tab === 'outline' && (

@@ -35,7 +35,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Roobert', '"Albert Sans Variable"', '-apple-system', '"Noto Sans"', 'sans-serif'],
-        hand: ['"Goodnotes Hand"', 'Caveat', 'cursive'],
+        hand: ['"Goodnotes Hand"', '"Bradley Hand"', 'cursive'],
       },
       letterSpacing: { gn: '0', 'gn-tight': '-0.01em' },
       lineHeight: { gn: '1.2', 'gn-body': '1.32' },

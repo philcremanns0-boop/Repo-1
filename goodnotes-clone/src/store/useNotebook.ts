@@ -53,6 +53,7 @@ export function loadNotebookData(id: string): NotebookData | null {
         strokes: Array.isArray(p.content?.strokes) ? p.content.strokes.filter(isStroke) : [],
         texts: Array.isArray(p.content?.texts) ? p.content.texts : [],
         images: Array.isArray(p.content?.images) ? p.content.images : [],
+        links: Array.isArray(p.content?.links) ? p.content.links : [],
       },
     }))
     return { id, title: d.title ?? '', pages, currentId: pages.some((p) => p.id === d.currentId) ? d.currentId : pages[0].id, outline: Array.isArray(d.outline) ? d.outline : [] }
@@ -138,6 +139,7 @@ export function useNotebook(id: string, fallbackTitle: string, onMeta: (m: { pag
         strokes: c.strokes.map((s) => ({ ...s, points: s.points.map((q) => ({ ...q, ...rp(q.x, q.y) })) })),
         texts: c.texts.map((t) => ({ ...t, ...rp(t.x, t.y) })),
         images: c.images.map((i) => { const a = rp(i.x, i.y), b = rp(i.x + i.w, i.y + i.h); return { ...i, x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: i.h, h: i.w } }),
+        links: (c.links ?? []).map((i) => { const a = rp(i.x, i.y), b = rp(i.x + i.w, i.y + i.h); return { ...i, x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: i.h, h: i.w } }),
       }
       return { ...p, size: swap[p.size], content, past: cap([...p.past, p.content]), future: [] }
     }),

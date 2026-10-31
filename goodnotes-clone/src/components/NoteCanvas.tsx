@@ -25,8 +25,8 @@ export interface CanvasTool {
   hlStraight: boolean
 }
 export interface Ruler { pageId: string; x: number; y: number; angle: number }
-export const RULER_LEN = 720
-export const RULER_H = 76
+export const RULER_LEN = 1000
+export const RULER_H = 80
 
 interface Props {
   pageId: string
@@ -180,9 +180,11 @@ export default function NoteCanvas({ pageId, store, tool, zoom, width, height, r
     const id = newId()
     if (t.kind === 'pen') {
       a.line = rulerLine(p)
+      if (a.line) { const q = project(p, a.line); p.x = q.x; p.y = q.y }
       a.stroke = { id, tool: 'pen', pen: t.pen, opts: { ...t.opts }, color: t.color, width: t.width, points: [{ ...p, w }] }
     } else if (t.kind === 'highlighter') {
       a.line = rulerLine(p)
+      if (a.line) { const q = project(p, a.line); p.x = q.x; p.y = q.y }
       a.straight = t.hlStraight && !a.line
       a.stroke = { id, tool: 'highlighter', color: t.color, width: t.width, points: a.straight ? [{ ...p, w: 1 }, { ...p, w: 1 }] : [{ ...p, w: 1 }] }
     } else if (t.kind === 'tape') {

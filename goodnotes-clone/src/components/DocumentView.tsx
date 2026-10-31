@@ -106,6 +106,7 @@ export default function DocumentView({ nb, ed, zoom, setZoom, scrollTo, laser, t
     const mid = () => { const [a, b] = [...st.pts.values()]; return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } }
     const down = (e: PointerEvent) => {
       if (e.pointerType !== 'touch') return
+      if ((e.target as HTMLElement).closest?.('[data-ruler],[data-selection],[data-popover]')) return
       if (st.pts.size === 0) { st.max = 0; st.t0 = performance.now(); st.moved = false }
       st.pts.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY })
       st.max = Math.max(st.max, st.pts.size)

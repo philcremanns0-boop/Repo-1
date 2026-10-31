@@ -41,8 +41,9 @@ interface Props {
   pageH: number
   onChange: (s: Selection | null) => void
   onToast?: (m: string) => void
+  onLink?: (box: { x: number; y: number; w: number; h: number }) => void
 }
-export default function SelectionLayer({ store, selection, zoom, colors, pageW, pageH, onChange, onToast }: Props) {
+export default function SelectionLayer({ store, selection, zoom, colors, pageW, pageH, onChange, onToast, onLink }: Props) {
   const t = useT()
   const [palette, setPalette] = useState(false)
   const c = store.content
@@ -133,6 +134,7 @@ export default function SelectionLayer({ store, selection, zoom, colors, pageW, 
             )}
           </div>
         )}
+        {onLink && <Btn onClick={() => { onLink({ x: bb.x0, y: bb.y0, w: bb.x1 - bb.x0, h: bb.y1 - bb.y0 }); onChange(null) }}>{t('Link')}</Btn>}
         <Btn onClick={() => void shot()}>{t('Screenshot')}</Btn>
         <Btn danger onClick={del}><Trash2 size={15} />{t('Löschen')}</Btn>
       </div>

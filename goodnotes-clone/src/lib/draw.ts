@@ -26,7 +26,9 @@ export interface TextObj {
   fill?: string | null; border?: string | null
 }
 export interface ImageObj { id: number; x: number; y: number; w: number; h: number; src: string }
-export interface Content { strokes: Stroke[]; texts: TextObj[]; images: ImageObj[] }
+/** Hyperlink area on a page (Goodnotes: Lasso → Link hinzufügen). */
+export interface LinkObj { id: number; x: number; y: number; w: number; h: number; to: { page: string } | { url: string } }
+export interface Content { strokes: Stroke[]; texts: TextObj[]; images: ImageObj[]; links?: LinkObj[] }
 export interface Selection { pageId: string; strokes: number[]; texts: number[]; images: number[] }
 
 export const emptyContent = (): Content => ({ strokes: [], texts: [], images: [] })

@@ -2,34 +2,102 @@ import { useEffect, useRef, useState } from 'react'
 import { Pause, Play, RotateCcw, X } from './glyphs'
 import { RULER_H, RULER_LEN, type Ruler } from './NoteCanvas'
 import { useT } from '../context/Settings'
+import type { ZoomRegion } from './editorTypes'
 
 /* ----------------------------- Ruler (page space) ----------------------------- */
+const MM = 96 / 25.4
+const SNAPS = [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180].flatMap((d) => [d, -d])
+const snapAngle = (rad: number) => {
+  const deg = (rad * 180) / Math.PI
+  for (const s of SNAPS) if (Math.abs(deg - s) < 2.5) return (s * Math.PI) / 180
+  return rad
+}
+const norm = (rad: number) => { let d = ((rad * 180) / Math.PI) % 180; if (d > 90) d -= 180; if (d < -90) d += 180; return d }
+
+/**
+ * Goodnotes ruler: translucent bar with mm/cm scale and live angle readout.
+ * One finger / mouse drags it, two fingers move + rotate it (snaps to 0°, 15°, 30°, 45° …),
+ * the round handle rotates with a mouse. Pen and highlighter strokes that start next to an edge follow it.
+ */
 export function RulerOverlay({ ruler, zoom, onChange, onClose }: { ruler: Ruler; zoom: number; onChange: (r: Ruler) => void; onClose: () => void }) {
+  const touches = useRef(new Map<number, { x: number; y: number }>())
+  const gest = useRef<null | { base: Ruler; a0: number; m0: { x: number; y: number } }>(null)
+  const [rotating, setRotating] = useState(false)
   const start = (e: React.PointerEvent, mode: 'move' | 'rot') => {
     e.stopPropagation(); e.preventDefault()
+    if (e.pointerType === 'touch') {
+      touches.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+      if (touches.current.size === 2) {
+        const [p, q] = [...touches.current.values()]
+        gest.current = { base: ruler, a0: Math.atan2(q.y - p.y, q.x - p.x), m0: { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 } }
+        setRotating(true)
+      }
+    }
     const base = ruler, sx = e.clientX, sy = e.clientY
     const host = (e.currentTarget as HTMLElement).closest('[data-page-inner]')!.getBoundingClientRect()
     const cx = host.left + base.x * zoom, cy = host.top + base.y * zoom
+    const a0 = Math.atan2(sy - cy, sx - cx)
+    if (mode === 'rot') setRotating(true)
     const mv = (ev: PointerEvent) => {
+      if (ev.pointerType === 'touch' && touches.current.has(ev.pointerId)) touches.current.set(ev.pointerId, { x: ev.clientX, y: ev.clientY })
+      const g = gest.current
+      if (g && touches.current.size >= 2) {
+        const [p, q] = [...touches.current.values()]
+        const m = { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 }
+        onChange({ ...g.base, x: g.base.x + (m.x - g.m0.x) / zoom, y: g.base.y + (m.y - g.m0.y) / zoom, angle: snapAngle(g.base.angle + Math.atan2(q.y - p.y, q.x - p.x) - g.a0) })
+        return
+      }
+      if (ev.pointerId !== e.pointerId) return
       if (mode === 'move') onChange({ ...base, x: base.x + (ev.clientX - sx) / zoom, y: base.y + (ev.clientY - sy) / zoom })
-      else onChange({ ...base, angle: Math.atan2(ev.clientY - cy, ev.clientX - cx) - 0 })
+      else onChange({ ...base, angle: snapAngle(base.angle + Math.atan2(ev.clientY - cy, ev.clientX - cx) - a0) })
     }
+    const up = (ev: PointerEvent) => {
+      touches.current.delete(ev.pointerId)
+      if (touches.current.size < 2) gest.current = null
+      if (ev.pointerId !== e.pointerId) return
+      setRotating(false)
+      window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up)
+    }
+    window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up)
+  }
+  const mm = Math.floor(RULER_LEN / MM)
+  const deg = Math.round(Math.abs(norm(ruler.angle)))
+  return (
+    <div className="absolute" style={{ left: ruler.x, top: ruler.y, width: 0, height: 0, zIndex: 6 }}>
+      <div data-ruler className="absolute cursor-move rounded-[6px] shadow-[0_4px_14px_rgba(0,0,0,.18),0_0_0_.5px_rgba(0,0,0,.25)]"
+        style={{ width: RULER_LEN, height: RULER_H, left: -RULER_LEN / 2, top: -RULER_H / 2, transform: `rotate(${ruler.angle}rad)`, background: 'rgba(242,242,247,.72)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', touchAction: 'none' }}
+        onPointerDown={(e) => start(e, 'move')}>
+        <svg width={RULER_LEN} height={RULER_H} className="pointer-events-none absolute inset-0">
+          {Array.from({ length: mm + 1 }, (_, i) => {
+            const x = 8 + i * MM, h = i % 10 === 0 ? 14 : i % 5 === 0 ? 10 : 6
+            return <g key={i}><line x1={x} x2={x} y1={0} y2={h} stroke="#3c3c43" strokeWidth=".8" /><line x1={x} x2={x} y1={RULER_H} y2={RULER_H - h} stroke="#3c3c43" strokeWidth=".8" /></g>
+          })}
+          {Array.from({ length: Math.floor(mm / 10) + 1 }, (_, i) => i).filter((i) => i > 0).map((i) => (
+            <text key={i} x={8 + i * 10 * MM} y={26} fontSize="9" textAnchor="middle" fill="#3c3c43" fontFamily="-apple-system, sans-serif">{i}</text>
+          ))}
+        </svg>
+        <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/70 px-2.5 py-0.5 text-[13px] font-semibold tabular-nums text-white" style={{ transform: `translate(-50%,-50%) rotate(${-ruler.angle}rad)`, opacity: rotating || deg ? 1 : 0.75 }}>{deg}°</div>
+        <button aria-label="Lineal schließen" className="absolute top-1/2 flex items-center justify-center rounded-full bg-black/55 text-white" style={{ width: 30 / zoom, height: 30 / zoom, right: 40 / zoom, marginTop: -15 / zoom }} onPointerDown={(e) => e.stopPropagation()} onClick={onClose}><X size={14 / zoom} /></button>
+        <div aria-label="Lineal drehen" className="absolute top-1/2 cursor-grab rounded-full border-white bg-gn-ui-lasso shadow" style={{ width: 30 / zoom, height: 30 / zoom, right: -15 / zoom, marginTop: -15 / zoom, borderWidth: 3 / zoom }} onPointerDown={(e) => start(e, 'rot')} />
+      </div>
+    </div>
+  )
+}
+
+/* ----------------------------- Zoom-Ansicht ----------------------------- */
+/** Blue frame on the page marking the region shown in the zoom panel – drag to move. */
+export function ZoomFrame({ region, zoom, pageW, pageH, onChange }: { region: ZoomRegion; zoom: number; pageW: number; pageH: number; onChange: (r: ZoomRegion) => void }) {
+  const drag = (e: React.PointerEvent) => {
+    e.stopPropagation(); e.preventDefault()
+    const sx = e.clientX, sy = e.clientY, b = region
+    const mv = (ev: PointerEvent) => onChange({ ...b, x: Math.max(0, Math.min(pageW - b.w, b.x + (ev.clientX - sx) / zoom)), y: Math.max(0, Math.min(pageH - b.h, b.y + (ev.clientY - sy) / zoom)) })
     const up = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up) }
     window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up)
   }
-  const ticks = Array.from({ length: Math.floor(RULER_LEN / 12) + 1 }, (_, i) => i)
   return (
-    <div className="absolute" style={{ left: ruler.x, top: ruler.y, width: 0, height: 0, zIndex: 6 }}>
-      <div className="absolute cursor-move rounded-md border border-black/20 shadow-lg"
-        style={{ width: RULER_LEN, height: RULER_H, left: -RULER_LEN / 2, top: -RULER_H / 2, transform: `rotate(${ruler.angle}rad)`, background: 'rgba(255,255,255,.62)', backdropFilter: 'blur(2px)', touchAction: 'none' }}
-        onPointerDown={(e) => start(e, 'move')}>
-        <svg width={RULER_LEN} height={RULER_H} className="pointer-events-none absolute inset-0">
-          {ticks.map((i) => <line key={i} x1={i * 12} x2={i * 12} y1={0} y2={i % 5 === 0 ? 16 : 8} stroke="#444" strokeWidth="1" />)}
-          {ticks.filter((i) => i % 5 === 0 && i > 0).map((i) => <text key={i} x={i * 12 + 2} y={30} fontSize="9" fill="#444">{i / 5}</text>)}
-        </svg>
-        <button className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white" onPointerDown={(e) => e.stopPropagation()} onClick={onClose}><X size={13} /></button>
-        <div className="absolute -right-3 top-1/2 h-6 w-6 -translate-y-1/2 cursor-grab rounded-full border-2 border-white bg-gn-ui-lasso shadow" onPointerDown={(e) => start(e, 'rot')} title="Drehen" />
-      </div>
+    <div data-zoomframe className="absolute cursor-move" onPointerDown={drag}
+      style={{ left: region.x, top: region.y, width: region.w, height: region.h, border: `${2 / zoom}px solid #1a82e0`, background: 'rgba(26,130,224,.06)', borderRadius: 3 / zoom, zIndex: 6, touchAction: 'none' }}>
+      <div className="absolute right-0 top-0 h-full" style={{ width: region.w * 0.18, background: 'rgba(26,130,224,.10)' }} />
     </div>
   )
 }

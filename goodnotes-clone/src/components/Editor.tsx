@@ -16,9 +16,10 @@ import DocumentView from './DocumentView'
 import Sidebar, { type SideTab } from './Sidebar'
 import Toolbar, { type PopName } from './Toolbar'
 import { OptionsBar, UndoPill } from './ToolOptionsBar'
-import { Magnifier, TimerWidget } from './Widgets'
+import { TimerWidget } from './Widgets'
+import ZoomWindow from './ZoomWindow'
 import type { Ruler } from './NoteCanvas'
-import type { AccId, EditorProps, TextRef, ToolId } from './editorTypes'
+import type { AccId, EditorProps, TextRef, ToolId, ZoomRegion } from './editorTypes'
 import { buildCanvasTool, currentColor, loadPrefs, savePrefs, type ToolPrefs } from './toolState'
 import ColorPopover from './popovers/ColorPopover'
 import PenPopover from './popovers/PenPopover'
@@ -27,6 +28,7 @@ import { TextBoxStylePopover, TextStylesPopover, AccessoriesPopover, EraserPopov
 import { AddPagePopover, MorePopover, SearchPopover, SharePopover, type ClearKind, type ExportFormat, type Where } from './popovers/PagePopovers'
 import CustomizeToolbar from './sheets/CustomizeToolbar'
 import FontPicker from './sheets/FontPicker'
+import LinkSheet from './sheets/LinkSheet'
 import TemplatePicker, { type TemplateResult } from './sheets/TemplatePicker'
 
 const HINT = 'Tippe, um ein Textfeld hinzuzufügen. Halte gedrückt, um Text zur ganzen Seite hinzuzufügen.'
@@ -54,6 +56,7 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
   const [selText, setSelText] = useState<TextRef | null>(null)
   const [editText, setEditTextRaw] = useState<TextRef | null>(null)
   const [ruler, setRuler] = useState<Ruler | null>(null)
+  const [linkReq, setLinkReq] = useState<{ pageId: string; box: { x: number; y: number; w: number; h: number } } | null>(null)
   const [pasteAt, setPasteAt] = useState<{ pageId: string; p: { x: number; y: number }; client: { x: number; y: number } } | null>(null)
   const paste = (pageId: string, at?: { x: number; y: number }) => {
     const r = clipFor(pageId, at)
@@ -101,7 +104,7 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
   const [readOnly, setReadOnly] = useState(false)
   const [sidebar, setSidebar] = useState(false)
   const [sideTab, setSideTab] = useState<SideTab>('pages')
-  const [lens, setLens] = useState(false)
+  const [zoomRegion, setZoomRegion] = useState<ZoomRegion | null>(null)
   const [timer, setTimer] = useState(false)
   const [scrollTo, setScrollTo] = useState<{ id: string; n: number } | null>(null)
   const [tpl, setTpl] = useState<TplAction | null>(null)
@@ -187,11 +190,11 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
   const onAcc = (a: AccId) => {
     if (a === 'record') { if (rec.recording) rec.stop(); else { rec.start(); setSidebar(true); setSideTab('audio') } }
     else if (a === 'recordings') { setSidebar(true); setSideTab('audio') }
-    else if (a === 'zoom') setLens((v) => !v)
+    else if (a === 'zoom') setZoomRegion((r) => (r ? null : { pageId: page.id, x: 48, y: Math.min(160, pageDims(page).h / 4), w: Math.min(360, pageDims(page).w), h: 110 }))
     else if (a === 'timer') setTimer((v) => !v)
     else if (a === 'ruler') setRuler((r) => (r ? null : { pageId: page.id, x: pageDims(page).w / 2, y: pageDims(page).h / 2, angle: 0 }))
   }
-  const accActive: Record<AccId, boolean> = { record: rec.recording, recordings: sidebar && sideTab === 'audio', zoom: lens, ruler: !!ruler, timer }
+  const accActive: Record<AccId, boolean> = { record: rec.recording, recordings: sidebar && sideTab === 'audio', zoom: !!zoomRegion, ruler: !!ruler, timer }
 
   /* ------------------------------ export ------------------------------ */
   const exportAs = async (all: boolean, format: ExportFormat) => {
@@ -252,7 +255,12 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
     onTextCreated: () => { autoSwitch.current = true },
     onLassoTap: (pageId, p, client) => setPasteAt({ pageId, p, client }),
     toast,
-  }), [tool, canvasTool, selection, prefs.textStyle, selText, editText, ruler, prefs.colors]) // eslint-disable-line react-hooks/exhaustive-deps
+    readOnly,
+    onAddLink: (pageId, box) => setLinkReq({ pageId, box }),
+    goPage: (id) => goPage(id),
+    pageNo: (id) => nb.pages.findIndex((p) => p.id === id) + 1,
+    zoomRegion, setZoomRegion,
+  }), [tool, canvasTool, selection, prefs.textStyle, selText, editText, ruler, prefs.colors, readOnly, nb.pages, zoomRegion]) // eslint-disable-line react-hooks/exhaustive-deps
   const close = () => setPopover(null)
   const P = (name: PopName) => popover === name
   const tplInit: TemplateResult = { template: page.template, color: page.color, size: page.size, cover: meta.cover, coverColor: meta.coverColor, title: meta.title }
@@ -279,6 +287,10 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
           )}
           <DocumentView nb={nb} ed={ed} zoom={zoomSet} setZoom={setZoom} scrollTo={scrollTo} topInset={present ? 8 : floating ? 116 : 58} onZoomValue={(z) => { zoomNow.current = z }} onUndo={() => nb.store(nb.page.id).undo()} onRedo={() => nb.store(nb.page.id).redo()}
             laser={{ on: tool === 'laser' && !readOnly, color: prefs.laserColor, trail: prefs.laserTrail, size: 9 }} />
+          {zoomRegion && !present && (() => {
+            const zp = nb.pages.find((p) => p.id === zoomRegion.pageId)
+            return zp ? <ZoomWindow page={zp} store={nb.store(zp.id)} ed={{ ...ed, zoom: 1 }} region={zoomRegion} onRegion={setZoomRegion} onClose={() => setZoomRegion(null)} /> : null
+          })()}
           {!present && (
             <div className={`pointer-events-none absolute inset-x-0 ${floating ? 'top-[66px]' : 'top-2'} z-20 grid grid-cols-[96px_minmax(0,1fr)_96px] items-start px-2`}>
               <div className="pointer-events-auto w-fit"><UndoPill canUndo={nb.canUndo(page.id)} canRedo={nb.canRedo(page.id)} onUndo={store.undo} onRedo={store.redo} /></div>
@@ -298,7 +310,6 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
             className="absolute -translate-x-1/2 -translate-y-[130%] rounded-xl bg-gn-ui-toast px-4 py-2 text-[15px] font-medium text-white shadow-lg" style={{ left: pasteAt.client.x, top: pasteAt.client.y }}>{t('Einfügen')}</button>
         </div>
       )}
-      {lens && <Magnifier onClose={() => setLens(false)} />}
 
       <PenPopover anchor={anchorFor('opt:pen', 'tool:pen')} open={P('pen')} onClose={close} prefs={prefs} set={set} />
       <ColorPopover anchor={anchorFor('color')} open={P('color')} onClose={close} color={currentColor(tool, prefs)}
@@ -327,6 +338,8 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
       <SettingsPopover anchor={anchorFor('more')} open={P('settings')} onClose={close} />
       <SearchPopover anchor={anchorFor('search')} open={P('search')} onClose={close} pages={nb.pages} outline={nb.outline} onGo={goPage} />
 
+      <LinkSheet open={!!linkReq} pages={nb.pages} onClose={() => setLinkReq(null)}
+        onDone={(to) => { if (linkReq) { const { pageId, box } = linkReq; nb.store(pageId).commit((c) => ({ ...c, links: [...(c.links ?? []), { id: newId(), ...box, to }] })); toast(t('Link hinzugefügt')) } setLinkReq(null) }} />
       <FontPicker open={fontSheet} onClose={() => setFontSheet(false)} current={prefs.textStyle.font} recent={prefs.recentFonts} onPick={(f) => onTextStyle({ font: f })} />
       <CustomizeToolbar open={customize} onClose={() => setCustomize(false)} prefs={prefs} set={set} onCustomizePen={() => { setTool('pen'); setTimeout(() => setPopover('pen'), 50) }} />
       <TemplatePicker open={!!tpl} mode="page" initial={tplInit} onClose={() => setTpl(null)}
