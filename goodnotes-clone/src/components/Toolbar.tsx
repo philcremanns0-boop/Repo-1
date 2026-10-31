@@ -9,7 +9,7 @@ import { useT } from '../context/Settings'
 import { ALL_ACC, type ToolPrefs } from './toolState'
 import { GN_SPRING, GN_TAP } from './motion'
 
-export type PopName = 'pen' | 'eraser' | 'lasso' | 'shapes' | 'objects' | 'images' | 'acc' | 'add' | 'share' | 'more' | 'search' | 'color' | 'font' | 'size' | 'spacing' | 'textcolor' | 'tab' | 'settings'
+export type PopName = 'pen' | 'eraser' | 'lasso' | 'shapes' | 'objects' | 'images' | 'acc' | 'add' | 'share' | 'more' | 'search' | 'color' | 'font' | 'size' | 'spacing' | 'textcolor' | 'textbox' | 'textstyles' | 'tab' | 'settings'
 type IconC = (p: { size?: number; active?: boolean }) => JSX.Element
 
 /** Lasso: fluid rope loop, dashed 3,3, short solid tail, filled pointer. 1.5 stroke = the thin GN line weight. */

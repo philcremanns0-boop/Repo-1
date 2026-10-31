@@ -32,9 +32,16 @@ export interface ToolPrefs {
   recentFonts: string[]
   lowLat: boolean
   hlStraight: boolean
+  textPresets: { name: string; style: Partial<TextStyle> }[]
   spell: boolean
   mathSug: boolean
 }
+export const DEFAULT_PRESETS: ToolPrefs['textPresets'] = [
+  { name: 'Titel', style: { size: 32, bold: true, italic: false } },
+  { name: 'Überschrift', style: { size: 24, bold: true, italic: false } },
+  { name: 'Unterüberschrift', style: { size: 20, bold: true, italic: false } },
+  { name: 'Text', style: { size: 16, bold: false, italic: false } },
+]
 export const DEFAULT_TOOLS: ToolId[] = ['pen', 'eraser', 'text', 'objects', 'images', 'shapes', 'note', 'laser']
 export const DEFAULT_ACC: AccId[] = ['record']
 export const ALL_ACC: AccId[] = ['record', 'recordings', 'zoom', 'ruler', 'timer']
@@ -52,7 +59,7 @@ export const DEFAULT_PREFS: ToolPrefs = {
   lassoMode: 'free', lassoStrokes: true, lassoObjects: true,
   laserColor: '#ff3b30', laserTrail: true,
   textStyle: DEFAULT_TEXT, pinText: false,
-  visibleTools: DEFAULT_TOOLS, visibleAcc: DEFAULT_ACC, recent: [], recentFonts: ['Chalkboard SE'], lowLat: false, hlStraight: false, spell: false, mathSug: false,
+  visibleTools: DEFAULT_TOOLS, visibleAcc: DEFAULT_ACC, recent: [], recentFonts: ['Chalkboard SE'], lowLat: false, hlStraight: false, textPresets: DEFAULT_PRESETS, spell: false, mathSug: false,
 }
 const KEY = 'gn:tools'
 export function loadPrefs(): ToolPrefs {

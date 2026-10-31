@@ -2,7 +2,7 @@ import { type MutableRefObject, type ReactNode } from 'react'
 import { ChevronDown } from './glyphs'
 import { motion } from 'framer-motion'
 import { GN_SPRING, GN_TAP } from './motion'
-import { AlignI, RedoI, UndoI, EraserI, HighlighterI, LineSpacingI, PenI, PinI, PixelEraserI, ShapeAutoI, StrokeEraserI, WashiI } from './icons'
+import { AlignI, RedoI, UndoI, EraserI, TextBoxStyleI, TextStylesI, HighlighterI, LineSpacingI, PenI, PinI, PixelEraserI, ShapeAutoI, StrokeEraserI, WashiI } from './icons'
 import type { ToolId } from './editorTypes'
 import { useT } from '../context/Settings'
 import { colorKey, WIDTHS, type PenMode, type ToolPrefs } from './toolState'
@@ -159,6 +159,8 @@ export function OptionsBar({ tool, prefs, set, anchors, popover, onPop, onTextSt
       <Opt label={t('Ausrichtung')} w={38} onClick={() => onTextStyle({ align: s.align === 'left' ? 'center' : s.align === 'center' ? 'right' : 'left' })}><AlignI a={s.align} size={22} /></Opt>
       <Opt refFn={reg('spacing')} label={t('Zeilenabstand')} w={38} onClick={() => onPop(popover === 'spacing' ? null : 'spacing')}><LineSpacingI size={22} /></Opt>
       <Sep />
+      <Opt refFn={reg('textbox')} label={t('Textfeld-Stil')} w={40} active={!!(s.fill || s.border)} tone="sel" onClick={() => onPop(popover === 'textbox' ? null : 'textbox')}><TextBoxStyleI size={24} /></Opt>
+      <Opt refFn={reg('textstyles')} label={t('Textstile')} w={40} onClick={() => onPop(popover === 'textstyles' ? null : 'textstyles')}><TextStylesI size={24} /></Opt>
       <button aria-pressed={prefs.pinText} onClick={() => set((p) => ({ ...p, pinText: !p.pinText }))}
         className={`mr-1 flex h-[34px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[10px] px-2.5 text-[15px] font-medium text-ink ${prefs.pinText ? 'bg-[var(--opt-active)]' : 'bg-chip'}`}>
         <PinI size={20} />{t('Textwerkzeug fixieren')}

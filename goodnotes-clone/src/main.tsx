@@ -4,7 +4,12 @@ import App from './App'
 import { SettingsProvider } from './context/Settings'
 import '@fontsource-variable/albert-sans'
 import '@fontsource/caveat/400.css'
+import '@fontsource/caveat/700.css'
+import './lib/webfonts'
 import './index.css'
+import { loadCustomFonts } from './lib/customFonts'
+
+void loadCustomFonts().catch(() => undefined)
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

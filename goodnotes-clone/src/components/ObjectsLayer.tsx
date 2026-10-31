@@ -3,8 +3,8 @@ import { fontStack } from '../lib/fonts'
 import { newId, type Content, type ImageObj, type TextObj } from '../lib/draw'
 import type { PageStore } from '../store/useNotebook'
 
-export interface TextStyle { font: string; size: number; color: string; bold: boolean; italic: boolean; align: 'left' | 'center' | 'right'; lh: number }
-export const DEFAULT_TEXT: TextStyle = { font: 'Helvetica Neue', size: 20, color: '#111111', bold: false, italic: false, align: 'left', lh: 1 }
+export interface TextStyle { font: string; size: number; color: string; bold: boolean; italic: boolean; align: 'left' | 'center' | 'right'; lh: number; fill: string | null; border: string | null }
+export const DEFAULT_TEXT: TextStyle = { font: 'Helvetica Neue', size: 20, color: '#111111', bold: false, italic: false, align: 'left', lh: 1, fill: null, border: null }
 
 export function ImagesLayer({ images }: { images: ImageObj[] }) {
   return (
@@ -75,7 +75,8 @@ function TextBox({ t, store, interactive, selected, editing, onSelect, onEdit, b
         style={{
           fontFamily: fontStack(t.font), fontSize: t.size, color: t.color, fontWeight: t.bold ? 700 : 400, fontStyle: t.italic ? 'italic' : 'normal',
           textAlign: t.align, lineHeight: t.lh * 1.2, padding: pad, minHeight: t.size * 1.4, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', cursor: interactive ? 'text' : 'default',
-          background: t.note ? '#fff3a6' : 'transparent', boxShadow: t.note ? '0 3px 10px rgba(0,0,0,.25)' : undefined,
+          background: t.note ? '#fff3a6' : t.fill ?? 'transparent', boxShadow: t.note ? '0 3px 10px rgba(0,0,0,.25)' : t.border ? `inset 0 0 0 1.5px ${t.border}` : undefined,
+          borderRadius: !t.note && (t.fill || t.border) ? 4 : undefined,
           outline: selected ? '1.5px dashed #2f8cf0' : undefined, outlineOffset: 1,
         }} />
       {selected && interactive && (

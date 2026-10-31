@@ -72,6 +72,10 @@ export const EN: Record<string, string> = {
   'Zeichne eine Form – Linie, Kreis, Ellipse, Dreieck, Rechteck oder Vieleck. Sie wird beim Absetzen automatisch geglättet.': 'Draw a shape – line, circle, ellipse, triangle, rectangle or polygon. It is cleaned up automatically when you lift the pen.',
   'Kopieren': 'Copy', 'Ausschneiden': 'Cut', 'Einfügen': 'Paste', 'Kopiert': 'Copied', 'Screenshot': 'Screenshot', 'Größe ändern': 'Resize', 'Drehen': 'Rotate',
   'Format': 'Format', 'Seiten mit Handschrift als PDF': 'Pages with handwriting as PDF', 'Eine PNG-Datei pro Seite': 'One PNG file per page', 'Bearbeitbare Notizbuch-Datei': 'Editable notebook file',
+  'Textfeld-Stil': 'Text box style', 'Füllfarbe': 'Fill colour', 'Rahmen': 'Border', 'Keine': 'None', 'Textstile': 'Text styles', 'Überschrift': 'Heading', 'Unterüberschrift': 'Subheading',
+  'Aktuellen Stil speichern als …': 'Save current style as …', 'Sichern': 'Save', 'Eigene Schriften': 'My fonts', 'Schriften verwalten': 'Manage fonts', 'Schrift importieren': 'Import font',
+  'Importiere eigene Schriftdateien (TTF, OTF, WOFF). Sie stehen danach in allen Notizbüchern zur Verfügung.': 'Import your own font files (TTF, OTF, WOFF). They are then available in all notebooks.',
+  'Schrift konnte nicht geladen werden': 'Font could not be loaded', 'Die Zwischenablage ist leer': 'The clipboard is empty', 'Kein Zugriff auf die Zwischenablage – nutze ⌘V / Strg+V': 'No clipboard access – use ⌘V / Ctrl+V',
   // sidebar & library
   'Seiten': 'Pages', 'Gliederungen': 'Outlines', 'Audio': 'Audio', 'Favoriten': 'Favourites', 'Favorit': 'Favourite', 'Seitenmenü': 'Page menu', 'Nach oben': 'Move up', 'Nach unten': 'Move down', 'Seite löschen': 'Delete page',
   'Gliederungen – Übersichten über deine Dokumente': 'Outlines – overviews of your documents',

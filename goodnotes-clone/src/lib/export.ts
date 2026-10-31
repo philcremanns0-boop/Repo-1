@@ -31,6 +31,12 @@ function drawText(ctx: CanvasRenderingContext2D, t: TextObj) {
     lines.push(line)
   }
   const lh = t.size * t.lh * 1.2
+  if (!t.note && (t.fill || t.border)) {
+    const hh = lines.length * t.size * t.lh * 1.2 + pad * 2
+    if (t.fill) { ctx.fillStyle = t.fill; ctx.fillRect(t.x, t.y, t.w, hh) }
+    if (t.border) { ctx.strokeStyle = t.border; ctx.lineWidth = 1.5; ctx.strokeRect(t.x + .75, t.y + .75, t.w - 1.5, hh - 1.5) }
+    ctx.fillStyle = t.color
+  }
   if (t.note) {
     ctx.fillStyle = '#fff3a6'; ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 8
     ctx.fillRect(t.x, t.y, t.w, lines.length * lh + pad * 2); ctx.shadowBlur = 0; ctx.fillStyle = t.color

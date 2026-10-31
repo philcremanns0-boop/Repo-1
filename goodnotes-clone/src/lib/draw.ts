@@ -22,6 +22,8 @@ export interface TextObj {
   id: number; x: number; y: number; w: number; text: string
   font: string; size: number; color: string; bold: boolean; italic: boolean
   align: 'left' | 'center' | 'right'; lh: number; note?: boolean
+  /** Textfeld-Stil: box fill / border colour (null = none) */
+  fill?: string | null; border?: string | null
 }
 export interface ImageObj { id: number; x: number; y: number; w: number; h: number; src: string }
 export interface Content { strokes: Stroke[]; texts: TextObj[]; images: ImageObj[] }

@@ -195,3 +195,59 @@ export function SettingsPopover(b: Base) {
   return <Popover {...b} width={360} align="right"><PopTitle>{t('Einstellungen')}</PopTitle><SettingsBody /></Popover>
 }
 export const iconsUsed = [FileDown, ScanLine, Settings, Wheel]
+
+/* ------------------------------ Textfeld-Stil (box fill / border) ------------------------------ */
+const BOX_COLORS = ['#ffffff', '#f2f2f7', '#fff3a6', '#ffd6e0', '#d6f0ff', '#d9f5d0', '#e6dcff', '#1c1c1e', '#e5372e', '#1f6fe5']
+export function TextBoxStylePopover({ prefs, onStyle, ...b }: Base & { prefs: ToolPrefs; onStyle: (p: { fill?: string | null; border?: string | null }) => void }) {
+  const t = useT()
+  const s = prefs.textStyle
+  const Swatches = ({ value, onPick }: { value: string | null; onPick: (c: string | null) => void }) => (
+    <div className="flex flex-wrap gap-2 px-3.5 py-3">
+      <button aria-label={t('Keine')} onClick={() => onPick(null)} className={`relative h-8 w-8 rounded-full border border-hair bg-card ${value === null ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : ''}`}>
+        <span className="absolute left-1/2 top-1/2 h-px w-7 -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-danger" />
+      </button>
+      {BOX_COLORS.map((c) => <button key={c} aria-label={c} onClick={() => onPick(c)} className={`h-8 w-8 rounded-full ${value === c ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : ''}`} style={{ background: c, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.15)' }} />)}
+    </div>
+  )
+  return (
+    <Popover {...b} width={340}>
+      <PopTitle>{t('Textfeld-Stil')}</PopTitle>
+      <div className="px-4 pb-1 text-[13px] uppercase tracking-wide text-sub">{t('Füllfarbe')}</div>
+      <Group><Swatches value={s.fill} onPick={(c) => onStyle({ fill: c })} /></Group>
+      <div className="px-4 pb-1 pt-4 text-[13px] uppercase tracking-wide text-sub">{t('Rahmen')}</div>
+      <Group><Swatches value={s.border} onPick={(c) => onStyle({ border: c })} /></Group>
+      <div className="h-4" />
+    </Popover>
+  )
+}
+
+/* ------------------------------ Textstile (presets) ------------------------------ */
+export function TextStylesPopover({ prefs, set, onApply, ...b }: Base & { prefs: ToolPrefs; set: Set; onApply: (s: Partial<ToolPrefs['textStyle']>) => void }) {
+  const t = useT()
+  const [name, setName] = useState('')
+  const cur = prefs.textStyle
+  const save = () => {
+    const n = name.trim(); if (!n) return
+    const { font, size, color, bold, italic } = cur
+    set((p) => ({ ...p, textPresets: [...p.textPresets.filter((x) => x.name !== n), { name: n, style: { font, size, color, bold, italic } }] }))
+    setName('')
+  }
+  return (
+    <Popover {...b} width={340}>
+      <PopTitle>{t('Textstile')}</PopTitle>
+      <Group>
+        {prefs.textPresets.map((x) => (
+          <Row key={x.name} onClick={() => { onApply(x.style); b.onClose() }}
+            trailing={<span role="button" aria-label={t('Entfernen')} onClick={(e) => { e.stopPropagation(); set((p) => ({ ...p, textPresets: p.textPresets.filter((y) => y.name !== x.name) })) }} className="px-1 text-[20px] leading-none text-sub">×</span>}>
+            <span style={{ fontFamily: fontStack(x.style.font ?? cur.font), fontSize: Math.min(26, Math.max(15, x.style.size ?? 16)), fontWeight: x.style.bold ? 700 : 400, fontStyle: x.style.italic ? 'italic' : 'normal', color: x.style.color }}>{t(x.name)}</span>
+          </Row>
+        ))}
+      </Group>
+      <div className="mx-3 mt-3 flex gap-2">
+        <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && save()} placeholder={t('Aktuellen Stil speichern als …')} className="min-w-0 flex-1 rounded-xl bg-card px-3 py-2.5 text-[16px] outline-none" />
+        <button onClick={save} disabled={!name.trim()} className="rounded-xl bg-gn-ui-action px-3 text-[15px] font-semibold text-white disabled:opacity-40">{t('Sichern')}</button>
+      </div>
+      <div className="h-4" />
+    </Popover>
+  )
+}

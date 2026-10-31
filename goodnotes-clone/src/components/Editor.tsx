@@ -23,7 +23,7 @@ import { buildCanvasTool, currentColor, loadPrefs, savePrefs, type ToolPrefs } f
 import ColorPopover from './popovers/ColorPopover'
 import PenPopover from './popovers/PenPopover'
 import ShapesPopover from './popovers/ShapesPopover'
-import { AccessoriesPopover, EraserPopover, FontPopover, ImagesPopover, LassoPopover, ObjectsPopover, SettingsPopover, SizePopover, SpacingPopover, TextColorPopover } from './popovers/SimplePopovers'
+import { TextBoxStylePopover, TextStylesPopover, AccessoriesPopover, EraserPopover, FontPopover, ImagesPopover, LassoPopover, ObjectsPopover, SettingsPopover, SizePopover, SpacingPopover, TextColorPopover } from './popovers/SimplePopovers'
 import { AddPagePopover, MorePopover, SearchPopover, SharePopover, type ClearKind, type ExportFormat, type Where } from './popovers/PagePopovers'
 import CustomizeToolbar from './sheets/CustomizeToolbar'
 import FontPicker from './sheets/FontPicker'
@@ -60,6 +60,41 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
     if (!r) return
     nb.store(pageId).commit((c) => ({ strokes: [...c.strokes, ...r.add.strokes], texts: [...c.texts, ...r.add.texts], images: [...c.images, ...r.add.images] }))
     setTool('lasso'); setSelection(r.sel); setPasteAt(null)
+  }
+  /** Paste from the system clipboard: text → text box in the current style, image → image object. */
+  const pasteExternal = (pageId: string, data: { text?: string; image?: Blob }, at?: { x: number; y: number }) => {
+    const st = nb.store(pageId)
+    const pg = nb.pages.find((p) => p.id === pageId) ?? page
+    const { w: pw, h: ph } = pageDims(pg)
+    if (data.image) {
+      void readImage(data.image).then((im) => {
+        const tw = Math.min(im.w, pw * 0.6), th = (tw * im.h) / im.w, id = newId()
+        st.commit((c) => ({ ...c, images: [...c.images, { id, src: im.src, w: tw, h: th, x: at ? at.x : (pw - tw) / 2, y: at ? at.y : Math.max(40, (ph - th) / 3) }] }))
+        setTool('lasso'); setSelection({ pageId, strokes: [], texts: [], images: [id] })
+      }).catch(() => toast(t('Datei konnte nicht gelesen werden')))
+    } else if (data.text?.trim()) {
+      const id = newId(), s = prefs.textStyle
+      const w = Math.min(pw - 96, Math.max(200, Math.min(...[data.text.split('\n').reduce((m, l) => Math.max(m, l.length), 0) * s.size * 0.55 + 16])))
+      st.commit((c) => ({ ...c, texts: [...c.texts, { id, x: at ? at.x : 48, y: at ? at.y : 80, w, text: data.text!, ...s }] }))
+      setTool('lasso'); setSelection({ pageId, strokes: [], texts: [id], images: [] })
+    }
+    setPasteAt(null)
+  }
+  const pasteAny = async (pageId: string, at?: { x: number; y: number }) => {
+    if (hasClip()) return paste(pageId, at)
+    try {
+      const items = await navigator.clipboard.read()
+      for (const it of items) {
+        const img = it.types.find((x) => x.startsWith('image/'))
+        if (img) return pasteExternal(pageId, { image: await it.getType(img) }, at)
+        if (it.types.includes('text/plain')) return pasteExternal(pageId, { text: await (await it.getType('text/plain')).text() }, at)
+      }
+      toast(t('Die Zwischenablage ist leer'))
+    } catch {
+      try { const text = await navigator.clipboard.readText(); if (text) return pasteExternal(pageId, { text }, at) } catch { /* no permission */ }
+      toast(t('Kein Zugriff auf die Zwischenablage – nutze ⌘V / Strg+V'))
+    }
+    setPasteAt(null)
   }
   const [zoomSet, setZoom] = useState<number | null>(null)
   const zoomNow = useRef(1)
@@ -198,13 +233,24 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
     else if (e.key === 'Escape') { setSelection(null); setPopover(null) }
   }
   useEffect(() => { const f = (e: KeyboardEvent) => key.current(e); window.addEventListener('keydown', f); return () => window.removeEventListener('keydown', f) }, [])
+  // system paste (⌘V / Strg+V) when no in-app lasso clipboard is active
+  const onPaste = useRef<(e: ClipboardEvent) => void>(() => {})
+  onPaste.current = (e) => {
+    const el = e.target as HTMLElement
+    if (el?.isContentEditable || /^(INPUT|TEXTAREA)$/.test(el?.tagName)) return
+    const d = e.clipboardData; if (!d) return
+    const file = Array.from(d.files).find((f) => f.type.startsWith('image/'))
+    const text = d.getData('text/plain')
+    if (file || text) { e.preventDefault(); pasteExternal(page.id, file ? { image: file } : { text }) }
+  }
+  useEffect(() => { const f = (e: ClipboardEvent) => onPaste.current(e); window.addEventListener('paste', f); return () => window.removeEventListener('paste', f) }, [])
   useEffect(() => { if (nb.saveError) toast(t('Speicher voll – Änderungen werden nur noch im Arbeitsspeicher gehalten.')) }, [nb.saveError]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ------------------------------ render ------------------------------ */
   const ed = useMemo<Omit<EditorProps, 'zoom'>>(() => ({
     tool, canvasTool, selection, setSelection, textStyle: prefs.textStyle, selText, setSelText, editText, setEditText, ruler, setRuler, colors: prefs.colors,
     onTextCreated: () => { autoSwitch.current = true },
-    onLassoTap: (pageId, p, client) => { if (hasClip()) setPasteAt({ pageId, p, client }) },
+    onLassoTap: (pageId, p, client) => setPasteAt({ pageId, p, client }),
     toast,
   }), [tool, canvasTool, selection, prefs.textStyle, selText, editText, ruler, prefs.colors]) // eslint-disable-line react-hooks/exhaustive-deps
   const close = () => setPopover(null)
@@ -248,7 +294,7 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
       {timer && <TimerWidget onClose={() => setTimer(false)} />}
       {pasteAt && (
         <div className="fixed inset-0 z-[58]" onPointerDown={() => setPasteAt(null)}>
-          <button onPointerDown={(e) => e.stopPropagation()} onClick={() => paste(pasteAt.pageId, pasteAt.p)}
+          <button onPointerDown={(e) => e.stopPropagation()} onClick={() => void pasteAny(pasteAt.pageId, pasteAt.p)}
             className="absolute -translate-x-1/2 -translate-y-[130%] rounded-xl bg-gn-ui-toast px-4 py-2 text-[15px] font-medium text-white shadow-lg" style={{ left: pasteAt.client.x, top: pasteAt.client.y }}>{t('Einfügen')}</button>
         </div>
       )}
@@ -266,6 +312,8 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
       <FontPopover anchor={anchorFor('font')} open={P('font')} onClose={close} prefs={prefs} onFont={(f) => onTextStyle({ font: f })} onMore={() => setFontSheet(true)} />
       <SizePopover anchor={anchorFor('size')} open={P('size')} onClose={close} prefs={prefs} onSize={(n) => onTextStyle({ size: n })} />
       <SpacingPopover anchor={anchorFor('spacing')} open={P('spacing')} onClose={close} prefs={prefs} onLh={(n) => onTextStyle({ lh: n })} />
+      <TextBoxStylePopover anchor={anchorFor('textbox')} open={P('textbox')} onClose={close} prefs={prefs} onStyle={onTextStyle} />
+      <TextStylesPopover anchor={anchorFor('textstyles')} open={P('textstyles')} onClose={close} prefs={prefs} set={set} onApply={onTextStyle} />
       <TextColorPopover anchor={anchorFor('textcolor')} open={P('textcolor')} onClose={close} prefs={prefs} onColor={(c) => onTextStyle({ color: c })} />
       <AddPagePopover anchor={anchorFor('add')} open={P('add')} onClose={close} current={{ size: page.size, template: page.template, color: page.color }}
         onAdd={(w, m) => addPageWith(w, m)} onMoreTemplates={(w) => setTpl({ kind: 'add', where: w })} onChoose={(k, w) => choose(k, w, true)} />
