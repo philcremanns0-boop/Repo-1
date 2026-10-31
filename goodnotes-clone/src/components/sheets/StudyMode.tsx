@@ -3,6 +3,7 @@ import type { Page } from '../../store/types'
 import { renderPage } from '../../lib/export'
 import { isDue, schedule } from '../../lib/srs'
 import { CloseBtn, Sheet } from '../ui'
+import { Check } from '../glyphs'
 import { useT } from '../../context/Settings'
 
 /** Lernmodus: flashcard pages, answer half covered until tapped, graded with spaced repetition. */
@@ -42,7 +43,7 @@ export default function StudyMode({ open, pages, onClose, onGrade }: { open: boo
         <p className="px-8 pt-10 text-center text-[18px] text-sub">{t('Noch keine Lernkarten. Füge über „Seite hinzufügen → Mehr Vorlagen“ die Vorlage „Lernkarte“ hinzu: oben die Frage, unten die Antwort.')}</p>
       ) : !cur ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-          <span className="text-[48px]">🎉</span><p className="text-[22px] font-semibold">{t('Alle fälligen Karten gelernt!')}</p>
+          <span className="grid h-16 w-16 place-items-center rounded-full bg-chip text-accent"><Check size={36} strokeWidth={2.4} /></span><p className="text-[22px] font-semibold">{t('Alle fälligen Karten gelernt!')}</p>
           <button onClick={onClose} className="rounded-full bg-gn-ui-action px-6 py-2.5 text-[17px] font-semibold text-white">{t('Fertig')}</button>
         </div>
       ) : (

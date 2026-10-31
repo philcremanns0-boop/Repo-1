@@ -47,3 +47,9 @@ Auf dem iPad: Safari → Teilen → **Zum Home-Bildschirm**. Die App startet dan
 Nicht enthalten (benötigt Server bzw. KI-Modelle): Handschrifterkennung, Goodnotes AI, Cloud-Sync, Zusammenarbeit.
 
 Siehe `docs/IPAD-CHECKLIST.md` für den Abnahmetest auf echter Hardware.
+
+## Eigenhand-Brücke (Handschrift einfügen)
+
+In Eigenhand: Export-Blatt öffnen, bei „Ganze Seite“ oder einem Absatz auf **Als Striche** tippen. In dieser App lange auf die Seite tippen und „Einfügen“ wählen (oder ⌘V). Die Handschrift kommt als echte Kugelschreiber-Striche an: radierbar (Strich- und Pixelradierer), umfärbbar, mit dem Lasso verschiebbar, rückgängig machbar.
+
+Format in der Zwischenablage: `text/plain` (reiner Text) und `text/html` mit `<div data-gn-ink="BASE64(JSON)">`. JSON: `{ v: 1, src, unit: 'pt' | 'px', text, strokes: [{ p: [x0, y0, x1, y1, ...], w, c: '#rrggbb' }] }`. Parser: `src/lib/inkTransfer.ts`, Eigenhand-Seite: `docs/eigenhand-bridge.js`.

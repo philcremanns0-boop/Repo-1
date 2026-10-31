@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ChevronDown, ChevronLeft, Import, Search, Star, Cloud, Download, Folder as FolderIcon, FolderPlus, Info, LayoutGrid, List as ListIcon, NotebookPen, Plus, Settings, Trash2, Upload, User } from './glyphs'
+import { Check, ChevronDown, ChevronLeft, Import, Search, Star, Cloud, Download, Folder as FolderIcon, FolderPlus, Info, LayoutGrid, List as ListIcon, NotebookPen, Plus, Settings, Trash2, Upload, User } from './glyphs'
 import type { Library as Lib } from '../store/useLibrary'
 import type { Folder, NbMeta } from '../store/types'
 import { coverUri } from '../lib/covers'
@@ -202,8 +202,8 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
           <>
             <PopTitle left={<BackBtn onClick={() => setMenuView('main')} />}>{t('Verschieben')}</PopTitle>
             <Group>
-              <Row onClick={() => { lib.moveNotebook(menuNb.id, null); setMenu(null) }} trailing={(menuNb.folder ?? null) === null ? <span className="text-accent">✓</span> : null}>{t('Dokumente')}</Row>
-              {folderOpts().map((f) => <Row key={f.id} icon={<FolderGlyph color={f.color} icon={f.icon} width={30} />} onClick={() => { lib.moveNotebook(menuNb.id, f.id); setMenu(null) }} trailing={menuNb.folder === f.id ? <span className="text-accent">✓</span> : null}>{f.name}</Row>)}
+              <Row onClick={() => { lib.moveNotebook(menuNb.id, null); setMenu(null) }} trailing={(menuNb.folder ?? null) === null ? <Check size={20} className="text-accent" /> : null}>{t('Dokumente')}</Row>
+              {folderOpts().map((f) => <Row key={f.id} icon={<FolderGlyph color={f.color} icon={f.icon} width={30} />} onClick={() => { lib.moveNotebook(menuNb.id, f.id); setMenu(null) }} trailing={menuNb.folder === f.id ? <Check size={20} className="text-accent" /> : null}>{f.name}</Row>)}
             </Group>
             <div className="h-4" />
           </>
@@ -232,7 +232,7 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
         <PopTitle>{t('Sortieren nach')}</PopTitle>
         <Group>
           {(['date', 'created', 'name'] as const).map((k) => (
-            <Row key={k} onClick={() => { lib.setSort(k); setSortOpen(false) }} trailing={lib.sort === k ? <span className="text-accent">✓</span> : null}>{t(k === 'name' ? 'Name' : k === 'created' ? 'Erstellt' : 'Zuletzt bearbeitet')}</Row>
+            <Row key={k} onClick={() => { lib.setSort(k); setSortOpen(false) }} trailing={lib.sort === k ? <Check size={20} className="text-accent" /> : null}>{t(k === 'name' ? 'Name' : k === 'created' ? 'Erstellt' : 'Zuletzt bearbeitet')}</Row>
           ))}
         </Group>
         <div className="h-4" />

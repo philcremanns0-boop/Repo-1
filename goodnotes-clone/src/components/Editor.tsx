@@ -1,10 +1,11 @@
 import { pageDims } from '../lib/pageDims'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { X } from './glyphs'
+import { Check, X } from './glyphs'
 import { emptyContent, newId, type Content, type Selection } from '../lib/draw'
 import { ELEMENT_SIZE } from '../lib/elements'
 import { buildPdf, download, printPages, readImage, renderPage } from '../lib/export'
 import { importPdf, isPdf } from '../lib/files'
+import { parseInkHtml, strokesFromPayload, type InkPayload } from '../lib/inkTransfer'
 import { clipFor, copyPage, copySel, hasClip, hasPageClip, pastedPage, remove } from '../lib/clipboard'
 
 import { useRecorder } from '../lib/recorder'
@@ -77,11 +78,16 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
     setTool('lasso'); setSelection(r.sel); setPasteAt(null)
   }
   /** Paste from the system clipboard: text → text box in the current style, image → image object. */
-  const pasteExternal = (pageId: string, data: { text?: string; image?: Blob }, at?: { x: number; y: number }) => {
+  const pasteExternal = (pageId: string, data: { text?: string; image?: Blob; ink?: InkPayload }, at?: { x: number; y: number }) => {
     const st = nb.store(pageId)
     const pg = nb.pages.find((p) => p.id === pageId) ?? page
     const { w: pw, h: ph } = pageDims(pg)
-    if (data.image) {
+    if (data.ink) {
+      // handwriting from Eigenhand: real pen strokes (erasable, lasso-able)
+      const add = strokesFromPayload(data.ink, pw, ph, at)
+      st.commit((c) => ({ ...c, strokes: [...c.strokes, ...add] }))
+      setTool('lasso'); setSelection({ pageId, strokes: add.map((x) => x.id), texts: [], images: [] })
+    } else if (data.image) {
       void readImage(data.image).then((im) => {
         const tw = Math.min(im.w, pw * 0.6), th = (tw * im.h) / im.w, id = newId()
         st.commit((c) => ({ ...c, images: [...c.images, { id, src: im.src, w: tw, h: th, x: at ? at.x : (pw - tw) / 2, y: at ? at.y : Math.max(40, (ph - th) / 3) }] }))
@@ -100,6 +106,10 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
     try {
       const items = await navigator.clipboard.read()
       for (const it of items) {
+        if (it.types.includes('text/html')) {
+          const ink = parseInkHtml(await (await it.getType('text/html')).text())
+          if (ink) return pasteExternal(pageId, { ink }, at)
+        }
         const img = it.types.find((x) => x.startsWith('image/'))
         if (img) return pasteExternal(pageId, { image: await it.getType(img) }, at)
         if (it.types.includes('text/plain')) return pasteExternal(pageId, { text: await (await it.getType('text/plain')).text() }, at)
@@ -259,6 +269,8 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
     const el = e.target as HTMLElement
     if (el?.isContentEditable || /^(INPUT|TEXTAREA)$/.test(el?.tagName)) return
     const d = e.clipboardData; if (!d) return
+    const ink = parseInkHtml(d.getData('text/html'))
+    if (ink) { e.preventDefault(); pasteExternal(page.id, { ink }); return }
     const file = Array.from(d.files).find((f) => f.type.startsWith('image/'))
     const text = d.getData('text/plain')
     if (file || text) { e.preventDefault(); pasteExternal(page.id, file ? { image: file } : { text }) }
@@ -333,7 +345,7 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
 
       <Popover anchor={anchorFor('overflow')} open={P('overflow')} onClose={close} width={300}>
         <PopTitle>{t('Weitere Werkzeuge')}</PopTitle>
-        <Group>{overflowTools.current.map((id) => { const I = TOOL_ICON(id); return <Row key={id} icon={<I size={24} active={tool === id} />} onClick={() => { close(); onTool(id, tool === id) }} trailing={tool === id ? <span className="text-accent">✓</span> : null}>{t(TOOL_LABEL(id))}</Row> })}</Group>
+        <Group>{overflowTools.current.map((id) => { const I = TOOL_ICON(id); return <Row key={id} icon={<I size={24} active={tool === id} />} onClick={() => { close(); onTool(id, tool === id) }} trailing={tool === id ? <Check size={20} className="text-accent" /> : null}>{t(TOOL_LABEL(id))}</Row> })}</Group>
         <div className="h-4" />
       </Popover>
       <PenPopover anchor={anchorFor('opt:pen', 'tool:pen')} open={P('pen')} onClose={close} prefs={prefs} set={set} />

@@ -9,7 +9,7 @@ try { ({ chromium } = require('playwright')) } catch { ({ chromium } = require(r
 
 const PORT = 4179, URL = `http://localhost:${PORT}`
 const results = []
-const check = (name, ok, info = '') => { results.push({ name, ok, info }); console.log(`${ok ? '✔' : '✘'} ${name}${info ? `  (${info})` : ''}`) }
+const check = (name, ok, info = '') => { results.push({ name, ok, info }); console.log(`${ok ? 'OK  ' : 'FAIL'} ${name}${info ? `  (${info})` : ''}`) }
 
 function makePdf(file) {
   const objs = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >>']
@@ -72,6 +72,25 @@ function makePdf(file) {
     await p.getByRole('button', { name: 'Radierer' }).first().click(); await p.getByRole('button', { name: 'Strichradierer' }).click()
     await p.mouse.move(bx.x + 190, bx.y + 90); await p.mouse.down(); await p.mouse.move(bx.x + 190, bx.y + 170, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(400)
     check('stroke eraser removes stroke', (await content()).strokes.length === 0)
+    // handwriting from Eigenhand: clipboard HTML with vector ink -> real, erasable pen strokes
+    const ink = { v: 1, src: 'eigenhand', unit: 'pt', text: 'Test', strokes: [0, 1, 2, 3, 4].map((i) => ({ p: [i * 30, 0, i * 30 + 2, 15, i * 30, 30], w: 1.2, c: '#1a2973' })) }
+    await p.evaluate((ink) => {
+      const dt = new DataTransfer()
+      dt.setData('text/html', `<meta charset="utf-8"><div data-gn-ink="${btoa(JSON.stringify(ink))}">Test</div>`); dt.setData('text/plain', 'Test')
+      window.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true }))
+    }, ink)
+    await p.waitForTimeout(400)
+    let pasted = (await content()).strokes
+    check('Eigenhand ink pastes as pen strokes', pasted.length === 5 && pasted.every((x) => x.tool === 'pen' && x.color === '#1a2973'), String(pasted.length))
+    await p.getByRole('button', { name: 'Radierer' }).first().click(); await p.getByRole('button', { name: 'Strichradierer' }).click()
+    {
+      const k = bx.width / 794, sx = pasted[0].points[0].x, sy = pasted[0].points[0].y
+      await p.mouse.move(bx.x + (sx - 15) * k, bx.y + (sy + 20) * k); await p.mouse.down(); await p.mouse.move(bx.x + (sx + 12) * k, bx.y + (sy + 20) * k, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(400)
+    }
+    check('pasted handwriting can be erased with the eraser', (await content()).strokes.length === 4)
+    await p.keyboard.press('Escape')
+    for (let i = 0; i < 2; i++) { await p.getByRole('button', { name: 'Rückgängig' }).click(); await p.waitForTimeout(600) }
+    check('undo removes the paste', (await content()).strokes.length === 0, String((await content()).strokes.length))
     // shapes
     await p.getByRole('button', { name: 'Formen' }).first().click(); await p.keyboard.press('Escape')
     const rect = [[100, 300], [300, 302], [302, 420], [98, 418], [101, 305]]
