@@ -1,25 +1,49 @@
-# Notizen – iPad-style notebook UI (React · Vite · Tailwind · lucide-react)
+# Goodnotes (Web-App für iPad / Apple-Geräte)
 
-Unofficial UI recreation of a tablet note-taking app. Everything is stored locally in the browser (`localStorage`); there is no account or server.
+Nachbau der Goodnotes-6-Oberfläche als installierbare Web-App (PWA). Alle Daten bleiben lokal auf dem Gerät
+(IndexedDB); es gibt kein Konto und keinen Server.
 
-```
+## Entwicklung
+
+```bash
 npm install
-npm run dev      # development
-npm run build    # type-check + production build
+npm run dev          # Entwicklungsserver
+npm run typecheck    # TypeScript (strict)
+npm test             # Unit-Tests (Vitest)
+npm run build        # Produktions-Build nach dist/
+npm run test:e2e     # End-to-End-Test der echten Oberfläche (nach dem Build; braucht Playwright + Chromium)
 ```
 
-- **Library**: notebooks with cover + paper template picker, trash, backup/restore (JSON).
-- **Editor**: tabs, toolbar (lasso, pen types, eraser, text, objects, images, shapes, sticky notes, laser), floating option bar, popovers, customisable toolbar, sidebar (pages / outlines / audio), multi-page notebooks, PDF export/print.
-- **Themes**: light / dark / system via the settings menu (library gear, or *More → Settings* in the editor), plus scroll direction and language (DE/EN).
-- Not available in the web version: collaboration, handwriting/equation recognition, AI summaries, Apple-Pencil gestures.
+## Deployment
 
-## Design tokens, type & motion
-- **Tokens** live in `tailwind.config.js` (`gn.*`) and are mirrored as CSS variables in `src/index.css`.
-  - Sampled from the official app logo: Teal I `#02BDE4`, Ink I `#0F1010`, Eraser I `#F7F7F7`.
-  - Navy `#0A192F`: value from the design brief.
-  - Teal II/III, Ink II/III, Eraser II, Matcha, Sky, Kale, Merlot, Lavender, Candy Floss: derived placeholders — the official Brandpad swatches (brandpad.io/goodnotes-guidelines) were not readable from the build environment. Swap the hex values in one place when you have them.
-  - `gn.ui.*`: values measured from the reference iPad screenshots (toolbar navy, selection blue …).
-- **Type:** Roobert (local, commercial) → Inter (Google Fonts) → bundled Inter Variable → Noto Sans. Body uses −0.02em tracking, 1.2 line-height and grayscale antialiasing (`.gn-text`, `.gn-title`).
-- **Motion:** one spring (`stiffness 400, damping 30`, `src/components/motion.ts`) for popovers (scale from the tapped icon), sheets, nested menu push/pop and sliding selection tiles; page slide/fade follows the scroll axis.
-- **Toolbar:** Settings → Werkzeugleiste → Angedockt (reference layout) or Schwebend (frosted pill: rounded-full, px-4 py-2, backdrop-blur-xl, bg-white/80, layered shadow).
-- **Icons:** all inline SVG (`src/components/icons.tsx`, `src/components/glyphs.tsx`); no icon library.
+Statische Seite, ein Ordner `dist/`.
+
+- **Vercel:** Projekt importieren, *Root Directory* = `goodnotes-clone`. `vercel.json` setzt Build, SPA-Rewrites,
+  Cache-Header (Service Worker ohne Cache, Assets immutable) und Sicherheits-Header.
+- **Anderer Host:** `dist/` ausliefern, alle unbekannten Pfade auf `index.html` umleiten, `sw.js` mit `Cache-Control: no-cache`.
+- **HTTPS ist Pflicht** (Service Worker, Mikrofon, Kamera, Zwischenablage).
+
+Auf dem iPad: Safari → Teilen → **Zum Home-Bildschirm**. Die App startet dann im Vollbild, offline-fähig.
+
+## Funktionen
+
+| Bereich | Umfang |
+|---|---|
+| Bibliothek | Notizbücher mit Umschlag + Papier, farbige Ordner (verschachtelt), Favoriten, Suche, Sortierung, Duplizieren, Umschlag ändern, Papierkorb, Backup/Wiederherstellen, PDF-Import |
+| Schreiben | Füller / Kugelschreiber / Pinselstift mit Druck, Schärfe, Rundung, Stabilisierung; Textmarker (gerade Linie, liegt unter der Tinte); Washi-Tape; eigene Farben |
+| Radierer | Präzision / Standard / Strich, Größen, Filter (Stift, Textmarker, Tape), automatisch abwählen |
+| Formen | Freihand zeichnen → Linie, Kreis, Ellipse, Dreieck, Rechteck, Vieleck; Füllung |
+| Lasso | Freihand/Rechteck; verschieben, skalieren, drehen (45°-Raster), kopieren/ausschneiden/einfügen, duplizieren, umfärben, Screenshot, Link, als Objekt sichern |
+| Text | Alle iOS-Systemschriften, eigene Schriften importieren, Größe, Fett/Kursiv, Ausrichtung, Zeilenabstand, Textfeld-Stil, Textstile, Notizzettel (Farben), Einfügen aus der Zwischenablage, Rechtschreibprüfung |
+| Bilder & Objekte | Bild/Kamera, zuschneiden, skalieren; Objekte inkl. „Meine Objekte“ |
+| Zubehör | Lineal (mm-Skala, Winkel, Zwei-Finger-Drehung), Zoom-Ansicht mit Vorschub, Zeitmesser, Audioaufnahme (gespeichert, mit Tinte synchron), Laserpointer |
+| Seiten | Vorlagen (über 25, inkl. Planer, Musik, Lernkarten), Größen inkl. Whiteboard, hinzufügen/einfügen/duplizieren/drehen/löschen, Lesezeichen, Gliederung, Links, Umsortieren per Ziehen, Mehrfachauswahl |
+| PDF | Import, beschriften, Textsuche mit Hervorhebung |
+| Lernkarten | Vorlage + Lernmodus mit Wiederholungsplanung |
+| Export | PDF, PNG, Notizbuch-Datei; Drucken; Präsentationsmodus |
+| Gesten | Pinch-Zoom, 2-Finger-Tipp = Rückgängig, 3-Finger-Tipp = Wiederholen, Handballenerkennung mit Apple Pencil |
+| Darstellung | Hell/Dunkel/System, Scrollrichtung, Werkzeugleiste angedockt/schwebend, Deutsch/Englisch |
+
+Nicht enthalten (benötigt Server bzw. KI-Modelle): Handschrifterkennung, Goodnotes AI, Cloud-Sync, Zusammenarbeit.
+
+Siehe `docs/IPAD-CHECKLIST.md` für den Abnahmetest auf echter Hardware.

@@ -4,6 +4,7 @@ export type TemplateId =
   | 'blank' | 'dots' | 'grid' | 'narrow' | 'wide'
   | 'cornell' | 'notepad' | 'mixed' | 'onecol' | 'twocolL' | 'twocolR' | 'twocol' | 'threecol'
   | 'todo' | 'monthly' | 'music' | 'guitar' | 'tabs' | 'flashcard'
+  | 'mm' | 'iso' | 'hex' | 'daily' | 'weekly' | 'storyboard' | 'quad' | 'legal'
 
 export const SIZES: Record<SizeId, { w: number; h: number; label: string }> = {
   a4p: { w: 794, h: 1123, label: 'A4, Hochformat' },
@@ -28,12 +29,14 @@ export const colorsFor = (t: TemplateId): PaperColor[] => (t === 'blank' ? ['yel
 export const TEMPLATE_GROUPS: { title: string; items: { id: TemplateId; label: string }[] }[] = [
   { title: 'Herkömmlich', items: [
     { id: 'blank', label: 'Leer' }, { id: 'dots', label: 'Gepunktet' }, { id: 'grid', label: 'Kariert' },
-    { id: 'narrow', label: 'Liniert schmal' }, { id: 'wide', label: 'Liniert breit' } ] },
+    { id: 'narrow', label: 'Liniert schmal' }, { id: 'wide', label: 'Liniert breit' }, { id: 'mm', label: 'Millimeterpapier' },
+    { id: 'iso', label: 'Isometrisch' }, { id: 'hex', label: 'Hexagon' } ] },
   { title: 'Schreibpapier', items: [
     { id: 'cornell', label: 'Cornell' }, { id: 'notepad', label: 'Notizblock' }, { id: 'mixed', label: 'Eine Spalte gemischt' },
     { id: 'onecol', label: 'Eine Spalte' }, { id: 'twocolL', label: 'Zwei Spalten links' }, { id: 'twocolR', label: 'Zwei Spalten rechts' },
-    { id: 'twocol', label: 'Zwei Spalten' }, { id: 'threecol', label: 'Drei Spalten' } ] },
-  { title: 'Planung', items: [{ id: 'todo', label: 'To-Dos' }, { id: 'monthly', label: 'Monatsplaner C' }] },
+    { id: 'twocol', label: 'Zwei Spalten' }, { id: 'threecol', label: 'Drei Spalten' }, { id: 'legal', label: 'Legal Pad' }, { id: 'quad', label: 'Vier Felder' },
+    { id: 'storyboard', label: 'Storyboard' } ] },
+  { title: 'Planung', items: [{ id: 'todo', label: 'To-Dos' }, { id: 'daily', label: 'Tagesplaner' }, { id: 'weekly', label: 'Wochenplaner' }, { id: 'monthly', label: 'Monatsplaner C' }] },
   { title: 'Lernen', items: [{ id: 'flashcard', label: 'Lernkarte' }] },
   { title: 'Musik', items: [{ id: 'music', label: 'Musikpapier' }, { id: 'guitar', label: 'Noten für Gitarre' }, { id: 'tabs', label: 'Tabs für Gitarre' }] },
 ]
@@ -48,8 +51,8 @@ export const MM = 96 / 25.4
 export const PITCH = { narrow: 7.1 * MM, wide: 8.7 * MM, grid: 5 * MM, dots: 5 * MM }
 
 /** Inner SVG markup of a template (no outer <svg>). `uid` keeps pattern ids unique when many pages share a document. */
-export function paperInner(t: TemplateId, c: PaperColor, w: number, h: number, uid = 'p'): string {
-  const { line } = PAPER_COLORS[c]
+export function paperInner(t: TemplateId, c: PaperColor, w: number, h: number, uid = 'p', lineOverride?: string): string {
+  const line = lineOverride ?? PAPER_COLORS[c].line
   let d = ''
   let extra = ''
   switch (t) {
@@ -70,6 +73,50 @@ export function paperInner(t: TemplateId, c: PaperColor, w: number, h: number, u
     case 'twocolR': d = rows(60, 28, h - 40, 0, w) + V(Math.round(w * 0.7), 0, h); break
     case 'twocol': d = rows(60, 28, h - 40, 0, w) + V(Math.round(w / 2), 0, h); break
     case 'threecol': d = rows(60, 28, h - 40, 0, w) + V(Math.round(w / 3), 0, h) + V(Math.round((2 * w) / 3), 0, h); break
+    case 'mm': {
+      const g = MM
+      extra = `<pattern id="${uid}a" width="${g}" height="${g}" patternUnits="userSpaceOnUse"><path d="M${g} 0H0V${g}" fill="none" stroke="${line}" stroke-width=".35" opacity=".7"/></pattern>`
+        + `<pattern id="${uid}b" width="${g * 10}" height="${g * 10}" patternUnits="userSpaceOnUse"><rect width="${g * 10}" height="${g * 10}" fill="url(#${uid}a)"/><path d="M${g * 10} 0H0V${g * 10}" fill="none" stroke="${line}" stroke-width="1"/></pattern>`
+        + `<rect width="${w}" height="${h}" fill="url(#${uid}b)"/>`
+      break
+    }
+    case 'iso': {
+      // isometric dot grid (5 mm triangles)
+      const a = 5 * MM, rh = a * Math.sqrt(3) / 2
+      extra = `<pattern id="${uid}" width="${a}" height="${rh * 2}" patternUnits="userSpaceOnUse"><circle cx="0" cy="0" r="1.1" fill="${line}"/><circle cx="${a}" cy="0" r="1.1" fill="${line}"/><circle cx="${a / 2}" cy="${rh}" r="1.1" fill="${line}"/><circle cx="0" cy="${rh * 2}" r="1.1" fill="${line}"/><circle cx="${a}" cy="${rh * 2}" r="1.1" fill="${line}"/></pattern><rect width="${w}" height="${h}" fill="url(#${uid})"/>`
+      break
+    }
+    case 'hex': {
+      const r = 6 * MM, hw = r * Math.sqrt(3), hh = r * 3
+      const hexPath = (cx: number, cy: number) => Array.from({ length: 6 }, (_, i) => { const t = (Math.PI / 3) * i + Math.PI / 6; return `${i ? 'L' : 'M'}${(cx + r * Math.cos(t)).toFixed(1)} ${(cy + r * Math.sin(t)).toFixed(1)}` }).join('') + 'Z'
+      extra = `<pattern id="${uid}" width="${hw}" height="${hh}" patternUnits="userSpaceOnUse"><path d="${hexPath(hw / 2, r)}${hexPath(0, r * 2.5)}${hexPath(hw, r * 2.5)}" fill="none" stroke="${line}" stroke-width=".8"/></pattern><rect width="${w}" height="${h}" fill="url(#${uid})"/>`
+      break
+    }
+    case 'legal': d = rows(PITCH.wide * 3, PITCH.wide, h - 30, 0, w) + V(Math.round(w * 0.12), 0, h) + V(Math.round(w * 0.12) + 4, 0, h) + H(Math.round(PITCH.wide * 2), 0, w); break
+    case 'quad': d = V(Math.round(w / 2), 30, h - 30) + H(Math.round(h / 2), 30, w - 30) + `M30 30h${w - 60}v${h - 60}h-${w - 60}z`; break
+    case 'storyboard': {
+      const cols = 2, rowsN = 3, gx = 40, gy = 50, fw = (w - gx * (cols + 1)) / cols, fh = (h - 80 - gy * rowsN) / rowsN * 0.62
+      for (let r2 = 0; r2 < rowsN; r2++) for (let c2 = 0; c2 < cols; c2++) {
+        const x = gx + c2 * (fw + gx), y = 60 + r2 * ((h - 80) / rowsN)
+        d += `M${x} ${y}h${fw}v${fh}h-${fw}z` + H(Math.round(y + fh + 22), x, x + fw) + H(Math.round(y + fh + 44), x, x + fw)
+      }
+      break
+    }
+    case 'daily': {
+      d = H(90, 40, w - 40)
+      const top = 120, slots = 15, sh = (h - top - 60) / slots
+      for (let i = 0; i <= slots; i++) d += H(Math.round(top + i * sh), 110, w - 40)
+      d += V(100, top, h - 60)
+      extra = Array.from({ length: slots }, (_, i) => `<text x="44" y="${(top + i * sh + 20).toFixed(0)}" font-family="-apple-system,sans-serif" font-size="13" fill="${line}">${String(7 + i).padStart(2, '0')}:00</text>`).join('')
+      break
+    }
+    case 'weekly': {
+      const days = ['MO', 'DI', 'MI', 'DO', 'FR', 'SA', 'SO'], top = 80, rh2 = (h - top - 40) / 4
+      d = `M30 ${top}h${w - 60}v${h - top - 40}h-${w - 60}z` + V(Math.round(w / 2), top, h - 40)
+      for (let i = 1; i < 4; i++) d += H(Math.round(top + i * rh2), 30, w - 30)
+      extra = days.map((dd, i) => `<text x="${i % 2 ? w / 2 + 12 : 42}" y="${(top + Math.floor(i / 2) * rh2 + 26).toFixed(0)}" font-family="-apple-system,sans-serif" font-size="15" font-weight="600" fill="${line}">${dd}</text>`).join('')
+      break
+    }
     case 'flashcard': {
       // front (question) top half, back (answer) bottom half – used by the study mode
       const m = Math.round(h / 2)
@@ -96,9 +143,11 @@ export function paperInner(t: TemplateId, c: PaperColor, w: number, h: number, u
   }
   return `${extra}${d ? `<path d="${d}" fill="none" stroke="${line}" stroke-width="1"/>` : ''}`
 }
-export const paperSvg = (t: TemplateId, c: PaperColor, w: number, h: number) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${paperInner(t, c, w, h)}</svg>`
-export const paperUri = (t: TemplateId, c: PaperColor, w: number, h: number) => `data:image/svg+xml;utf8,${encodeURIComponent(paperSvg(t, c, w, h))}`
-export function paperStyle(t: TemplateId, c: PaperColor, w: number, h: number): React.CSSProperties {
-  return { backgroundColor: PAPER_COLORS[c].bg, backgroundImage: t === 'blank' ? undefined : `url("${paperUri(t, c, w, h)}")`, backgroundSize: '100% 100%' }
+export const paperSvg = (t: TemplateId, c: PaperColor, w: number, h: number, line?: string) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${paperInner(t, c, w, h, 'p', line)}</svg>`
+export const paperUri = (t: TemplateId, c: PaperColor, w: number, h: number, line?: string) => `data:image/svg+xml;utf8,${encodeURIComponent(paperSvg(t, c, w, h, line))}`
+/** thumbnails are shown at ~15 % – a stronger line keeps the pattern readable */
+export const THUMB_LINE: Record<PaperColor, string> = { white: '#9aa3b2', yellow: '#b5a873', black: '#6b6b73', blue: '#7f9fc6', pink: '#c48a9a', green: '#86b07e' }
+export function paperStyle(t: TemplateId, c: PaperColor, w: number, h: number, thumb = false): React.CSSProperties {
+  return { backgroundColor: PAPER_COLORS[c].bg, backgroundImage: t === 'blank' ? undefined : `url("${paperUri(t, c, w, h, thumb ? THUMB_LINE[c] : undefined)}")`, backgroundSize: '100% 100%' }
 }

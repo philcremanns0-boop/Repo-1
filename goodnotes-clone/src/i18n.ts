@@ -90,6 +90,7 @@ export const EN: Record<string, string> = {
   'Antwort zeigen': 'Show answer', 'Tippen, um die Antwort zu zeigen': 'Tap to show the answer', 'Alle fälligen Karten gelernt!': 'All due cards done!',
   'Noch keine Lernkarten. Füge über „Seite hinzufügen → Mehr Vorlagen“ die Vorlage „Lernkarte“ hinzu: oben die Frage, unten die Antwort.': 'No flashcards yet. Add the “Flashcard” template via “Add page → More templates”: question on top, answer below.',
   'Weitere Werkzeuge': 'More tools',
+  'Millimeterpapier': 'Graph paper (mm)', 'Isometrisch': 'Isometric', 'Hexagon': 'Hexagon', 'Legal Pad': 'Legal pad', 'Vier Felder': 'Four quadrants', 'Storyboard': 'Storyboard', 'Tagesplaner': 'Daily planner', 'Wochenplaner': 'Weekly planner',
   // sidebar & library
   'Seiten': 'Pages', 'Gliederungen': 'Outlines', 'Audio': 'Audio', 'Favoriten': 'Favourites', 'Favorit': 'Favourite', 'Seitenmenü': 'Page menu', 'Nach oben': 'Move up', 'Nach unten': 'Move down', 'Seite löschen': 'Delete page',
   'Gliederungen – Übersichten über deine Dokumente': 'Outlines – overviews of your documents',

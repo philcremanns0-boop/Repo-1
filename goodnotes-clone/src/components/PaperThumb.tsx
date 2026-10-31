@@ -6,7 +6,7 @@ import type { Page } from '../store/types'
 
 export function PaperThumb({ template, color, size = 'a4p', className = '', style }: { template: TemplateId; color: PaperColor; size?: SizeId; className?: string; style?: React.CSSProperties }) {
   const { w, h } = SIZES[size]
-  return <div className={className} style={{ aspectRatio: `${w} / ${h}`, ...paperStyle(template, color, w, h), ...style }} />
+  return <div className={className} style={{ aspectRatio: `${w} / ${h}`, ...paperStyle(template, color, w, h, true), ...style }} />
 }
 
 /** Page thumbnail: paper + ink/objects rendered to a small canvas. */
