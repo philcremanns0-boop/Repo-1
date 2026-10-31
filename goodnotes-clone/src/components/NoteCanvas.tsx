@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 /* ------------------------------------------------------------------ *
  * Data model — every line is plain data, so colour / width can be
@@ -30,77 +30,18 @@ export const WIDTHS: Record<DrawTool, [number, number, number]> = {
 }
 export const HIGHLIGHTER_ALPHA = 0.35
 
-/* ------------------------------------------------------------------ *
- * History store (immutable snapshots → trivial, robust undo / redo)
- * ------------------------------------------------------------------ */
-
-interface History {
-  present: Stroke[]
-  past: Stroke[][]
-  future: Stroke[][]
+/** What the canvas needs from the notebook store (current page only). */
+export interface StrokeStore {
+  strokes: Stroke[]
+  /** commit a finished stroke as one undoable step */
+  add: (s: Stroke) => void
+  /** replace strokes without recording history (live erase preview) */
+  preview: (next: Stroke[]) => void
+  /** record `base` as the undo step for the current strokes (end of erase) */
+  checkpoint: (base: Stroke[]) => void
+  undo: () => void
+  redo: () => void
 }
-
-const HISTORY_LIMIT = 100
-const cap = (past: Stroke[][]) => (past.length > HISTORY_LIMIT ? past.slice(-HISTORY_LIMIT) : past)
-
-export function useStrokeStore() {
-  const [h, setH] = useState<History>({ present: [], past: [], future: [] })
-
-  /** Add a finished stroke as one undoable step. */
-  const add = useCallback((s: Stroke) => {
-    setH((p) => ({ present: [...p.present, s], past: cap([...p.past, p.present]), future: [] }))
-  }, [])
-  /** Replace without recording history (live preview while erasing). */
-  const preview = useCallback((next: Stroke[]) => setH((p) => ({ ...p, present: next })), [])
-  /** Record `base` as an undo step for the current present (end of erase). */
-  const checkpoint = useCallback((base: Stroke[]) => {
-    setH((p) => ({ ...p, past: cap([...p.past, base]), future: [] }))
-  }, [])
-  const undo = useCallback(() => {
-    setH((p) =>
-      p.past.length
-        ? { present: p.past[p.past.length - 1], past: p.past.slice(0, -1), future: [p.present, ...p.future] }
-        : p,
-    )
-  }, [])
-  const redo = useCallback(() => {
-    setH((p) =>
-      p.future.length
-        ? { present: p.future[0], past: [...p.past, p.present], future: p.future.slice(1) }
-        : p,
-    )
-  }, [])
-  /** Remove every stroke — a single undoable step (no-op when already empty). */
-  const clear = useCallback(() => {
-    setH((p) =>
-      p.present.length
-        ? { present: [], past: cap([...p.past, p.present]), future: [] }
-        : p,
-    )
-  }, [])
-  /** Restyle strokes (e.g. selected ids) — one undoable step. */
-  const restyle = useCallback((ids: number[], patch: Partial<Pick<Stroke, 'color' | 'width'>>) => {
-    setH((p) => ({
-      present: p.present.map((s) => (ids.includes(s.id) ? { ...s, ...patch } : s)),
-      past: [...p.past, p.present],
-      future: [],
-    }))
-  }, [])
-
-  return {
-    strokes: h.present,
-    add,
-    preview,
-    checkpoint,
-    undo,
-    redo,
-    clear,
-    restyle,
-    canUndo: h.past.length > 0,
-    canRedo: h.future.length > 0,
-  }
-}
-export type StrokeStore = ReturnType<typeof useStrokeStore>
 
 /* ------------------------------------------------------------------ *
  * Rendering — midpoint quadratic Béziers give C1-smooth curves through
@@ -191,7 +132,9 @@ interface Props {
   zoom: number
 }
 
-let nextId = 1
+let lastId = 0
+/** Unique, monotonically increasing ids that survive reloads. */
+const newStrokeId = () => (lastId = Math.max(Date.now() * 1000, lastId + 1))
 
 interface ActiveGesture {
   pointerId: number
@@ -312,7 +255,7 @@ export default function NoteCanvas({ store, tool, color, thickness, width, heigh
     } else {
       a.lastW = factor(e, 0)
       a.stroke = {
-        id: nextId++,
+        id: newStrokeId(),
         tool: tool as 'pen' | 'highlighter',
         color: COLOR_HEX[color] ?? color,
         width: WIDTHS[tool as DrawTool][thickness],
