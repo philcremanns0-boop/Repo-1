@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Minus, Plus } from 'lucide-react'
+import NoteCanvas, { useStrokeStore } from './components/NoteCanvas'
 import Toolbar, { type PenColor, type Thickness, type ToolId } from './components/Toolbar'
 
 type Pattern = 'blank' | 'ruled' | 'grid'
@@ -28,6 +29,7 @@ export default function App() {
   const [thickness, setThickness] = useState<Thickness>(1)
   const [pattern, setPattern] = useState<Pattern>('ruled')
   const [zoom, setZoom] = useState(0.9)
+  const store = useStrokeStore()
 
   const clamp = (z: number) => Math.min(2, Math.max(0.4, +z.toFixed(2)))
   const handleTool = (t: ToolId) => {
@@ -44,6 +46,10 @@ export default function App() {
         onColor={setColor}
         thickness={thickness}
         onThickness={setThickness}
+        onUndo={store.undo}
+        onRedo={store.redo}
+        canUndo={store.canUndo}
+        canRedo={store.canRedo}
       />
 
       {/* Document viewer */}
@@ -51,7 +57,7 @@ export default function App() {
         <div className="flex min-h-full justify-center px-6 py-8">
           <div style={{ width: PAGE_W * zoom, height: PAGE_H * zoom, flexShrink: 0 }}>
             <div
-              className="origin-top-left bg-white shadow-page"
+              className="relative origin-top-left bg-white shadow-page"
               style={{
                 width: PAGE_W,
                 height: PAGE_H,
@@ -59,7 +65,17 @@ export default function App() {
                 borderRadius: 2,
                 ...PATTERNS[pattern],
               }}
-            />
+            >
+              <NoteCanvas
+                store={store}
+                tool={tool}
+                color={color}
+                thickness={thickness}
+                width={PAGE_W}
+                height={PAGE_H}
+                zoom={zoom}
+              />
+            </div>
           </div>
         </div>
 

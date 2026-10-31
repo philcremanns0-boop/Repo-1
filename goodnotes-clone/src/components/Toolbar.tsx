@@ -54,6 +54,10 @@ interface Props {
   thickness: Thickness
   onThickness: (t: Thickness) => void
   title?: string
+  onUndo?: () => void
+  onRedo?: () => void
+  canUndo?: boolean
+  canRedo?: boolean
 }
 
 export default function Toolbar({
@@ -64,6 +68,10 @@ export default function Toolbar({
   thickness,
   onThickness,
   title = 'Untitled Notebook',
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
 }: Props) {
   const activeHex = COLORS.find((c) => c.id === color)!.hex
 
@@ -77,10 +85,20 @@ export default function Toolbar({
         <span className="mr-2 hidden max-w-[180px] truncate text-[15px] font-semibold md:block">
           {title}
         </span>
-        <button className="tool-btn w-9 text-gn-mute" aria-label="Undo">
+        <button
+          className={`tool-btn w-9 ${canUndo ? '' : 'text-gn-mute opacity-50'}`}
+          aria-label="Undo"
+          disabled={!canUndo}
+          onClick={onUndo}
+        >
           <Undo2 size={20} strokeWidth={1.75} />
         </button>
-        <button className="tool-btn w-9 text-gn-mute" aria-label="Redo">
+        <button
+          className={`tool-btn w-9 ${canRedo ? '' : 'text-gn-mute opacity-50'}`}
+          aria-label="Redo"
+          disabled={!canRedo}
+          onClick={onRedo}
+        >
           <Redo2 size={20} strokeWidth={1.75} />
         </button>
       </div>
