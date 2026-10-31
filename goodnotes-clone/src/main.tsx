@@ -6,8 +6,10 @@ import { SettingsProvider } from './context/Settings'
 import '@fontsource-variable/albert-sans'
 import './index.css'
 import { loadCustomFonts } from './lib/customFonts'
+import { ensureMigrated } from './lib/kv'
 
 void loadCustomFonts().catch(() => undefined)
+void ensureMigrated()
 
 // Ask the browser to keep our IndexedDB / localStorage (PDF pages, fonts, notebooks) when storage is tight.
 void navigator.storage?.persist?.().catch(() => undefined)

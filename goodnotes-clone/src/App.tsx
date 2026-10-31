@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { MotionConfig } from 'framer-motion'
-import Editor from './components/Editor'
+import EditorLoader from './components/EditorLoader'
 import Library from './components/Library'
 import TabBar from './components/TabBar'
 import TemplatePicker, { type TemplateResult } from './components/sheets/TemplatePicker'
@@ -42,7 +42,7 @@ export default function App() {
             onRename={(id, title) => lib.patch(id, { title })} onTrash={lib.trash} />
         )}
         {open
-          ? <Editor key={open.id} meta={open} lib={lib} present={present} setPresent={setPresent} toast={show} hideToast={hide} />
+          ? <EditorLoader key={open.id} meta={open} lib={lib} present={present} setPresent={setPresent} toast={show} hideToast={hide} />
           : <Library lib={lib} onNew={() => setNewOpen(true)} onToast={show} />}
         <TemplatePicker open={newOpen} mode="new" initial={NEW_NOTEBOOK} onClose={() => setNewOpen(false)}
           onConfirm={(r) => {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { emptyContent, newId, type Content, type Stroke } from '../lib/draw'
 import { SIZES, type SizeId } from '../lib/paper'
 import type { NotebookData, Page, PageMeta, OutlineItem } from './types'
+import { ensureMigrated, kvGet, kvSet } from '../lib/kv'
 
 export interface PageStore {
   id: string
@@ -31,16 +32,17 @@ export function createNotebookData(id: string, title: string, meta: PageMeta, bg
   const pages: Page[] = list.map((bg) => { const p = blankPage(meta); return { id: p.id, size: p.size, template: bg ? 'blank' : p.template, color: bg ? 'white' : p.color, content: p.content, bookmarked: false, bg } })
   return { id, title, pages, currentId: pages[0].id, outline: [] }
 }
-export function saveNotebookData(d: NotebookData): boolean {
-  try { localStorage.setItem(nbKey(d.id), JSON.stringify({ v: 2, ...d })); return true } catch { return false }
+export function saveNotebookData(d: NotebookData): Promise<boolean> {
+  return kvSet(nbKey(d.id), JSON.stringify({ v: 2, ...d }))
 }
 function isStroke(s: any): s is Stroke {
   return s && ['pen', 'highlighter', 'shape'].includes(s.tool) && typeof s.color === 'string' && typeof s.width === 'number' && typeof s.id === 'number' &&
     Array.isArray(s.points) && s.points.every((p: any) => p && isFinite(p.x) && isFinite(p.y) && isFinite(p.w))
 }
-export function loadNotebookData(id: string): NotebookData | null {
+export async function loadNotebookData(id: string): Promise<NotebookData | null> {
   try {
-    const raw = localStorage.getItem(nbKey(id))
+    await ensureMigrated()
+    const raw = await kvGet(nbKey(id))
     if (!raw) return null
     const d = JSON.parse(raw)
     if (!d || !Array.isArray(d.pages) || !d.pages.length) return null
@@ -61,9 +63,9 @@ export function loadNotebookData(id: string): NotebookData | null {
 }
 
 
-export function useNotebook(id: string, fallbackTitle: string, onMeta: (m: { pages: number; title: string }) => void) {
+export function useNotebook(id: string, initial: NotebookData, onMeta: (m: { pages: number; title: string }) => void) {
   const [state, setState] = useState<State>(() => {
-    const d = loadNotebookData(id) ?? createNotebookData(id, fallbackTitle, { size: 'a4p', template: 'wide', color: 'white' })
+    const d = initial
     return { title: d.title, currentId: d.currentId, outline: d.outline, pages: d.pages.map((p) => ({ ...p, past: [], future: [] })) }
   })
   const [saveError, setSaveError] = useState(false)
@@ -73,8 +75,7 @@ export function useNotebook(id: string, fallbackTitle: string, onMeta: (m: { pag
 
   const flush = useCallback(() => {
     const s = latest.current
-    const ok = saveNotebookData({ id, title: s.title, currentId: s.currentId, outline: s.outline, pages: s.pages.map(({ past, future, ...p }) => p) })
-    setSaveError(!ok)
+    void saveNotebookData({ id, title: s.title, currentId: s.currentId, outline: s.outline, pages: s.pages.map(({ past, future, ...p }) => p) }).then((ok) => setSaveError(!ok))
     metaRef.current({ pages: s.pages.length, title: s.title })
   }, [id])
   useEffect(() => { const t = setTimeout(flush, 300); return () => clearTimeout(t) }, [state, flush])

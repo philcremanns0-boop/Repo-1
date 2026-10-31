@@ -41,7 +41,7 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
   const pdfIn = useRef<HTMLInputElement>(null)
   const importFile = async (f: File | undefined) => {
     if (!f) return
-    if (f.name.endsWith('.json')) { try { lib.restoreBackup(await f.text()); onToast(t('Notizbuch importiert')) } catch { onToast(t('Ungültige Backup-Datei')) } return }
+    if (f.name.endsWith('.json')) { try { await lib.restoreBackup(await f.text()); onToast(t('Notizbuch importiert')) } catch { onToast(t('Ungültige Backup-Datei')) } return }
     if (!isPdf(f)) { onToast(t('Bitte eine PDF-Datei wählen')); return }
     try {
       onToast(t('PDF wird importiert …'), true)
@@ -176,10 +176,10 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
           <>
             <p className="mb-4 max-w-xl text-[18px] text-sub">{t('Notizbücher werden nur in diesem Browser gespeichert. Sichere sie als Datei, um sie auf ein anderes Gerät zu übertragen.')}</p>
             <Group className="!mx-0 max-w-xl">
-              <Row icon={<Download size={22} />} onClick={() => { download(`notizbuecher-${new Date().toISOString().slice(0, 10)}.json`, lib.backup(), 'application/json'); onToast(t('Backup heruntergeladen')) }}>{t('Backup herunterladen')}</Row>
+              <Row icon={<Download size={22} />} onClick={async () => { download(`notizbuecher-${new Date().toISOString().slice(0, 10)}.json`, await lib.backup(), 'application/json'); onToast(t('Backup heruntergeladen')) }}>{t('Backup herunterladen')}</Row>
               <Row icon={<Upload size={22} />} onClick={() => file.current?.click()}>{t('Backup wiederherstellen')}</Row>
             </Group>
-            <input ref={file} type="file" accept="application/json,.json" hidden onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; try { lib.restoreBackup(await f.text()); onToast(t('Backup wiederhergestellt')) } catch { onToast(t('Ungültige Backup-Datei')) } }} />
+            <input ref={file} type="file" accept="application/json,.json" hidden onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; try { await lib.restoreBackup(await f.text()); onToast(t('Backup wiederhergestellt')) } catch { onToast(t('Ungültige Backup-Datei')) } }} />
           </>
         )}
       </main>

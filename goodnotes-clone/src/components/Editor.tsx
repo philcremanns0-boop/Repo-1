@@ -9,7 +9,7 @@ import { clipFor, copySel, hasClip, remove } from '../lib/clipboard'
 
 import { useRecorder } from '../lib/recorder'
 import { useNotebook } from '../store/useNotebook'
-import type { NbMeta } from '../store/types'
+import type { NbMeta, NotebookData } from '../store/types'
 import type { Library } from '../store/useLibrary'
 import { useSettings, useT } from '../context/Settings'
 import DocumentView from './DocumentView'
@@ -35,6 +35,7 @@ const HINT = 'Tippe, um ein Textfeld hinzuzufügen. Halte gedrückt, um Text zur
 type TplAction = { kind: 'change' } | { kind: 'add'; where: Where }
 
 interface Props {
+  initial: NotebookData
   meta: NbMeta
   lib: Library
   present: boolean
@@ -42,10 +43,10 @@ interface Props {
   toast: (msg: string, persistent?: boolean) => void
   hideToast: () => void
 }
-export default function Editor({ meta, lib, present, setPresent, toast, hideToast }: Props) {
+export default function Editor({ initial, meta, lib, present, setPresent, toast, hideToast }: Props) {
   const t = useT()
   const floating = useSettings().toolbar === 'floating'
-  const nb = useNotebook(meta.id, meta.title, useCallback((m) => lib.patch(meta.id, { pages: m.pages, title: m.title, updated: Date.now() }), [lib.patch, meta.id])) // eslint-disable-line react-hooks/exhaustive-deps
+  const nb = useNotebook(meta.id, initial, useCallback((m) => lib.patch(meta.id, { pages: m.pages, title: m.title, updated: Date.now() }), [lib.patch, meta.id])) // eslint-disable-line react-hooks/exhaustive-deps
   const [prefs, setPrefsRaw] = useState<ToolPrefs>(loadPrefs)
   const set = useCallback((fn: (p: ToolPrefs) => ToolPrefs) => setPrefsRaw((p) => { const n = fn(p); savePrefs(n); return n }), [])
   const [tool, setToolRaw] = useState<ToolId>('pen')
@@ -170,7 +171,7 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
   const onFile = async (f: File | undefined, mode: 'insert' | 'page', where: Where = 'after') => {
     if (!f) return
     try {
-      if (f.type === 'application/json' || f.name.endsWith('.json')) { lib.restoreBackup(await f.text()); toast(t('Backup wiederhergestellt')); return }
+      if (f.type === 'application/json' || f.name.endsWith('.json')) { await lib.restoreBackup(await f.text()); toast(t('Backup wiederhergestellt')); return }
       if (isPdf(f)) {
         toast(t('PDF wird importiert …'), true)
         const bgs = await importPdf(f, (d, n) => toast(`${t('PDF wird importiert …')} ${d}/${n}`, true))
@@ -215,7 +216,7 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
         }
       } else {
         nb.flush()
-        download(`${name}.goodnotes.json`, lib.backupOne(meta.id), 'application/json')
+        download(`${name}.goodnotes.json`, await lib.backupOne(meta.id), 'application/json')
       }
       hideToast()
     } catch { toast(t('Export fehlgeschlagen')) }

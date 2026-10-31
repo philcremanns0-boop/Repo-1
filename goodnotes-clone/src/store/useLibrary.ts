@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { COVERS, type CoverId } from '../lib/covers'
 import { createNotebookData, nbKey, saveNotebookData } from './useNotebook'
+import { ensureMigrated, kvDel, kvGet, kvSet } from '../lib/kv'
 import type { Folder, NbMeta, NewNotebookOpts, PageBg } from './types'
 
 export type View = 'home' | 'favorites' | 'shared' | 'trash' | 'cloud' | string // string = notebook id
@@ -26,7 +27,7 @@ export function useLibrary() {
 
   const create = useCallback((o: NewNotebookOpts, bgs?: PageBg[]) => {
     const id = `nb_${Date.now().toString(36)}`
-    saveNotebookData(createNotebookData(id, o.title, o, bgs))
+    void saveNotebookData(createNotebookData(id, o.title, o, bgs))
     set((l) => {
       const meta: NbMeta = { id, title: o.title, cover: o.cover, coverColor: o.coverColor, created: Date.now(), updated: Date.now(), pages: bgs?.length || 1, folder: o.folder ?? l.folder }
       return { ...l, notebooks: [meta, ...l.notebooks], tabs: [...l.tabs, id], view: id }
@@ -39,7 +40,7 @@ export function useLibrary() {
   const patch = useCallback((id: string, p: Partial<NbMeta>) => set((l) => ({ ...l, notebooks: l.notebooks.map((n) => (n.id === id ? { ...n, ...p } : n)) })), [set])
   const trash = useCallback((id: string) => set((l) => ({ ...l, notebooks: l.notebooks.map((n) => (n.id === id ? { ...n, deleted: Date.now() } : n)), tabs: l.tabs.filter((t) => t !== id), view: l.view === id ? 'home' : l.view })), [set])
   const restore = useCallback((id: string) => set((l) => ({ ...l, notebooks: l.notebooks.map((n) => (n.id === id ? { ...n, deleted: undefined, folder: l.folders.some((f) => f.id === n.folder) ? n.folder : null } : n)) })), [set])
-  const purge = useCallback((id: string) => { try { localStorage.removeItem(nbKey(id)) } catch { /* ignore */ } set((l) => ({ ...l, notebooks: l.notebooks.filter((n) => n.id !== id) })) }, [set])
+  const purge = useCallback((id: string) => { void kvDel(nbKey(id)); set((l) => ({ ...l, notebooks: l.notebooks.filter((n) => n.id !== id) })) }, [set])
 
   /* ---- folders ---- */
   const createFolder = useCallback((f: Pick<Folder, 'name' | 'color' | 'icon'>) => set((l) => ({ ...l, folders: [...l.folders, { id: `fd_${Date.now().toString(36)}`, parent: l.folder, created: Date.now(), ...f }] })), [set])
@@ -57,12 +58,13 @@ export function useLibrary() {
   const toggleStar = useCallback((id: string) => set((l) => ({ ...l, notebooks: l.notebooks.map((n) => (n.id === id ? { ...n, starred: !n.starred } : n)) })), [set])
   const setSort = useCallback((sort: SortBy) => set((l) => ({ ...l, sort })), [set])
   /** Duplicate a notebook (pages, ink, outline); imported PDF backgrounds are shared read-only blobs. */
-  const duplicate = useCallback((id: string, copyLabel: string) => {
-    const raw = localStorage.getItem(nbKey(id))
+  const duplicate = useCallback(async (id: string, copyLabel: string) => {
+    await ensureMigrated()
+    const raw = await kvGet(nbKey(id))
     if (!raw) return
     const nid = `nb_${Date.now().toString(36)}`
     const d = JSON.parse(raw); d.id = nid; d.title = `${d.title || ''} ${copyLabel}`.trim()
-    try { localStorage.setItem(nbKey(nid), JSON.stringify(d)) } catch { return }
+    if (!(await kvSet(nbKey(nid), JSON.stringify(d)))) return
     set((l) => {
       const src = l.notebooks.find((n) => n.id === id)!
       return { ...l, notebooks: [{ ...src, id: nid, title: d.title, created: Date.now(), updated: Date.now(), starred: false }, ...l.notebooks] }
@@ -70,20 +72,21 @@ export function useLibrary() {
   }, [set])
   const setLayout = useCallback((layout: Layout) => set((l) => ({ ...l, layout })), [set])
 
-  const backup = useCallback(() => {
+  const backup = useCallback(async () => {
+    await ensureMigrated()
     const data: Record<string, string | null> = {}
-    lib.notebooks.forEach((n) => { data[n.id] = localStorage.getItem(nbKey(n.id)) })
+    for (const n of lib.notebooks) data[n.id] = (await kvGet(nbKey(n.id))) ?? null
     return JSON.stringify({ app: 'goodnotes-clone', v: 2, notebooks: lib.notebooks, folders: lib.folders, data })
   }, [lib.notebooks, lib.folders])
   /** Single notebook as a backup file (re-importable through 'Backup wiederherstellen' / Import). */
-  const backupOne = useCallback((id: string) => {
+  const backupOne = useCallback(async (id: string) => {
     const n = lib.notebooks.find((x) => x.id === id)
-    return JSON.stringify({ app: 'goodnotes-clone', v: 2, notebooks: n ? [{ ...n, folder: null }] : [], folders: [], data: { [id]: localStorage.getItem(nbKey(id)) } })
+    return JSON.stringify({ app: 'goodnotes-clone', v: 2, notebooks: n ? [{ ...n, folder: null }] : [], folders: [], data: { [id]: (await kvGet(nbKey(id))) ?? null } })
   }, [lib.notebooks])
-  const restoreBackup = useCallback((json: string) => {
+  const restoreBackup = useCallback(async (json: string) => {
     const b = JSON.parse(json)
     if (b?.app !== 'goodnotes-clone' || !Array.isArray(b.notebooks)) throw new Error('bad backup')
-    for (const n of b.notebooks as NbMeta[]) if (b.data?.[n.id]) localStorage.setItem(nbKey(n.id), b.data[n.id])
+    for (const n of b.notebooks as NbMeta[]) if (b.data?.[n.id]) await kvSet(nbKey(n.id), b.data[n.id])
     set((l) => ({
       ...l,
       notebooks: [...(b.notebooks as NbMeta[]).filter((n) => !l.notebooks.some((m) => m.id === n.id)), ...l.notebooks],

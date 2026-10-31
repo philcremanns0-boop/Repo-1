@@ -36,9 +36,26 @@ function makePdf(file) {
   p.on('pageerror', (e) => errors.push(e.message)); p.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
   try {
     await p.goto(URL)
-    await p.evaluate(() => { localStorage.clear(); localStorage.setItem('gn:settings', JSON.stringify({ theme: 'light', lang: 'de', scroll: 'vertical', toolbar: 'docked' })) })
+    // migration: a notebook left in localStorage by an older build must open from IndexedDB
+    await p.evaluate(async () => {
+      localStorage.clear()
+      await Promise.all(['gn-data', 'gn-blobs'].map((n) => new Promise((r) => { const q = indexedDB.deleteDatabase(n); q.onsuccess = q.onerror = q.onblocked = r })))
+      localStorage.setItem('gn:settings', JSON.stringify({ theme: 'light', lang: 'de', scroll: 'vertical', toolbar: 'docked' }))
+      localStorage.setItem('gn:nb:old', JSON.stringify({ v: 2, id: 'old', title: 'Alt', currentId: 'p1', outline: [], pages: [{ id: 'p1', size: 'a4p', template: 'wide', color: 'white', bookmarked: false, content: { strokes: [{ id: 1, tool: 'pen', color: '#000', width: 2, points: [{ x: 10, y: 10, w: 1 }, { x: 90, y: 10, w: 1 }] }], texts: [], images: [] } }] }))
+      localStorage.setItem('gn:library', JSON.stringify({ notebooks: [{ id: 'old', title: 'Alt', cover: 'hell', coverColor: '#02BDE4', created: 1, updated: 1, pages: 1 }], folders: [], tabs: [], view: 'home' }))
+    })
     await p.reload()
-    const content = (i = 0) => p.evaluate((i) => { const k = Object.keys(localStorage).find((k) => k.startsWith('gn:nb:')); return k ? JSON.parse(localStorage.getItem(k)).pages[i]?.content : null }, i)
+    const nbData = (title) => p.evaluate((title) => new Promise((res) => {
+      const r = indexedDB.open('gn-data')
+      r.onsuccess = () => {
+        const st = r.result.transaction('kv', 'readonly').objectStore('kv'), q = st.getAll()
+        q.onsuccess = () => { const all = q.result.map((x) => JSON.parse(x)); res(title ? all.find((d) => d.title === title) : all.find((d) => d.id !== 'old') ?? null) }
+      }
+    }), title)
+    await p.getByRole('button', { name: 'Alt', exact: true }).click(); await p.waitForSelector('[data-page]'); await p.waitForTimeout(300)
+    check('localStorage notebook migrated to IndexedDB', (await nbData('Alt'))?.pages[0].content.strokes.length === 1 && !(await p.evaluate(() => localStorage.getItem('gn:nb:old'))))
+    await p.getByRole('button', { name: 'Dokumente' }).first().click()
+    const content = async (i = 0) => (await nbData())?.pages[i]?.content ?? null
     const pageBox = () => p.locator('[data-page-inner]').first().boundingBox()
 
     // notebook
@@ -95,13 +112,12 @@ function makePdf(file) {
     // template on all pages
     await p.getByRole('button', { name: 'Mehr', exact: true }).first().click(); await p.getByText('Vorlage wechseln').click(); await p.waitForTimeout(300)
     await p.getByRole('button', { name: 'Kariert', exact: true }).click(); await p.getByRole('switch', { name: 'Auf alle Seiten anwenden' }).click(); await p.getByRole('button', { name: 'Fertig' }).click(); await p.waitForTimeout(500)
-    check('template applied to all pages', await p.evaluate(() => { const k = Object.keys(localStorage).find((k) => k.startsWith('gn:nb:')); return JSON.parse(localStorage.getItem(k)).pages.every((x) => x.template === 'grid') }))
+    check('template applied to all pages', (await nbData()).pages.every((x) => x.template === 'grid'))
     // outline add + rename
     await p.getByRole('button', { name: 'Mehr', exact: true }).first().click(); await p.getByText('Seite zur Gliederung hinzufügen').click()
     await p.getByRole('button', { name: 'Seitenleiste' }).first().click(); await p.getByRole('button', { name: 'Gliederungen' }).click()
     await p.getByRole('button', { name: 'Umbenennen', exact: true }).first().click(); await p.keyboard.press('Control+a'); await p.keyboard.type('Kapitel 1'); await p.keyboard.press('Enter'); await p.waitForTimeout(400)
-    if (process.env.DEBUG) { await p.screenshot({ path: '/tmp/claude-0/-home-user-Repo-1/9b4f1dfd-632e-5bde-9bdf-4596152885d8/scratchpad/outline.png' }); console.log(await p.evaluate(() => { const k = Object.keys(localStorage).find((k) => k.startsWith('gn:nb:')); return JSON.stringify(JSON.parse(localStorage.getItem(k)).outline) })) }
-    check('outline rename', await p.evaluate(() => { const k = Object.keys(localStorage).find((k) => k.startsWith('gn:nb:')); return JSON.parse(localStorage.getItem(k)).outline[0]?.title === 'Kapitel 1' }))
+        check('outline rename', (await nbData()).outline[0]?.title === 'Kapitel 1')
     await p.locator('aside').getByRole('button', { name: 'Schließen' }).click()
     await p.getByRole('button', { name: 'Mehr', exact: true }).first().click(); await p.getByText('Einstellungen', { exact: true }).last().click()
     await p.getByRole('switch', { name: 'Dunkelmodus' }).click(); await p.waitForTimeout(700)
@@ -110,7 +126,7 @@ function makePdf(file) {
     // library: duplicate + search
     await p.getByRole('button', { name: 'Dokumente' }).first().click(); await p.waitForTimeout(300)
     await p.getByRole('button', { name: 'Menü' }).first().click(); await p.getByText('Duplizieren', { exact: true }).click(); await p.waitForTimeout(300)
-    check('duplicate notebook', (await p.evaluate(() => JSON.parse(localStorage.getItem('gn:library')).notebooks.length)) === 2)
+    check('duplicate notebook', (await p.evaluate(() => JSON.parse(localStorage.getItem('gn:library')).notebooks.length)) === 3)
     await p.getByLabel('Notizbücher suchen').fill('kopie'); await p.waitForTimeout(200)
     check('library search filters', (await p.locator('main button[aria-label$="Kopie"], main button[aria-label$="kopie"]').count()) === 1)
     await p.getByLabel('Notizbücher suchen').fill('')
