@@ -151,12 +151,14 @@ export function SharePopover({ onExport, onPrint, present, onPresent, onUnavaila
 }
 
 /* ------------------------------ Search ------------------------------ */
-export function SearchPopover({ pages, outline, onGo, ...b }: Base & { pages: Page[]; outline: OutlineItem[]; onGo: (id: string) => void }) {
+export function SearchPopover({ pages, outline, onGo, onHit, ...b }: Base & { pages: Page[]; outline: OutlineItem[]; onGo: (id: string) => void; onHit?: (pageId: string, needle: string) => void }) {
   const t = useT()
   const [q, setQ] = useState('')
   const needle = q.trim().toLowerCase()
   const hits = needle ? pages.flatMap((p, i) => p.content.texts.filter((x) => x.text.toLowerCase().includes(needle)).map((x) => ({ id: p.id, page: i + 1, text: x.text }))) : []
   const outl = needle ? outline.filter((o) => o.title.toLowerCase().includes(needle)) : []
+  const snip = (s: string) => { const i = s.toLowerCase().indexOf(needle); return (i > 30 ? '…' : '') + s.slice(Math.max(0, i - 30), i + needle.length + 50) + '…' }
+  const pdfHits = needle ? pages.flatMap((p, i) => (p.bg?.text && p.bg.text.toLowerCase().includes(needle) ? [{ id: p.id, page: i + 1, text: snip(p.bg.text) }] : [])) : []
   return (
     <Popover {...b} width={380} align="left">
       <div className="p-3">
@@ -167,10 +169,11 @@ export function SearchPopover({ pages, outline, onGo, ...b }: Base & { pages: Pa
         <Group className="mb-3">
           {outl.map((o) => <Row key={o.id} icon={<List size={20} />} onClick={() => { onGo(o.pageId); b.onClose() }}>{o.title}</Row>)}
           {hits.map((h, i) => <Row key={i} sub={`${t('Seite')} ${h.page}`} onClick={() => { onGo(h.id); b.onClose() }}><span className="line-clamp-2">{h.text}</span></Row>)}
-          {!hits.length && !outl.length && <div className="px-4 py-5 text-center text-[17px] text-sub">{t('Keine Ergebnisse')}</div>}
+          {pdfHits.map((h, i) => <Row key={`pdf${i}`} icon={<FileDown size={20} />} sub={`PDF · ${t('Seite')} ${h.page}`} onClick={() => { onGo(h.id); onHit?.(h.id, needle); b.onClose() }}><span className="line-clamp-2">{h.text}</span></Row>)}
+          {!hits.length && !outl.length && !pdfHits.length && <div className="px-4 py-5 text-center text-[17px] text-sub">{t('Keine Ergebnisse')}</div>}
         </Group>
       )}
-      {!needle && <p className="px-5 pb-4 text-[15px] text-sub">{t('Durchsucht Text in Textfeldern und Gliederungen. Handschrift wird nicht erkannt.')}</p>}
+      {!needle && <p className="px-5 pb-4 text-[15px] text-sub">{t('Durchsucht Textfelder, Gliederungen und importierte PDFs. Handschrift wird nicht erkannt.')}</p>}
     </Popover>
   )
 }

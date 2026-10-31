@@ -90,7 +90,7 @@ export function Sheet({ open, onClose, children, width = 680, className = '' }: 
         <motion.div key="sheet" className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-3" onPointerDown={(e) => e.target === e.currentTarget && onClose()}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, pointerEvents: 'none', transition: { duration: 0.16 } }} transition={{ duration: 0.18 }}>
           <motion.div data-popover className={`relative flex max-h-[94vh] w-full flex-col overflow-hidden rounded-[30px] bg-pop text-ink shadow-popover ${className}`} style={{ maxWidth: width }}
-            initial={{ y: 36, scale: 0.97, opacity: 0.6 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={{ y: 24, scale: 0.98, opacity: 0, transition: { duration: 0.16 } }} transition={GN_SPRING}>
+            initial={{ y: 36, scale: 0.97, opacity: 0.6 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={{ y: 24, scale: 0.98, opacity: 0, pointerEvents: 'none', transition: { duration: 0.16 } }} transition={GN_SPRING}>
             {children}
           </motion.div>
         </motion.div>

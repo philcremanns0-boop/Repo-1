@@ -30,4 +30,6 @@ export interface EditorProps {
   pageNo: (pageId: string) => number
   zoomRegion: ZoomRegion | null
   setZoomRegion: (r: ZoomRegion | null) => void
+  flash: { pageId: string; needle: string } | null
+  clearFlash: () => void
 }

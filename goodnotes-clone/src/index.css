@@ -68,6 +68,12 @@
 
 @layer base {
   html, body, #root { height: 100%; }
+  html { height: 100dvh; }
+  /* iOS: no long-press callout / magnifier on UI, no tap flash, no double-tap zoom on controls */
+  body { -webkit-touch-callout: none; -webkit-text-size-adjust: 100%; }
+  button, [role='button'] { touch-action: manipulation; }
+  /* standalone (home-screen) app: keep content clear of the status bar / home indicator */
+  #root { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
   body {
     @apply bg-canvas text-ink;
     /* Roobert first if installed, else Albert Sans (closest free match; measured against the reference screenshots).

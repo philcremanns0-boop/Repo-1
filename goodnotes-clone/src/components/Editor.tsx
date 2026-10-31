@@ -56,6 +56,8 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
   const [selText, setSelText] = useState<TextRef | null>(null)
   const [editText, setEditTextRaw] = useState<TextRef | null>(null)
   const [ruler, setRuler] = useState<Ruler | null>(null)
+  const [flash, setFlash] = useState<{ pageId: string; needle: string } | null>(null)
+  const clearFlash = useCallback(() => setFlash(null), [])
   const [linkReq, setLinkReq] = useState<{ pageId: string; box: { x: number; y: number; w: number; h: number } } | null>(null)
   const [pasteAt, setPasteAt] = useState<{ pageId: string; p: { x: number; y: number }; client: { x: number; y: number } } | null>(null)
   const paste = (pageId: string, at?: { x: number; y: number }) => {
@@ -259,8 +261,8 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
     onAddLink: (pageId, box) => setLinkReq({ pageId, box }),
     goPage: (id) => goPage(id),
     pageNo: (id) => nb.pages.findIndex((p) => p.id === id) + 1,
-    zoomRegion, setZoomRegion,
-  }), [tool, canvasTool, selection, prefs.textStyle, selText, editText, ruler, prefs.colors, readOnly, nb.pages, zoomRegion]) // eslint-disable-line react-hooks/exhaustive-deps
+    zoomRegion, setZoomRegion, flash, clearFlash,
+  }), [tool, canvasTool, selection, prefs.textStyle, selText, editText, ruler, prefs.colors, readOnly, nb.pages, zoomRegion, flash]) // eslint-disable-line react-hooks/exhaustive-deps
   const close = () => setPopover(null)
   const P = (name: PopName) => popover === name
   const tplInit: TemplateResult = { template: page.template, color: page.color, size: page.size, cover: meta.cover, coverColor: meta.coverColor, title: meta.title }
@@ -336,7 +338,7 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
         onGoto={(n) => goPage(nb.pages[n - 1].id)} onClearKinds={(k) => store.commit(kinds(k))} onClearPage={() => store.commit(() => emptyContent())}
         onDelete={() => nb.deletePage(page.id)} onSettings={() => setPopover('settings')} />
       <SettingsPopover anchor={anchorFor('more')} open={P('settings')} onClose={close} />
-      <SearchPopover anchor={anchorFor('search')} open={P('search')} onClose={close} pages={nb.pages} outline={nb.outline} onGo={goPage} />
+      <SearchPopover anchor={anchorFor('search')} open={P('search')} onClose={close} pages={nb.pages} outline={nb.outline} onGo={goPage} onHit={(pageId, needle) => setFlash({ pageId, needle })} />
 
       <LinkSheet open={!!linkReq} pages={nb.pages} onClose={() => setLinkReq(null)}
         onDone={(to) => { if (linkReq) { const { pageId, box } = linkReq; nb.store(pageId).commit((c) => ({ ...c, links: [...(c.links ?? []), { id: newId(), ...box, to }] })); toast(t('Link hinzugefügt')) } setLinkReq(null) }} />

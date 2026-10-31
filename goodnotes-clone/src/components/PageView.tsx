@@ -3,6 +3,7 @@ import { memo, useEffect, useRef, useState } from 'react'
 import { PAPER_COLORS } from '../lib/paper'
 import PaperLayer from './PaperLayer'
 import PdfBg from './PdfBg'
+import SearchFlash from './SearchFlash'
 import type { Page } from '../store/types'
 import type { PageStore } from '../store/useNotebook'
 import NoteCanvas from './NoteCanvas'
@@ -34,6 +35,7 @@ function PageViewImpl({ page, store, ed, onActivate, panel }: Props) {
       onPointerDownCapture={() => onActivate(page.id)}>
       <div data-page-inner data-zoom={z} data-panel={panel ? '' : undefined} className="absolute left-0 top-0 origin-top-left rounded-[2px]"
         style={{ width: w, height: h, transform: `scale(${z})`, backgroundColor: PAPER_COLORS[page.color].bg }}>
+        {!panel && page.bg && ed.flash?.pageId === page.id && <SearchFlash bgKey={page.bg.key} needle={ed.flash.needle} onDone={ed.clearFlash} />}
         {page.bg ? <PdfBg storeKey={page.bg.key} /> : <PaperLayer template={page.template} color={page.color} width={w} height={h} />}
         {near && (
           <>

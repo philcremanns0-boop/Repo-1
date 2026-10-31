@@ -48,7 +48,7 @@ export function loadNotebookData(id: string): NotebookData | null {
       id: typeof p.id === 'string' ? p.id : newPageId(),
       size: SIZES[p.size as SizeId] ? p.size : 'a4p', template: p.template ?? 'wide', color: p.color ?? 'white',
       bookmarked: !!p.bookmarked,
-      bg: p.bg && typeof p.bg.key === 'string' ? { key: p.bg.key, w: +p.bg.w, h: +p.bg.h } : undefined,
+      bg: p.bg && typeof p.bg.key === 'string' ? { key: p.bg.key, w: +p.bg.w, h: +p.bg.h, text: typeof p.bg.text === 'string' ? p.bg.text : undefined } : undefined,
       content: {
         strokes: Array.isArray(p.content?.strokes) ? p.content.strokes.filter(isStroke) : [],
         texts: Array.isArray(p.content?.texts) ? p.content.texts : [],

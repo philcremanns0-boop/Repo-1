@@ -39,7 +39,7 @@ export const EN: Record<string, string> = {
   'Arbeitspartner anzeigen und einladen': 'View and invite collaborators', 'In schnelle Unterrichtseinheit umwandeln': 'Turn into quick lesson', 'mit interaktiven Lehrfunktionen': 'with interactive teaching features',
   'Export': 'Export', 'Diese Seite exportieren': 'Export this page', 'Alle exportieren': 'Export all', 'Drucken': 'Print', 'Diese Seite': 'This page', 'Alle Seiten': 'All pages',
   'Präsentationsmodus': 'Presentation mode', 'Werkzeugleisten ausblenden': 'Hide toolbars', 'Präsentation beenden': 'End presentation', 'Keine Ergebnisse': 'No results',
-  'Durchsucht Text in Textfeldern und Gliederungen. Handschrift wird nicht erkannt.': 'Searches text in text boxes and outlines. Handwriting is not recognised.',
+  'Durchsucht Textfelder, Gliederungen und importierte PDFs. Handschrift wird nicht erkannt.': 'Searches text boxes, outlines and imported PDFs. Handwriting is not recognised.',
   'Zusammenarbeit ist in dieser Web-Version nicht verfügbar.': 'Collaboration is not available in this web version.', 'Pop-ups sind blockiert': 'Pop-ups are blocked',
   'Export wird erstellt …': 'Creating export …', 'Export fehlgeschlagen': 'Export failed', 'Zur Gliederung hinzugefügt': 'Added to outline',
   'Mikrofonzugriff nicht möglich': 'Microphone access not possible', 'Datei konnte nicht gelesen werden': 'File could not be read',
