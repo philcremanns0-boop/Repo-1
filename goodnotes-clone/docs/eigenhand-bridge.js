@@ -18,6 +18,7 @@
     }).join('')
   }
   function r1(v) { return Math.round(v * 10) / 10 }
+  function r2(v) { return Math.round(v * 100) / 100 }
   function esc(s) { return s.replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] }) }
   function b64(str) {
     var bytes = new TextEncoder().encode(str), bin = ''
@@ -43,8 +44,8 @@
       v: 1, src: 'eigenhand', unit: 'pt', text: text,
       strokes: ops.map(function (s) {
         var flat = []
-        s.pts.forEach(function (q) { flat.push(r1(q[0] - mx), r1(q[1] - my)) })
-        if (flat.length === 2) flat.push(flat[0] + 0.1, flat[1])
+        s.pts.forEach(function (q) { flat.push(r2(q[0] - mx), r2(q[1] - my)) })
+        if (flat.length === 2) flat.push(flat[0] + 0.05, flat[1])
         return { p: flat, w: r1(s.w || 1), c: hex(s.c || ink) }
       })
     }

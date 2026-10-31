@@ -113,6 +113,70 @@ function drawShape(ctx: CanvasRenderingContext2D, s: Stroke) {
   ctx.restore()
 }
 
+/** Smooth centre line (midpoint quadratics, like the old renderer) with a radius per sample. */
+function centreLine(pts: StrokePoint[], radius: (i: number) => number) {
+  const out: { x: number; y: number; r: number }[] = []
+  const push = (x: number, y: number, r: number) => {
+    const q = out[out.length - 1]
+    if (q && Math.abs(q.x - x) < 1e-3 && Math.abs(q.y - y) < 1e-3) { q.r = Math.max(q.r, r); return }
+    out.push({ x, y, r })
+  }
+  push(pts[0].x, pts[0].y, radius(0))
+  let sx = pts[0].x, sy = pts[0].y, sr = radius(0)
+  for (let i = 1; i < pts.length; i++) {
+    const last = i === pts.length - 1
+    const ex = last ? pts[i].x : (pts[i].x + pts[i + 1].x) / 2, ey = last ? pts[i].y : (pts[i].y + pts[i + 1].y) / 2
+    const er = last ? radius(i) : (radius(i) + radius(i + 1)) / 2
+    const cx = pts[i].x, cy = pts[i].y, cr = radius(i)
+    const len = Math.hypot(cx - sx, cy - sy) + Math.hypot(ex - cx, ey - cy)
+    const n = last ? 1 : Math.max(1, Math.min(16, Math.ceil(len / 1.5)))
+    for (let k = 1; k <= n; k++) {
+      const t = k / n, u = 1 - t
+      if (last) push(sx + (ex - sx) * t, sy + (ey - sy) * t, sr + (er - sr) * t)
+      else push(u * u * sx + 2 * u * t * cx + t * t * ex, u * u * sy + 2 * u * t * cy + t * t * ey, u * u * sr + 2 * u * t * cr + t * t * er)
+    }
+    sx = ex; sy = ey; sr = er
+  }
+  return out
+}
+
+/** Closed outline (left side, round end cap, right side back, round start cap) for fill(). */
+export function strokeOutline(pts: StrokePoint[], radius: (i: number) => number): Path2D {
+  const c = centreLine(pts, radius)
+  const path = new Path2D()
+  if (c.length === 1) { path.arc(c[0].x, c[0].y, c[0].r, 0, Math.PI * 2); return path }
+  const nrm = c.map((_, i) => {
+    const a = c[Math.max(0, i - 1)], b = c[Math.min(c.length - 1, i + 1)]
+    const dx = b.x - a.x, dy = b.y - a.y, l = Math.hypot(dx, dy) || 1
+    return { x: -dy / l, y: dx / l }
+  })
+  const L = c.map((p, i) => ({ x: p.x + nrm[i].x * p.r, y: p.y + nrm[i].y * p.r }))
+  const R = c.map((p, i) => ({ x: p.x - nrm[i].x * p.r, y: p.y - nrm[i].y * p.r }))
+  const e = c.length - 1
+  const ae = Math.atan2(nrm[e].y, nrm[e].x), a0 = Math.atan2(nrm[0].y, nrm[0].x)
+  path.moveTo(L[0].x, L[0].y)
+  for (let i = 1; i <= e; i++) path.lineTo(L[i].x, L[i].y)
+  path.arc(c[e].x, c[e].y, c[e].r, ae, ae - Math.PI, true)
+  for (let i = e - 1; i >= 0; i--) path.lineTo(R[i].x, R[i].y)
+  path.arc(c[0].x, c[0].y, c[0].r, a0 + Math.PI, a0, true)
+  path.closePath()
+  // round joins at sharp turns (hairpins in handwriting); drawn with the outline's winding
+  // so the nonzero fill unions them instead of punching holes
+  let area = 0
+  const ring = [...L, ...R.slice().reverse()]
+  for (let i = 0; i < ring.length; i++) { const p = ring[i], q = ring[(i + 1) % ring.length]; area += p.x * q.y - q.x * p.y }
+  const ccw = area < 0
+  for (let i = 1; i < e; i++) {
+    const ax = c[i].x - c[i - 1].x, ay = c[i].y - c[i - 1].y, bx = c[i + 1].x - c[i].x, by = c[i + 1].y - c[i].y
+    const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by)
+    if (!la || !lb || (ax * bx + ay * by) / (la * lb) > 0.6) continue
+    path.moveTo(c[i].x + c[i].r, c[i].y)
+    path.arc(c[i].x, c[i].y, c[i].r, 0, ccw ? -Math.PI * 2 : Math.PI * 2, ccw)
+    path.closePath()
+  }
+  return path
+}
+
 /* ------------------------------ strokes ------------------------------ */
 
 export function drawStroke(ctx: CanvasRenderingContext2D, s: Stroke) {
@@ -139,15 +203,22 @@ export function drawStroke(ctx: CanvasRenderingContext2D, s: Stroke) {
   }
   const L = pen === 'brush' ? 6 : pen === 'fountain' ? Math.round((o.sharp / 100) * 8) : 0
   const taper = (i: number) => { if (!L) return 1; const d = Math.min(i, pts.length - 1 - i); return d >= L ? 1 : 0.4 + 0.6 * (d / L) }
-  let start = { x: pts[0].x, y: pts[0].y }
-  for (let i = 1; i < pts.length; i++) {
-    const last = i === pts.length - 1
-    const end = last ? { x: pts[i].x, y: pts[i].y } : { x: (pts[i].x + pts[i + 1].x) / 2, y: (pts[i].y + pts[i + 1].y) / 2 }
-    ctx.lineWidth = Math.max(0.3, s.width * ((pts[i - 1].w + pts[i].w) / 2) * taper(i))
-    ctx.beginPath(); ctx.moveTo(start.x, start.y)
-    if (last) ctx.lineTo(end.x, end.y); else ctx.quadraticCurveTo(pts[i].x, pts[i].y, end.x, end.y)
-    ctx.stroke(); start = end
+  if (o.round > 0) {
+    // squared nib: keep stroked segments (square caps are part of that look)
+    let start = { x: pts[0].x, y: pts[0].y }
+    for (let i = 1; i < pts.length; i++) {
+      const last = i === pts.length - 1
+      const end = last ? { x: pts[i].x, y: pts[i].y } : { x: (pts[i].x + pts[i + 1].x) / 2, y: (pts[i].y + pts[i + 1].y) / 2 }
+      ctx.lineWidth = Math.max(0.3, s.width * ((pts[i - 1].w + pts[i].w) / 2) * taper(i))
+      ctx.beginPath(); ctx.moveTo(start.x, start.y)
+      if (last) ctx.lineTo(end.x, end.y); else ctx.quadraticCurveTo(pts[i].x, pts[i].y, end.x, end.y)
+      ctx.stroke(); start = end
+    }
+    ctx.restore(); return
   }
+  // One filled outline per stroke. Stroking every segment separately double-paints the
+  // anti-aliased edges where segments overlap, which shows up as ridges along the line.
+  ctx.fill(strokeOutline(pts, (i) => Math.max(0.3, s.width * pts[i].w * taper(i)) / 2))
   ctx.restore()
 }
 
