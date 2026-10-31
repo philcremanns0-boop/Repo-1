@@ -1,0 +1,23 @@
+import type { Selection } from '../lib/draw'
+import type { CanvasTool, Ruler } from './NoteCanvas'
+import type { TextStyle } from './ObjectsLayer'
+
+export type ToolId = 'lasso' | 'pen' | 'eraser' | 'text' | 'objects' | 'images' | 'shapes' | 'note' | 'laser'
+export type AccId = 'record' | 'recordings' | 'zoom' | 'ruler' | 'timer'
+export interface TextRef { pageId: string; id: number }
+export interface EditorProps {
+  tool: ToolId
+  canvasTool: CanvasTool
+  zoom: number
+  selection: Selection | null
+  setSelection: (s: Selection | null) => void
+  textStyle: TextStyle
+  selText: TextRef | null
+  setSelText: (v: TextRef | null) => void
+  editText: TextRef | null
+  setEditText: (v: TextRef | null) => void
+  ruler: Ruler | null
+  setRuler: (r: Ruler | null) => void
+  colors: string[]
+  onTextCreated: () => void
+}

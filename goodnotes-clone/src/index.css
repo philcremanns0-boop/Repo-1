@@ -2,32 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --tab: #284d83;
+  --bar: #3262a6;
+  --canvas: #f4f4f5;
+  --pop: #f4f4f5;
+  --card: #ffffff;
+  --ink: #0b0b0d;
+  --sub: #8a8a8f;
+  --hair: rgba(0, 0, 0, 0.12);
+  --accent: #0a84ff;
+  --chip: rgba(0, 0, 0, 0.07);
+  --float: rgba(250, 250, 251, 0.94);
+  --danger: #e5372e;
+  --good: #07b97f;
+  --tool-active: #ffffff;
+  --tool-active-ink: #0c2a4b;
+  --opt-active: #a8dde9;
+  --opt-sel: #d6d6d9;
+}
+.dark {
+  --tab: #1f3260;
+  --bar: #284a85;
+  --canvas: #1b1c1e;
+  --pop: #1c1c1e;
+  --card: #2c2c2e;
+  --ink: #f5f5f7;
+  --sub: #98989f;
+  --hair: rgba(255, 255, 255, 0.12);
+  --accent: #3b9bff;
+  --chip: rgba(255, 255, 255, 0.1);
+  --float: rgba(34, 34, 36, 0.94);
+  --danger: #ff5a4d;
+  --good: #07b97f;
+  --tool-active: #d4d8e1;
+  --tool-active-ink: #0c2a4b;
+  --opt-active: #3b8d9d;
+  --opt-sel: #4a4a4e;
+}
+
 @layer base {
-  html,
-  body,
-  #root {
-    height: 100%;
-  }
+  html, body, #root { height: 100%; }
   body {
-    @apply bg-gn-canvas font-sans text-gn-ink antialiased;
+    @apply bg-canvas font-sans text-ink antialiased;
     overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
     -webkit-user-select: none;
     user-select: none;
+    overflow: hidden;
   }
-  button {
-    @apply outline-none;
-  }
+  button { @apply outline-none; }
+  input, textarea { -webkit-user-select: text; user-select: text; }
 }
-
-@layer components {
-  .tool-btn {
-    @apply relative flex h-10 w-11 items-center justify-center rounded-[10px] text-gn-ink transition-colors;
-  }
-  .tool-btn:hover {
-    @apply bg-black/5;
-  }
-  .tool-btn[data-active='true'] {
-    @apply bg-gn-active text-gn-accent;
-  }
+@layer utilities {
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
 }
+@media print { body * { visibility: hidden; } }

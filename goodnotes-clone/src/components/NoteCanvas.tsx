@@ -1,320 +1,275 @@
 import { useEffect, useRef, useState } from 'react'
+import {
+  drawStroke, hitStroke, inPoly, measureText, newId, pixelErase, pointWeight, recognize, strokePts,
+  type Content, type PenOpts, type PenType, type Pt, type Selection, type ShapeKind, type Stroke,
+} from '../lib/draw'
+import type { PageStore } from '../store/useNotebook'
 
-/* ------------------------------------------------------------------ *
- * Data model — every line is plain data, so colour / width can be
- * changed at any time and the canvas simply re-renders from state.
- * ------------------------------------------------------------------ */
-
-export interface StrokePoint {
-  x: number // page-space px
-  y: number
-  /** width multiplier derived from stylus pressure (1 for mouse / touch) */
-  w: number
-}
-
-export interface Stroke {
-  id: number
-  tool: 'pen' | 'highlighter'
+export interface CanvasTool {
+  kind: 'pen' | 'highlighter' | 'tape' | 'eraser' | 'shape' | 'lasso' | 'none'
   color: string
-  /** base width in page-space px */
   width: number
-  points: StrokePoint[]
+  pen: PenType
+  opts: PenOpts
+  stab: number
+  eraser: 'pixel' | 'stroke'
+  eraserSize: number
+  erHl: boolean
+  shape: ShapeKind
+  fill: boolean
+  autoShape: boolean
+  lassoMode: 'free' | 'rect'
+  lassoStrokes: boolean
+  lassoObjects: boolean
 }
-
-export type DrawTool = 'pen' | 'highlighter' | 'eraser'
-
-export const WIDTHS: Record<DrawTool, [number, number, number]> = {
-  pen: [1.5, 3, 5.5],
-  highlighter: [10, 16, 24],
-  eraser: [10, 20, 36],
-}
-export const HIGHLIGHTER_ALPHA = 0.35
-
-/** What the canvas needs from the notebook store (current page only). */
-export interface StrokeStore {
-  strokes: Stroke[]
-  /** commit a finished stroke as one undoable step */
-  add: (s: Stroke) => void
-  /** replace strokes without recording history (live erase preview) */
-  preview: (next: Stroke[]) => void
-  /** record `base` as the undo step for the current strokes (end of erase) */
-  checkpoint: (base: Stroke[]) => void
-  undo: () => void
-  redo: () => void
-}
-
-/* ------------------------------------------------------------------ *
- * Rendering — midpoint quadratic Béziers give C1-smooth curves through
- * noisy pointer samples (no jagged polylines).
- * ------------------------------------------------------------------ */
-
-function drawStroke(ctx: CanvasRenderingContext2D, s: Stroke) {
-  const pts = s.points
-  if (!pts.length) return
-  ctx.save()
-  ctx.lineCap = 'round'
-  ctx.lineJoin = 'round'
-  ctx.strokeStyle = s.color
-  ctx.fillStyle = s.color
-
-  if (s.tool === 'highlighter') {
-    // One single path at constant width + one alpha → no darker self-overlap.
-    ctx.globalAlpha = HIGHLIGHTER_ALPHA
-    ctx.lineWidth = s.width
-    ctx.beginPath()
-    ctx.moveTo(pts[0].x, pts[0].y)
-    if (pts.length === 1) ctx.lineTo(pts[0].x + 0.01, pts[0].y)
-    for (let i = 1; i < pts.length - 1; i++) {
-      const mx = (pts[i].x + pts[i + 1].x) / 2
-      const my = (pts[i].y + pts[i + 1].y) / 2
-      ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my)
-    }
-    if (pts.length > 1) ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y)
-    ctx.stroke()
-    ctx.restore()
-    return
-  }
-
-  // Pen: per-segment width for pressure sensitivity (opaque, so overlaps are invisible)
-  if (pts.length === 1) {
-    ctx.beginPath()
-    ctx.arc(pts[0].x, pts[0].y, (s.width * pts[0].w) / 2, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.restore()
-    return
-  }
-  let start = { x: pts[0].x, y: pts[0].y }
-  for (let i = 1; i < pts.length; i++) {
-    const last = i === pts.length - 1
-    const end = last
-      ? { x: pts[i].x, y: pts[i].y }
-      : { x: (pts[i].x + pts[i + 1].x) / 2, y: (pts[i].y + pts[i + 1].y) / 2 }
-    ctx.lineWidth = s.width * ((pts[i - 1].w + pts[i].w) / 2)
-    ctx.beginPath()
-    ctx.moveTo(start.x, start.y)
-    if (last) ctx.lineTo(end.x, end.y)
-    else ctx.quadraticCurveTo(pts[i].x, pts[i].y, end.x, end.y)
-    ctx.stroke()
-    start = end
-  }
-  ctx.restore()
-}
-
-function distToSegment(px: number, py: number, a: StrokePoint, b: StrokePoint) {
-  const dx = b.x - a.x
-  const dy = b.y - a.y
-  const len2 = dx * dx + dy * dy
-  const t = len2 ? Math.max(0, Math.min(1, ((px - a.x) * dx + (py - a.y) * dy) / len2)) : 0
-  return Math.hypot(px - (a.x + t * dx), py - (a.y + t * dy))
-}
-
-function hits(s: Stroke, x: number, y: number, r: number) {
-  const reach = r + (s.tool === 'highlighter' ? s.width / 2 : (s.width * 0.5))
-  if (s.points.length === 1) return Math.hypot(s.points[0].x - x, s.points[0].y - y) <= reach
-  for (let i = 1; i < s.points.length; i++) {
-    if (distToSegment(x, y, s.points[i - 1], s.points[i]) <= reach) return true
-  }
-  return false
-}
-
-/* ------------------------------------------------------------------ *
- * Component
- * ------------------------------------------------------------------ */
+export interface Ruler { pageId: string; x: number; y: number; angle: number }
+export const RULER_LEN = 720
+export const RULER_H = 76
 
 interface Props {
-  store: StrokeStore
-  tool: string
-  color: string
-  /** thickness preset index 0..2 */
-  thickness: 0 | 1 | 2
-  width: number // page width (px)
-  height: number
+  pageId: string
+  store: PageStore
+  tool: CanvasTool
   zoom: number
+  width: number
+  height: number
+  ruler: Ruler | null
+  onSelect: (s: Selection | null) => void
+  onActivate: () => void
 }
-
-let lastId = 0
-/** Unique, monotonically increasing ids that survive reloads. */
-const newStrokeId = () => (lastId = Math.max(Date.now() * 1000, lastId + 1))
-
-interface ActiveGesture {
+interface Gesture {
   pointerId: number
+  kind: 'draw' | 'erase' | 'lasso'
   stroke?: Stroke
-  eraseBase?: Stroke[]
-  erased?: Stroke[]
+  base?: Content
+  erased?: Content
+  lastErase?: Pt
   lastW: number
-  lastErase?: { x: number; y: number }
+  lastT: number
+  lastP: Pt
+  filt?: Pt
+  lasso?: Pt[]
+  hold?: ReturnType<typeof setTimeout>
+  snapped?: boolean
+  line?: { o: Pt; d: Pt }
 }
 
-export default function NoteCanvas({ store, tool, color, thickness, width, height, zoom }: Props) {
+function eraseStep(c: Content, x: number, y: number, r: number, kind: 'pixel' | 'stroke', hlOnly: boolean): Content {
+  let changed = false
+  const strokes: Stroke[] = []
+  for (const s of c.strokes) {
+    if (hlOnly && s.tool !== 'highlighter') { strokes.push(s); continue }
+    if (kind === 'stroke') { if (hitStroke(s, x, y, r)) changed = true; else strokes.push(s) }
+    else { const res = pixelErase(s, x, y, r); if (res === null) strokes.push(s); else { changed = true; strokes.push(...res) } }
+  }
+  return changed ? { ...c, strokes } : c
+}
+
+export default function NoteCanvas({ pageId, store, tool, zoom, width, height, ruler, onSelect, onActivate }: Props) {
   const baseRef = useRef<HTMLCanvasElement>(null)
   const liveRef = useRef<HTMLCanvasElement>(null)
-  const active = useRef<ActiveGesture | null>(null)
+  const act = useRef<Gesture | null>(null)
   const raf = useRef(0)
   const [penSeen, setPenSeen] = useState(false)
-
-  const drawing = tool === 'pen' || tool === 'highlighter' || tool === 'eraser'
   const dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1
-
-  // keep latest props accessible from stable handlers
-  const cfg = useRef({ tool, color, thickness, zoom, store })
-  cfg.current = { tool, color, thickness, zoom, store }
+  const scale = Math.min(zoom * dpr, 3)
+  const cfg = useRef({ tool, zoom, store, ruler, pageId })
+  cfg.current = { tool, zoom, store, ruler, pageId }
+  const drawing = tool.kind !== 'none'
 
   const setup = (c: HTMLCanvasElement) => {
-    const s = zoom * dpr
-    const w = Math.round(width * s)
-    const h = Math.round(height * s)
-    if (c.width !== w || c.height !== h) {
-      c.width = w
-      c.height = h
-    }
+    const w = Math.round(width * scale), h = Math.round(height * scale)
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h }
     const ctx = c.getContext('2d')!
-    ctx.setTransform(s, 0, 0, s, 0, 0)
+    ctx.setTransform(scale, 0, 0, scale, 0, 0)
     ctx.clearRect(0, 0, width, height)
     return ctx
   }
-
-  // Re-render committed strokes whenever data / zoom changes.
   useEffect(() => {
     const ctx = setup(baseRef.current!)
-    for (const s of store.strokes) drawStroke(ctx, s)
-    // clear the live layer after the base has caught up (no flicker)
-    if (!active.current?.stroke) setup(liveRef.current!)
+    for (const s of store.content.strokes) drawStroke(ctx, s)
+    if (!act.current?.stroke) setup(liveRef.current!)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.strokes, zoom, dpr, width, height])
+  }, [store.content.strokes, scale, width, height])
 
-  // Ctrl/Cmd+Z = undo, Ctrl/Cmd+Shift+Z or Ctrl+Y = redo
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey) || (e.target as HTMLElement)?.isContentEditable) return
-      const k = e.key.toLowerCase()
-      if (k === 'z') {
-        e.preventDefault()
-        e.shiftKey ? cfg.current.store.redo() : cfg.current.store.undo()
-      } else if (k === 'y') {
-        e.preventDefault()
-        cfg.current.store.redo()
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
-
-  const toPage = (e: { clientX: number; clientY: number }) => {
+  const toPage = (e: { clientX: number; clientY: number }): Pt => {
     const r = baseRef.current!.getBoundingClientRect()
     return { x: (e.clientX - r.left) / cfg.current.zoom, y: (e.clientY - r.top) / cfg.current.zoom }
   }
-
   const renderLive = () => {
     raf.current = 0
-    const st = active.current?.stroke
-    if (!st) return
-    drawStroke(setup(liveRef.current!), st)
-  }
-
-  const factor = (e: PointerEvent | React.PointerEvent, prev: number) => {
-    if (e.pointerType !== 'pen') return 1
-    const p = e.pressure > 0 ? e.pressure : 0.5
-    const target = 0.4 + 1.2 * p
-    return prev ? prev * 0.6 + target * 0.4 : target // low-pass for stable width
-  }
-
-  /**
-   * Stroke eraser: delete every whole stroke touched by the eraser. The path
-   * between consecutive samples is interpolated so fast swipes can't skip a stroke.
-   */
-  const eraseAt = (x: number, y: number) => {
-    const a = active.current!
-    const r = WIDTHS.eraser[cfg.current.thickness] / 2
-    const from = a.lastErase ?? { x, y }
-    const steps = Math.max(1, Math.ceil(Math.hypot(x - from.x, y - from.y) / (r / 2)))
-    let cur = a.erased ?? cfg.current.store.strokes
-    for (let i = 1; i <= steps; i++) {
-      const px = from.x + ((x - from.x) * i) / steps
-      const py = from.y + ((y - from.y) * i) / steps
-      cur = cur.filter((s) => !hits(s, px, py, r))
+    const a = act.current
+    if (!a) return
+    const ctx = setup(liveRef.current!)
+    if (a.stroke) drawStroke(ctx, a.stroke)
+    if (a.lasso && a.lasso.length > 1) {
+      ctx.save(); ctx.setLineDash([7, 6]); ctx.lineWidth = 1.6 / cfg.current.zoom * 1.2; ctx.strokeStyle = '#2f8cf0'; ctx.fillStyle = 'rgba(47,140,240,.08)'
+      ctx.beginPath(); ctx.moveTo(a.lasso[0].x, a.lasso[0].y); a.lasso.slice(1).forEach((p) => ctx.lineTo(p.x, p.y)); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore()
     }
-    a.lastErase = { x, y }
-    if (cur.length !== (a.erased ?? cfg.current.store.strokes).length) {
-      a.erased = cur
-      cfg.current.store.preview(cur)
-    }
+    if (a.kind === 'erase' && a.lastErase) ring(ctx, a.lastErase)
+  }
+  const ring = (ctx: CanvasRenderingContext2D, p: Pt) => {
+    ctx.save(); ctx.strokeStyle = 'rgba(120,120,128,.9)'; ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1.2 / cfg.current.zoom
+    ctx.beginPath(); ctx.arc(p.x, p.y, cfg.current.tool.eraserSize / 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore()
+  }
+  const schedule = () => { raf.current ||= requestAnimationFrame(renderLive) }
+
+  const eraseAt = (p: Pt) => {
+    const a = act.current!
+    const t = cfg.current.tool
+    const r = t.eraserSize / 2
+    const from = a.lastErase ?? p
+    const n = Math.max(1, Math.ceil(Math.hypot(p.x - from.x, p.y - from.y) / Math.max(1, r / 2)))
+    let cur = a.erased ?? cfg.current.store.content
+    const before = cur
+    for (let i = 1; i <= n; i++) cur = eraseStep(cur, from.x + ((p.x - from.x) * i) / n, from.y + ((p.y - from.y) * i) / n, r, t.eraser, t.erHl)
+    a.lastErase = p
+    if (cur !== before) { a.erased = cur; cfg.current.store.live(() => cur) }
   }
 
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!drawing || active.current) return
+  /** Constrain to ruler edge (pen/highlighter starting next to the ruler). */
+  const rulerLine = (p: Pt) => {
+    const r = cfg.current.ruler
+    if (!r || r.pageId !== cfg.current.pageId) return undefined
+    const d = { x: Math.cos(r.angle), y: Math.sin(r.angle) }, nrm = { x: -d.y, y: d.x }
+    const rel = { x: p.x - r.x, y: p.y - r.y }
+    const along = rel.x * d.x + rel.y * d.y, off = rel.x * nrm.x + rel.y * nrm.y
+    if (Math.abs(along) > RULER_LEN / 2 + 30 || Math.abs(off) > RULER_H / 2 + 36) return undefined
+    const s = off >= 0 ? 1 : -1
+    return { o: { x: r.x + nrm.x * s * (RULER_H / 2), y: r.y + nrm.y * s * (RULER_H / 2) }, d }
+  }
+  const project = (p: Pt, l: { o: Pt; d: Pt }): Pt => {
+    const t = (p.x - l.o.x) * l.d.x + (p.y - l.o.y) * l.d.y
+    return { x: l.o.x + l.d.x * t, y: l.o.y + l.d.y * t }
+  }
+
+  const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    onActivate()
+    if (!drawing || act.current) return
     if (e.pointerType === 'pen') setPenSeen(true)
-    else if (penSeen && e.pointerType === 'touch') return // palm / finger → scroll
+    else if (penSeen && e.pointerType === 'touch') return
     if (e.pointerType === 'mouse' && e.button !== 0) return
     e.currentTarget.setPointerCapture(e.pointerId)
-    const { x, y } = toPage(e)
-    const a: ActiveGesture = { pointerId: e.pointerId, lastW: 0 }
-    active.current = a
-    if (tool === 'eraser') {
-      a.eraseBase = store.strokes
-      eraseAt(x, y)
+    const t = tool
+    const p = toPage(e)
+    const a: Gesture = { pointerId: e.pointerId, kind: 'draw', lastW: 0, lastT: performance.now(), lastP: p }
+    act.current = a
+    if (t.kind === 'eraser') { a.kind = 'erase'; a.base = store.content; eraseAt(p); schedule(); return }
+    if (t.kind === 'lasso') { a.kind = 'lasso'; a.lasso = [p]; onSelect(null); return }
+    const w = t.kind === 'pen' ? pointWeight(t.pen, t.opts, e.pointerType, e.pressure, 0, 0) : 1
+    a.lastW = w
+    a.filt = p
+    const id = newId()
+    if (t.kind === 'pen') {
+      a.line = rulerLine(p)
+      a.stroke = { id, tool: 'pen', pen: t.pen, opts: { ...t.opts }, color: t.color, width: t.width, points: [{ ...p, w }] }
+    } else if (t.kind === 'highlighter') {
+      a.line = rulerLine(p)
+      a.stroke = { id, tool: 'highlighter', color: t.color, width: t.width, points: [{ ...p, w: 1 }] }
+    } else if (t.kind === 'tape') {
+      a.stroke = { id, tool: 'shape', shape: 'tape', color: t.color, width: t.width, points: [{ ...p, w: 1 }, { ...p, w: 1 }] }
     } else {
-      a.lastW = factor(e, 0)
-      a.stroke = {
-        id: newStrokeId(),
-        tool: tool as 'pen' | 'highlighter',
-        color: COLOR_HEX[color] ?? color,
-        width: WIDTHS[tool as DrawTool][thickness],
-        points: [{ x, y, w: tool === 'pen' ? a.lastW : 1 }],
-      }
-      raf.current ||= requestAnimationFrame(renderLive)
+      a.stroke = { id, tool: 'shape', shape: t.shape, fill: t.fill, color: t.color, width: t.width, points: [{ ...p, w: 1 }, { ...p, w: 1 }] }
     }
+    schedule()
   }
 
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const a = active.current
-    if (!a || a.pointerId !== e.pointerId) return
-    // coalesced events = every sampled stylus point, not just one per frame
-    const evs = e.nativeEvent.getCoalescedEvents?.() ?? []
-    const list = evs.length ? evs : [e.nativeEvent]
-    for (const ev of list) {
-      const { x, y } = toPage(ev)
-      if (a.stroke) {
-        const pts = a.stroke.points
-        const last = pts[pts.length - 1]
-        if (Math.hypot(x - last.x, y - last.y) < 0.6) continue // drop jitter
-        a.lastW = factor(ev, a.lastW)
-        pts.push({ x, y, w: a.stroke.tool === 'pen' ? a.lastW : 1 })
-      } else eraseAt(x, y)
+  const armHold = (a: Gesture) => {
+    clearTimeout(a.hold)
+    if (!cfg.current.tool.autoShape || !a.stroke || a.stroke.tool === 'shape' || a.line) return
+    a.hold = setTimeout(() => {
+      const s = a.stroke
+      if (!s || act.current !== a || a.snapped) return
+      const r = recognize(s.points)
+      if (!r) return
+      a.snapped = true
+      a.stroke = { ...s, tool: 'shape', shape: r.shape, points: [{ ...r.a, w: 1 }, { ...r.b, w: 1 }], pen: undefined, opts: undefined }
+      schedule()
+    }, 550)
+  }
+
+  const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const a = act.current
+    if (!a) {
+      if (tool.kind === 'eraser' && e.pointerType !== 'touch') { // hover ring
+        const ctx = setup(liveRef.current!); ring(ctx, toPage(e))
+      }
+      return
     }
-    if (a.stroke) raf.current ||= requestAnimationFrame(renderLive)
+    if (a.pointerId !== e.pointerId) return
+    const evs = e.nativeEvent.getCoalescedEvents?.() ?? []
+    for (const ev of evs.length ? evs : [e.nativeEvent]) {
+      let p = toPage(ev)
+      if (a.kind === 'erase') { eraseAt(p); continue }
+      if (a.kind === 'lasso') {
+        if (tool.lassoMode === 'rect') { const s = a.lasso![0]; a.lasso = [s, { x: p.x, y: s.y }, p, { x: s.x, y: p.y }] }
+        else a.lasso!.push(p)
+        continue
+      }
+      const s = a.stroke!
+      if (s.tool === 'shape' && !a.snapped) { s.points[1] = { ...p, w: 1 }; continue }
+      if (a.snapped) { if (s.shape === 'line') s.points[1] = { ...p, w: 1 }; continue }
+      if (a.line) p = project(p, a.line)
+      else if (tool.stab > 0) { // stroke stabilisation: low-pass filter
+        const k = 1 - 0.88 * (tool.stab / 100)
+        a.filt = { x: a.filt!.x + (p.x - a.filt!.x) * k, y: a.filt!.y + (p.y - a.filt!.y) * k }
+        p = a.filt
+      }
+      const last = s.points[s.points.length - 1]
+      const d = Math.hypot(p.x - last.x, p.y - last.y)
+      if (d < 0.6) continue
+      const now = performance.now()
+      const speed = d / Math.max(1, now - a.lastT)
+      a.lastT = now
+      if (s.tool === 'pen') a.lastW = pointWeight(s.pen!, s.opts!, ev.pointerType, ev.pressure, speed, a.lastW)
+      s.points.push({ ...p, w: s.tool === 'pen' ? a.lastW : 1 })
+      a.lastP = p
+    }
+    if (a.kind !== 'lasso' || true) schedule()
+    if (a.stroke) armHold(a)
   }
 
   const finish = (e: React.PointerEvent<HTMLDivElement>) => {
-    const a = active.current
+    const a = act.current
     if (!a || a.pointerId !== e.pointerId) return
-    active.current = null
-    cancelAnimationFrame(raf.current)
-    raf.current = 0
-    if (a.stroke) store.add(a.stroke)
-    else if (a.erased && a.eraseBase) store.checkpoint(a.eraseBase)
+    act.current = null
+    clearTimeout(a.hold)
+    cancelAnimationFrame(raf.current); raf.current = 0
+    const st = cfg.current.store
+    if (a.kind === 'draw' && a.stroke) {
+      const s = a.stroke
+      if (s.tool === 'shape' && s.points.length === 2 && Math.hypot(s.points[1].x - s.points[0].x, s.points[1].y - s.points[0].y) < 2) { setup(liveRef.current!); return }
+      st.commit((c) => ({ ...c, strokes: [...c.strokes, s] }))
+    } else if (a.kind === 'erase') {
+      if (a.erased && a.base) st.checkpoint(a.base)
+      setup(liveRef.current!)
+    } else if (a.kind === 'lasso') {
+      const poly = a.lasso ?? []
+      setup(liveRef.current!)
+      if (poly.length < 3) return
+      const c = st.content, t = cfg.current.tool
+      const sel: Selection = { pageId: cfg.current.pageId, strokes: [], texts: [], images: [] }
+      if (t.lassoStrokes) for (const s of c.strokes) {
+        const pts = strokePts(s)
+        if (pts.filter((q) => inPoly(q, poly)).length >= Math.max(1, pts.length * 0.5)) sel.strokes.push(s.id)
+      }
+      if (t.lassoObjects) {
+        for (const i of c.images) if (inPoly({ x: i.x + i.w / 2, y: i.y + i.h / 2 }, poly)) sel.images.push(i.id)
+        for (const x of c.texts) { const m = measureText(x); if (inPoly({ x: x.x + m.w / 2, y: x.y + m.h / 2 }, poly)) sel.texts.push(x.id) }
+      }
+      onSelect(sel.strokes.length + sel.texts.length + sel.images.length ? sel : null)
+    }
   }
 
   return (
     <div
       className="absolute inset-0"
-      style={{
-        touchAction: penSeen ? 'pan-x pan-y pinch-zoom' : drawing ? 'none' : 'auto',
-        cursor: drawing ? 'crosshair' : 'default',
-        pointerEvents: drawing ? 'auto' : 'none',
-      }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={finish}
-      onPointerCancel={finish}
+      style={{ touchAction: penSeen ? 'pan-x pan-y pinch-zoom' : drawing ? 'none' : 'auto', cursor: drawing ? 'crosshair' : 'default', pointerEvents: drawing ? 'auto' : 'none' }}
+      onPointerDown={onDown} onPointerMove={onMove} onPointerUp={finish} onPointerCancel={finish}
+      onPointerLeave={() => { if (!act.current && tool.kind === 'eraser') setup(liveRef.current!) }}
     >
       <canvas ref={baseRef} className="absolute inset-0 h-full w-full" />
       <canvas ref={liveRef} className="pointer-events-none absolute inset-0 h-full w-full" />
     </div>
   )
-}
-
-const COLOR_HEX: Record<string, string> = {
-  black: '#1c1c1e',
-  blue: '#1f6fe5',
-  red: '#e5372e',
 }

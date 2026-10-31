@@ -1,41 +1,31 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       fontFamily: {
-        sans: [
-          '-apple-system',
-          'BlinkMacSystemFont',
-          '"SF Pro Text"',
-          '"Helvetica Neue"',
-          'Inter',
-          'system-ui',
-          'sans-serif',
-        ],
+        sans: ['"Founders Grotesk"', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', '"Helvetica Neue"', 'system-ui', 'sans-serif'],
       },
       colors: {
-        gn: {
-          // Goodnotes-style palette
-          canvas: '#d9dadc', // neutral gray behind the page
-          bar: '#f7f7f8', // flat toolbar surface
-          line: '#e2e3e5', // hairline separators
-          ink: '#2b2d31', // icon / text colour
-          mute: '#8a8d93', // inactive icon
-          active: '#e5effd', // selected tool pill background
-          accent: '#2f6df6', // selected tool tint
-          ruled: '#bcd3ee', // ruled line colour on paper
-          grid: '#d3dfee',
-        },
-        pen: {
-          black: '#1c1c1e',
-          blue: '#1f6fe5',
-          red: '#e5372e',
-        },
+        tab: 'var(--tab)',
+        bar: 'var(--bar)',
+        canvas: 'var(--canvas)',
+        pop: 'var(--pop)',
+        card: 'var(--card)',
+        ink: 'var(--ink)',
+        sub: 'var(--sub)',
+        hair: 'var(--hair)',
+        accent: 'var(--accent)',
+        chip: 'var(--chip)',
+        float: 'var(--float)',
+        danger: 'var(--danger)',
+        good: 'var(--good)',
       },
       boxShadow: {
-        page: '0 1px 2px rgba(0,0,0,.10), 0 6px 24px rgba(0,0,0,.14)',
-        bar: '0 1px 0 rgba(0,0,0,.04)',
+        page: '0 0 0 .5px rgba(0,0,0,.12), 0 1px 3px rgba(0,0,0,.14), 0 8px 24px rgba(0,0,0,.10)',
+        pop: '0 10px 40px rgba(0,0,0,.28), 0 0 0 .5px rgba(0,0,0,.08)',
+        pill: '0 2px 10px rgba(0,0,0,.14), 0 0 0 .5px rgba(0,0,0,.14)',
       },
     },
   },
