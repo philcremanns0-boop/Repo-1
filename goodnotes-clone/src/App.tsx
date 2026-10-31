@@ -48,6 +48,8 @@ export default function App() {
         onThickness={setThickness}
         onUndo={store.undo}
         onRedo={store.redo}
+        onClear={store.clear}
+        canClear={store.strokes.length > 0}
         canUndo={store.canUndo}
         canRedo={store.canRedo}
       />

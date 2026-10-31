@@ -40,18 +40,21 @@ interface History {
   future: Stroke[][]
 }
 
+const HISTORY_LIMIT = 100
+const cap = (past: Stroke[][]) => (past.length > HISTORY_LIMIT ? past.slice(-HISTORY_LIMIT) : past)
+
 export function useStrokeStore() {
   const [h, setH] = useState<History>({ present: [], past: [], future: [] })
 
   /** Add a finished stroke as one undoable step. */
   const add = useCallback((s: Stroke) => {
-    setH((p) => ({ present: [...p.present, s], past: [...p.past, p.present], future: [] }))
+    setH((p) => ({ present: [...p.present, s], past: cap([...p.past, p.present]), future: [] }))
   }, [])
   /** Replace without recording history (live preview while erasing). */
   const preview = useCallback((next: Stroke[]) => setH((p) => ({ ...p, present: next })), [])
   /** Record `base` as an undo step for the current present (end of erase). */
   const checkpoint = useCallback((base: Stroke[]) => {
-    setH((p) => ({ ...p, past: [...p.past, base], future: [] }))
+    setH((p) => ({ ...p, past: cap([...p.past, base]), future: [] }))
   }, [])
   const undo = useCallback(() => {
     setH((p) =>
@@ -64,6 +67,14 @@ export function useStrokeStore() {
     setH((p) =>
       p.future.length
         ? { present: p.future[0], past: [...p.past, p.present], future: p.future.slice(1) }
+        : p,
+    )
+  }, [])
+  /** Remove every stroke — a single undoable step (no-op when already empty). */
+  const clear = useCallback(() => {
+    setH((p) =>
+      p.present.length
+        ? { present: [], past: cap([...p.past, p.present]), future: [] }
         : p,
     )
   }, [])
@@ -83,6 +94,7 @@ export function useStrokeStore() {
     checkpoint,
     undo,
     redo,
+    clear,
     restyle,
     canUndo: h.past.length > 0,
     canRedo: h.future.length > 0,
@@ -187,6 +199,7 @@ interface ActiveGesture {
   eraseBase?: Stroke[]
   erased?: Stroke[]
   lastW: number
+  lastErase?: { x: number; y: number }
 }
 
 export default function NoteCanvas({ store, tool, color, thickness, width, height, zoom }: Props) {
@@ -226,6 +239,23 @@ export default function NoteCanvas({ store, tool, color, thickness, width, heigh
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.strokes, zoom, dpr, width, height])
 
+  // Ctrl/Cmd+Z = undo, Ctrl/Cmd+Shift+Z or Ctrl+Y = redo
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || (e.target as HTMLElement)?.isContentEditable) return
+      const k = e.key.toLowerCase()
+      if (k === 'z') {
+        e.preventDefault()
+        e.shiftKey ? cfg.current.store.redo() : cfg.current.store.undo()
+      } else if (k === 'y') {
+        e.preventDefault()
+        cfg.current.store.redo()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   const toPage = (e: { clientX: number; clientY: number }) => {
     const r = baseRef.current!.getBoundingClientRect()
     return { x: (e.clientX - r.left) / cfg.current.zoom, y: (e.clientY - r.top) / cfg.current.zoom }
@@ -245,14 +275,25 @@ export default function NoteCanvas({ store, tool, color, thickness, width, heigh
     return prev ? prev * 0.6 + target * 0.4 : target // low-pass for stable width
   }
 
+  /**
+   * Stroke eraser: delete every whole stroke touched by the eraser. The path
+   * between consecutive samples is interpolated so fast swipes can't skip a stroke.
+   */
   const eraseAt = (x: number, y: number) => {
     const a = active.current!
     const r = WIDTHS.eraser[cfg.current.thickness] / 2
-    const cur = a.erased ?? cfg.current.store.strokes
-    const next = cur.filter((s) => !hits(s, x, y, r))
-    if (next.length !== cur.length) {
-      a.erased = next
-      cfg.current.store.preview(next)
+    const from = a.lastErase ?? { x, y }
+    const steps = Math.max(1, Math.ceil(Math.hypot(x - from.x, y - from.y) / (r / 2)))
+    let cur = a.erased ?? cfg.current.store.strokes
+    for (let i = 1; i <= steps; i++) {
+      const px = from.x + ((x - from.x) * i) / steps
+      const py = from.y + ((y - from.y) * i) / steps
+      cur = cur.filter((s) => !hits(s, px, py, r))
+    }
+    a.lastErase = { x, y }
+    if (cur.length !== (a.erased ?? cfg.current.store.strokes).length) {
+      a.erased = cur
+      cfg.current.store.preview(cur)
     }
   }
 

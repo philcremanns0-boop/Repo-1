@@ -7,6 +7,7 @@ import {
   Redo2,
   Shapes,
   Sticker,
+  Trash2,
   Type,
   Undo2,
   ZoomIn,
@@ -56,6 +57,8 @@ interface Props {
   title?: string
   onUndo?: () => void
   onRedo?: () => void
+  onClear?: () => void
+  canClear?: boolean
   canUndo?: boolean
   canRedo?: boolean
 }
@@ -70,6 +73,8 @@ export default function Toolbar({
   title = 'Untitled Notebook',
   onUndo,
   onRedo,
+  onClear,
+  canClear,
   canUndo,
   canRedo,
 }: Props) {
@@ -100,6 +105,15 @@ export default function Toolbar({
           onClick={onRedo}
         >
           <Redo2 size={20} strokeWidth={1.75} />
+        </button>
+        <button
+          className={`tool-btn w-9 ${canClear ? '' : 'text-gn-mute opacity-50'}`}
+          aria-label="Clear page"
+          title="Clear page"
+          disabled={!canClear}
+          onClick={onClear}
+        >
+          <Trash2 size={19} strokeWidth={1.75} />
         </button>
       </div>
 
