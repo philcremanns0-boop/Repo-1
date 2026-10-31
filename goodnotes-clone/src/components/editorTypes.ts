@@ -20,4 +20,6 @@ export interface EditorProps {
   setRuler: (r: Ruler | null) => void
   colors: string[]
   onTextCreated: () => void
+  onLassoTap: (pageId: string, p: { x: number; y: number }, client: { x: number; y: number }) => void
+  toast: (m: string) => void
 }

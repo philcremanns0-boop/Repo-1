@@ -9,6 +9,7 @@ import { useT } from '../../context/Settings'
 type A = RefObject<HTMLElement | null>
 interface Base { anchor: A; open: boolean; onClose: () => void }
 export type Where = 'before' | 'after' | 'last'
+export type ExportFormat = 'pdf' | 'png' | 'goodnotes'
 
 /* ------------------------------ Add page ------------------------------ */
 export function AddPagePopover({ current, onAdd, onMoreTemplates, onChoose, ...b }: Base & {
@@ -102,12 +103,25 @@ export function MorePopover({ page, index, total, onBookmark, onCopy, onRotate, 
 
 /* ------------------------------ Share ------------------------------ */
 export function SharePopover({ onExport, onPrint, present, onPresent, onUnavailable, ...b }: Base & {
-  onExport: (all: boolean) => void; onPrint: (all: boolean) => void; present: boolean; onPresent: (v: boolean) => void; onUnavailable: () => void
+  onExport: (all: boolean, format: ExportFormat) => void; onPrint: (all: boolean) => void; present: boolean; onPresent: (v: boolean) => void; onUnavailable: () => void
 }) {
   const t = useT()
-  const [view, setView] = useState<'main' | 'print'>('main')
+  const [view, setView] = useState<'main' | 'print' | 'export'>('main')
+  const [all, setAll] = useState(false)
   useEffect(() => { if (!b.open) setView('main') }, [b.open])
   const H = ({ children }: { children: React.ReactNode }) => <div className="px-4 pb-1.5 pt-4 text-[18px] font-bold text-sub">{children}</div>
+  if (view === 'export') return (
+    <Popover {...b} width={370} align="right"><Push id="export" dir={1}>
+      <PopTitle left={<BackBtn onClick={() => setView('main')} />}>{t(all ? 'Alle exportieren' : 'Diese Seite exportieren')}</PopTitle>
+      <div className="px-4 pb-1.5 pt-2 text-[18px] font-bold text-sub">{t('Format')}</div>
+      <Group>
+        <Row icon={<FileDown size={22} />} sub={t('Seiten mit Handschrift als PDF')} onClick={() => { onExport(all, 'pdf'); b.onClose() }}>PDF</Row>
+        <Row icon={<ImageIcon size={22} />} sub={t('Eine PNG-Datei pro Seite')} onClick={() => { onExport(all, 'png'); b.onClose() }}>{t('Bild')}</Row>
+        {all && <Row icon={<Copy size={22} />} sub={t('Bearbeitbare Notizbuch-Datei')} onClick={() => { onExport(all, 'goodnotes'); b.onClose() }}>Goodnotes</Row>}
+      </Group>
+      <div className="h-4" />
+    </Push></Popover>
+  )
   if (view === 'print') return (
     <Popover {...b} width={370} align="right"><Push id="print" dir={1}>
       <PopTitle left={<BackBtn onClick={() => setView('main')} />}>{t('Drucken')}</PopTitle>
@@ -125,8 +139,8 @@ export function SharePopover({ onExport, onPrint, present, onPresent, onUnavaila
       </Group>
       <H>{t('Export')}</H>
       <Group>
-        <Row icon={<FileDown size={22} />} onClick={() => { onExport(false); b.onClose() }}>{t('Diese Seite exportieren')}</Row>
-        <Row icon={<FileDown size={22} />} onClick={() => { onExport(true); b.onClose() }}>{t('Alle exportieren')}</Row>
+        <Row icon={<FileDown size={22} />} chevron onClick={() => { setAll(false); setView('export') }}>{t('Diese Seite exportieren')}</Row>
+        <Row icon={<FileDown size={22} />} chevron onClick={() => { setAll(true); setView('export') }}>{t('Alle exportieren')}</Row>
         <Row icon={<Printer size={22} />} chevron onClick={() => setView('print')}>{t('Drucken')}</Row>
       </Group>
       <H>{t('Präsentationsmodus')}</H>

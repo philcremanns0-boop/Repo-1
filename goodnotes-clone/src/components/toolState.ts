@@ -31,6 +31,7 @@ export interface ToolPrefs {
   recent: string[]
   recentFonts: string[]
   lowLat: boolean
+  hlStraight: boolean
   spell: boolean
   mathSug: boolean
 }
@@ -51,7 +52,7 @@ export const DEFAULT_PREFS: ToolPrefs = {
   lassoMode: 'free', lassoStrokes: true, lassoObjects: true,
   laserColor: '#ff3b30', laserTrail: true,
   textStyle: DEFAULT_TEXT, pinText: false,
-  visibleTools: DEFAULT_TOOLS, visibleAcc: DEFAULT_ACC, recent: [], recentFonts: ['Chalkboard SE'], lowLat: false, spell: false, mathSug: false,
+  visibleTools: DEFAULT_TOOLS, visibleAcc: DEFAULT_ACC, recent: [], recentFonts: ['Chalkboard SE'], lowLat: false, hlStraight: false, spell: false, mathSug: false,
 }
 const KEY = 'gn:tools'
 export function loadPrefs(): ToolPrefs {
@@ -71,7 +72,7 @@ export function buildCanvasTool(tool: ToolId, p: ToolPrefs, readOnly: boolean): 
   const base: CanvasTool = {
     kind: 'none', color: p.colors[p.colorIdx[k]] ?? '#000', width: WIDTHS[k][p.thick[k]], pen: p.penType, opts: p.penOpts[p.penType], stab: p.stab,
     eraser: p.eraser, eraserSize: ERASER_SIZES[p.eraserSize], erFilter: p.erFilter, shape: p.shape, fill: p.fill, autoShape: p.autoShape,
-    lassoMode: p.lassoMode, lassoStrokes: p.lassoStrokes, lassoObjects: p.lassoObjects,
+    lassoMode: p.lassoMode, lassoStrokes: p.lassoStrokes, lassoObjects: p.lassoObjects, hlStraight: p.hlStraight,
   }
   if (readOnly) return base
   if (tool === 'pen') base.kind = p.penMode

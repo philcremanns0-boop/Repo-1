@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  drawStroke, hitStroke, inPoly, measureText, newId, pixelErase, pointWeight, recognize, strokePts,
+  drawStroke, hitStroke, inPoly, measureText, newId, pixelErase, pointWeight, recognize, recognizeShape, strokePts,
   type Content, type PenOpts, type PenType, type Pt, type Selection, type ShapeKind, type Stroke,
 } from '../lib/draw'
 import type { PageStore } from '../store/useNotebook'
@@ -21,6 +21,8 @@ export interface CanvasTool {
   lassoMode: 'free' | 'rect'
   lassoStrokes: boolean
   lassoObjects: boolean
+  /** highlighter draws straight lines (Goodnotes: 'Gerade Linie zeichnen') */
+  hlStraight: boolean
 }
 export interface Ruler { pageId: string; x: number; y: number; angle: number }
 export const RULER_LEN = 720
@@ -35,6 +37,8 @@ interface Props {
   height: number
   ruler: Ruler | null
   onSelect: (s: Selection | null) => void
+  /** lasso tap on empty space (Goodnotes shows 'Einfügen' there) */
+  onLassoTap?: (p: Pt, client: { x: number; y: number }) => void
   onActivate: () => void
 }
 interface Gesture {
@@ -52,6 +56,8 @@ interface Gesture {
   hold?: ReturnType<typeof setTimeout>
   snapped?: boolean
   line?: { o: Pt; d: Pt }
+  shapeTool?: boolean
+  straight?: boolean
 }
 
 const category = (s: Stroke): 'pen' | 'highlighter' | 'tape' => (s.tool === 'highlighter' ? 'highlighter' : s.tool === 'shape' && s.shape === 'tape' ? 'tape' : 'pen')
@@ -67,7 +73,7 @@ function eraseStep(c: Content, x: number, y: number, r: number, kind: CanvasTool
   return changed ? { ...c, strokes } : c
 }
 
-export default function NoteCanvas({ pageId, store, tool, zoom, width, height, ruler, onSelect, onActivate }: Props) {
+export default function NoteCanvas({ pageId, store, tool, zoom, width, height, ruler, onSelect, onActivate, onLassoTap }: Props) {
   const baseRef = useRef<HTMLCanvasElement>(null)
   const liveRef = useRef<HTMLCanvasElement>(null)
   const act = useRef<Gesture | null>(null)
@@ -147,7 +153,17 @@ export default function NoteCanvas({ pageId, store, tool, zoom, width, height, r
 
   const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
     onActivate()
-    if (!drawing || act.current) return
+    if (act.current) {
+      // a second finger turns the gesture into pinch / multi-finger tap: drop the stroke in progress
+      if (e.pointerType === 'touch' && act.current.pointerId !== e.pointerId) {
+        const a = act.current
+        act.current = null; clearTimeout(a.hold); cancelAnimationFrame(raf.current); raf.current = 0
+        if (a.kind === 'erase' && a.base) { const b = a.base; cfg.current.store.live(() => b) }
+        setup(liveRef.current!)
+      }
+      return
+    }
+    if (!drawing) return
     if (e.pointerType === 'pen') setPenSeen(true)
     else if (penSeen && e.pointerType === 'touch') return
     if (e.pointerType === 'mouse' && e.button !== 0) return
@@ -167,11 +183,14 @@ export default function NoteCanvas({ pageId, store, tool, zoom, width, height, r
       a.stroke = { id, tool: 'pen', pen: t.pen, opts: { ...t.opts }, color: t.color, width: t.width, points: [{ ...p, w }] }
     } else if (t.kind === 'highlighter') {
       a.line = rulerLine(p)
-      a.stroke = { id, tool: 'highlighter', color: t.color, width: t.width, points: [{ ...p, w: 1 }] }
+      a.straight = t.hlStraight && !a.line
+      a.stroke = { id, tool: 'highlighter', color: t.color, width: t.width, points: a.straight ? [{ ...p, w: 1 }, { ...p, w: 1 }] : [{ ...p, w: 1 }] }
     } else if (t.kind === 'tape') {
       a.stroke = { id, tool: 'shape', shape: 'tape', color: t.color, width: t.width, points: [{ ...p, w: 1 }, { ...p, w: 1 }] }
     } else {
-      a.stroke = { id, tool: 'shape', shape: t.shape, fill: t.fill, color: t.color, width: t.width, points: [{ ...p, w: 1 }, { ...p, w: 1 }] }
+      // Shapes tool: draw freehand, recognised into a clean shape on lift (Goodnotes behaviour)
+      a.shapeTool = true
+      a.stroke = { id, tool: 'pen', pen: 'ballpoint', opts: { sharp: 0, press: 0, round: 0, speed: false }, color: t.color, width: t.width, points: [{ ...p, w: 1 }] }
     }
     schedule()
   }
@@ -209,6 +228,7 @@ export default function NoteCanvas({ pageId, store, tool, zoom, width, height, r
         continue
       }
       const s = a.stroke!
+      if (a.straight) { s.points[1] = { ...p, w: 1 }; continue }
       if (s.tool === 'shape' && !a.snapped) { s.points[1] = { ...p, w: 1 }; continue }
       if (a.snapped) { if (s.shape === 'line') s.points[1] = { ...p, w: 1 }; continue }
       if (a.line) p = project(p, a.line)
@@ -239,7 +259,11 @@ export default function NoteCanvas({ pageId, store, tool, zoom, width, height, r
     cancelAnimationFrame(raf.current); raf.current = 0
     const st = cfg.current.store
     if (a.kind === 'draw' && a.stroke) {
-      const s = a.stroke
+      let s = a.stroke
+      if (a.shapeTool) {
+        const r = recognizeShape(s.points)
+        if (r) s = { id: s.id, tool: 'shape', shape: r.shape, points: r.points, color: s.color, width: s.width, fill: cfg.current.tool.fill }
+      }
       if (s.tool === 'shape' && s.points.length === 2 && Math.hypot(s.points[1].x - s.points[0].x, s.points[1].y - s.points[0].y) < 2) { setup(liveRef.current!); return }
       st.commit((c) => ({ ...c, strokes: [...c.strokes, s] }))
     } else if (a.kind === 'erase') {
@@ -248,6 +272,8 @@ export default function NoteCanvas({ pageId, store, tool, zoom, width, height, r
     } else if (a.kind === 'lasso') {
       const poly = a.lasso ?? []
       setup(liveRef.current!)
+      const pxs = poly.map((q) => q.x), pys = poly.map((q) => q.y)
+      if (poly.length && Math.max(...pxs) - Math.min(...pxs) < 6 && Math.max(...pys) - Math.min(...pys) < 6) { onLassoTap?.(poly[0], { x: e.clientX, y: e.clientY }); return }
       if (poly.length < 3) return
       const c = st.content, t = cfg.current.tool
       const sel: Selection = { pageId: cfg.current.pageId, strokes: [], texts: [], images: [] }

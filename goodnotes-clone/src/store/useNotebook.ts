@@ -26,9 +26,10 @@ let uid = 0
 export const newPageId = () => `p_${Date.now().toString(36)}_${(uid++).toString(36)}`
 const blankPage = (m: PageMeta): PageState => ({ id: newPageId(), ...m, content: emptyContent(), bookmarked: false, past: [], future: [] })
 
-export function createNotebookData(id: string, title: string, meta: PageMeta): NotebookData {
-  const p = blankPage(meta)
-  return { id, title, pages: [{ id: p.id, size: p.size, template: p.template, color: p.color, content: p.content, bookmarked: false }], currentId: p.id, outline: [] }
+export function createNotebookData(id: string, title: string, meta: PageMeta, bgs?: Page['bg'][]): NotebookData {
+  const list = bgs?.length ? bgs : [undefined]
+  const pages: Page[] = list.map((bg) => { const p = blankPage(meta); return { id: p.id, size: p.size, template: bg ? 'blank' : p.template, color: bg ? 'white' : p.color, content: p.content, bookmarked: false, bg } })
+  return { id, title, pages, currentId: pages[0].id, outline: [] }
 }
 export function saveNotebookData(d: NotebookData): boolean {
   try { localStorage.setItem(nbKey(d.id), JSON.stringify({ v: 2, ...d })); return true } catch { return false }
@@ -47,6 +48,7 @@ export function loadNotebookData(id: string): NotebookData | null {
       id: typeof p.id === 'string' ? p.id : newPageId(),
       size: SIZES[p.size as SizeId] ? p.size : 'a4p', template: p.template ?? 'wide', color: p.color ?? 'white',
       bookmarked: !!p.bookmarked,
+      bg: p.bg && typeof p.bg.key === 'string' ? { key: p.bg.key, w: +p.bg.w, h: +p.bg.h } : undefined,
       content: {
         strokes: Array.isArray(p.content?.strokes) ? p.content.strokes.filter(isStroke) : [],
         texts: Array.isArray(p.content?.texts) ? p.content.texts : [],
@@ -101,13 +103,14 @@ export function useNotebook(id: string, fallbackTitle: string, onMeta: (m: { pag
       return next
     }),
     toggleBookmark: (pid: string) => upd(pid, (p) => ({ ...p, bookmarked: !p.bookmarked })),
-    addPage: (where: 'before' | 'after' | 'last', meta?: Partial<PageMeta>, content?: Content) => {
+    addPage: (where: 'before' | 'after' | 'last', meta?: Partial<PageMeta>, content?: Content, bg?: Page['bg']) => {
       const nid = newPageId()
       setState((s) => {
         const i = s.pages.findIndex((p) => p.id === s.currentId)
         const base = s.pages[i] ?? s.pages[s.pages.length - 1]
         const np: PageState = { ...blankPage({ size: meta?.size ?? base.size, template: meta?.template ?? base.template, color: meta?.color ?? base.color }), id: nid }
         if (content) np.content = content
+        if (bg) np.bg = bg
         const at = where === 'before' ? Math.max(0, i) : where === 'after' ? i + 1 : s.pages.length
         return { ...s, pages: [...s.pages.slice(0, at), np, ...s.pages.slice(at)], currentId: nid }
       })

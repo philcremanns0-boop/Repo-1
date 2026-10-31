@@ -1,7 +1,7 @@
 /* Vector model + rendering helpers shared by canvas, thumbnails and export. */
 
 export type PenType = 'fountain' | 'ballpoint' | 'brush'
-export type ShapeKind = 'line' | 'arrow' | 'rect' | 'ellipse' | 'triangle' | 'diamond' | 'tape'
+export type ShapeKind = 'line' | 'arrow' | 'rect' | 'ellipse' | 'triangle' | 'diamond' | 'tape' | 'poly'
 export interface Pt { x: number; y: number }
 export interface StrokePoint extends Pt { w: number }
 /** sharp/press: 0-100, round: 0-3, speed: width follows pen speed */
@@ -66,6 +66,7 @@ export function shapeOutline(s: Stroke): Pt[] {
       const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, rx = (x1 - x0) / 2, ry = (y1 - y0) / 2
       return Array.from({ length: 49 }, (_, i) => ({ x: cx + rx * Math.cos((i / 48) * Math.PI * 2), y: cy + ry * Math.sin((i / 48) * Math.PI * 2) }))
     }
+    case 'poly': return [...s.points.map((p) => ({ x: p.x, y: p.y })), { x: s.points[0].x, y: s.points[0].y }]
     default: return [{ x: a.x, y: a.y }, { x: b.x, y: b.y }]
   }
 }
@@ -232,6 +233,60 @@ export function recognize(pts: Pt[]): { shape: 'line' | 'ellipse'; a: Pt; b: Pt 
     const mean = rs.reduce((q, v) => q + v, 0) / rs.length
     const sd = Math.sqrt(rs.reduce((q, v) => q + (v - mean) ** 2, 0) / rs.length)
     if (sd < 0.16 && mean > 0.8 && mean < 1.2) return { shape: 'ellipse', a: { x: x0, y: y0 }, b: { x: x1, y: y1 } }
+  }
+  return null
+}
+
+/* ------------------------------ shape tool recognition ------------------------------ */
+
+function rdp(pts: Pt[], eps: number): Pt[] {
+  if (pts.length < 3) return pts
+  const a = pts[0], b = pts[pts.length - 1]
+  let idx = 0, dmax = 0
+  for (let i = 1; i < pts.length - 1; i++) { const d = distToSeg(pts[i].x, pts[i].y, a, b); if (d > dmax) { dmax = d; idx = i } }
+  if (dmax <= eps) return [a, b]
+  return [...rdp(pts.slice(0, idx + 1), eps).slice(0, -1), ...rdp(pts.slice(idx), eps)]
+}
+
+/**
+ * Shapes tool (Goodnotes behaviour): a freehand stroke is replaced by the clean shape it resembles –
+ * line, circle / ellipse, triangle, rectangle or polygon. Returns null when nothing fits (stroke is kept as ink).
+ */
+export function recognizeShape(pts: Pt[]): Pick<Stroke, 'shape' | 'points'> | null {
+  if (pts.length < 4) return null
+  const P = (p: Pt): StrokePoint => ({ x: p.x, y: p.y, w: 1 })
+  const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y)
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys)
+  const diag = Math.hypot(x1 - x0, y1 - y0)
+  if (diag < 12) return null
+  let len = 0
+  for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y)
+  const a = pts[0], b = pts[pts.length - 1], gap = Math.hypot(b.x - a.x, b.y - a.y)
+  if (gap / len > 0.9) return { shape: 'line', points: [P(a), P(b)] }
+  const closed = gap < Math.max(24, diag * 0.28)
+  if (!closed) return null
+  // polygon test first: few straight edges
+  const loop = [...pts, pts[0]]
+  let corners = rdp(loop, diag * 0.07).slice(0, -1)
+  // merge vertices that are very close
+  corners = corners.filter((p, i) => i === 0 || Math.hypot(p.x - corners[i - 1].x, p.y - corners[i - 1].y) > diag * 0.12)
+  if (corners.length > 2 && Math.hypot(corners[0].x - corners[corners.length - 1].x, corners[0].y - corners[corners.length - 1].y) < diag * 0.12) corners.pop()
+  // ellipse fit quality
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, rx = (x1 - x0) / 2 || 1, ry = (y1 - y0) / 2 || 1
+  const rs = pts.map((p) => Math.hypot((p.x - cx) / rx, (p.y - cy) / ry))
+  const mean = rs.reduce((q, v) => q + v, 0) / rs.length
+  const sd = Math.sqrt(rs.reduce((q, v) => q + (v - mean) ** 2, 0) / rs.length)
+  const roundish = sd < 0.11
+  if (corners.length >= 3 && corners.length <= 6 && !(roundish && corners.length > 4)) {
+    if (corners.length === 4) {
+      const axis = corners.every((p, i) => { const q = corners[(i + 1) % 4]; const ang = Math.abs(Math.atan2(q.y - p.y, q.x - p.x)) % (Math.PI / 2); return Math.min(ang, Math.PI / 2 - ang) < 0.2 })
+      if (axis) return { shape: 'rect', points: [P({ x: x0, y: y0 }), P({ x: x1, y: y1 })] }
+    }
+    return { shape: 'poly', points: corners.map(P) }
+  }
+  if (sd < 0.2) {
+    if (Math.abs(rx - ry) / Math.max(rx, ry) < 0.14) { const r = (rx + ry) / 2; return { shape: 'ellipse', points: [P({ x: cx - r, y: cy - r }), P({ x: cx + r, y: cy + r })] } }
+    return { shape: 'ellipse', points: [P({ x: x0, y: y0 }), P({ x: x1, y: y1 })] }
   }
   return null
 }

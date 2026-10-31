@@ -1,6 +1,8 @@
+import { pageDims } from './pageDims'
 import { drawStroke, type Content, type TextObj } from './draw'
 import { fontStack } from './fonts'
-import { PAPER_COLORS, SIZES, paperUri } from './paper'
+import { blobUrl } from './blobstore'
+import { PAPER_COLORS, paperUri } from './paper'
 import type { Page } from '../store/types'
 
 const cache = new Map<string, Promise<HTMLImageElement>>()
@@ -45,13 +47,14 @@ export async function drawContent(ctx: CanvasRenderingContext2D, c: Content) {
 }
 
 export async function renderPage(page: Page, scale: number, withPaper = true): Promise<HTMLCanvasElement> {
-  const { w, h } = SIZES[page.size]
+  const { w, h } = pageDims(page)
   const cv = document.createElement('canvas')
   cv.width = Math.max(1, Math.round(w * scale)); cv.height = Math.max(1, Math.round(h * scale))
   const ctx = cv.getContext('2d')!
   ctx.scale(scale, scale)
   ctx.fillStyle = PAPER_COLORS[page.color].bg; ctx.fillRect(0, 0, w, h)
-  if (withPaper && page.template !== 'blank') { try { ctx.drawImage(await loadImg(paperUri(page.template, page.color, w, h)), 0, 0, w, h) } catch { /* ignore */ } }
+  if (page.bg) { const u = await blobUrl(page.bg.key); if (u) { try { ctx.drawImage(await loadImg(u), 0, 0, w, h) } catch { /* ignore */ } } }
+  else if (withPaper && page.template !== 'blank') { try { ctx.drawImage(await loadImg(paperUri(page.template, page.color, w, h)), 0, 0, w, h) } catch { /* ignore */ } }
   await drawContent(ctx, page.content)
   return cv
 }
@@ -75,7 +78,7 @@ export async function buildPdf(pages: Page[]): Promise<Blob> {
   obj(1, '<< /Type /Catalog /Pages 2 0 R >>')
   obj(2, `<< /Type /Pages /Kids [${pages.map((_, i) => `${3 + i * 3} 0 R`).join(' ')}] /Count ${n} >>`)
   for (let i = 0; i < n; i++) {
-    const { w, h } = SIZES[pages[i].size]
+    const { w, h } = pageDims(pages[i])
     const cv = await renderPage(pages[i], 1.5)
     const jpg = Uint8Array.from(atob(cv.toDataURL('image/jpeg', 0.9).split(',')[1]), (c) => c.charCodeAt(0))
     const pw = (w * 0.75).toFixed(2), ph = (h * 0.75).toFixed(2)

@@ -1,7 +1,8 @@
+import { pageDims } from '../lib/pageDims'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Minus, Plus } from './glyphs'
 import { motion, useAnimate } from 'framer-motion'
-import { SIZES } from '../lib/paper'
+
 import type { Notebook } from '../store/useNotebook'
 import PageView from './PageView'
 import { LaserLayer } from './Widgets'
@@ -36,9 +37,11 @@ interface Props {
   laser: { on: boolean; color: string; trail: boolean; size: number }
   topInset: number
   onZoomValue: (z: number) => void
+  onUndo: () => void
+  onRedo: () => void
 }
 
-export default function DocumentView({ nb, ed, zoom, setZoom, scrollTo, laser, topInset, onZoomValue }: Props) {
+export default function DocumentView({ nb, ed, zoom, setZoom, scrollTo, laser, topInset, onZoomValue, onUndo, onRedo }: Props) {
   const { scroll } = useSettings()
   const box = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ w: 800, h: 600 })
@@ -51,7 +54,7 @@ export default function DocumentView({ nb, ed, zoom, setZoom, scrollTo, laser, t
   }, [])
   const horizontal = scroll === 'horizontal'
   const pg = nb.page
-  const { w: pw, h: ph } = SIZES[pg.size]
+  const { w: pw, h: ph } = pageDims(pg)
   const fitH = (size.h - topInset - 40) / ph
   const fit = Math.max(0.2, Math.min(1.25, horizontal ? fitH : Math.min((size.w - 48) / pw, fitH)))
   const z = zoom ?? fit
@@ -91,12 +94,64 @@ export default function DocumentView({ nb, ed, zoom, setZoom, scrollTo, laser, t
   }, [z, setZoom])
 
   const known = useRef(new Set(nb.pages.map((p) => p.id)))
+  /* ---- iPad touch gestures: pinch zoom, 2-finger tap = undo, 3-finger tap = redo ---- */
+  const g = useRef({ pts: new Map<number, { x: number; y: number; x0: number; y0: number }>(), max: 0, t0: 0, moved: false, pinch: null as null | { d0: number; z0: number } })
+  const anchor = useRef<null | { cx: number; cy: number; mx: number; my: number; z: number }>(null)
+  const zRef = useRef(z); zRef.current = z
+  const cbs = useRef({ onUndo, onRedo, setZoom }); cbs.current = { onUndo, onRedo, setZoom }
+  useEffect(() => {
+    const el = box.current!
+    const st = g.current
+    const dist = () => { const [a, b] = [...st.pts.values()]; return Math.hypot(a.x - b.x, a.y - b.y) }
+    const mid = () => { const [a, b] = [...st.pts.values()]; return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } }
+    const down = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch') return
+      if (st.pts.size === 0) { st.max = 0; st.t0 = performance.now(); st.moved = false }
+      st.pts.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY })
+      st.max = Math.max(st.max, st.pts.size)
+      if (st.pts.size === 2) st.pinch = { d0: dist(), z0: zRef.current }
+    }
+    const move = (e: PointerEvent) => {
+      const p = st.pts.get(e.pointerId)
+      if (!p) return
+      p.x = e.clientX; p.y = e.clientY
+      if (Math.hypot(p.x - p.x0, p.y - p.y0) > 10) st.moved = true
+      if (st.pts.size === 2 && st.pinch) {
+        e.preventDefault()
+        const nz = Math.min(4, Math.max(0.25, st.pinch.z0 * (dist() / st.pinch.d0)))
+        const r = el.getBoundingClientRect(), m = mid()
+        anchor.current = { cx: (el.scrollLeft + m.x - r.left) / zRef.current, cy: (el.scrollTop + m.y - r.top) / zRef.current, mx: m.x - r.left, my: m.y - r.top, z: nz }
+        cbs.current.setZoom(nz)
+      }
+    }
+    const up = (e: PointerEvent) => {
+      if (!st.pts.delete(e.pointerId)) return
+      if (st.pts.size < 2) st.pinch = null
+      if (st.pts.size === 0 && !st.moved && performance.now() - st.t0 < 350) {
+        if (st.max === 2) cbs.current.onUndo()
+        else if (st.max === 3) cbs.current.onRedo()
+      }
+    }
+    el.addEventListener('pointerdown', down, true)
+    window.addEventListener('pointermove', move, { capture: true, passive: false })
+    window.addEventListener('pointerup', up, true)
+    window.addEventListener('pointercancel', up, true)
+    return () => { el.removeEventListener('pointerdown', down, true); window.removeEventListener('pointermove', move, true); window.removeEventListener('pointerup', up, true); window.removeEventListener('pointercancel', up, true) }
+  }, [])
+  // keep the pinch midpoint fixed while zooming
+  useLayoutEffect(() => {
+    const a = anchor.current, el = box.current
+    if (!a || !el || Math.abs(a.z - z) > 1e-6) return
+    el.scrollLeft = a.cx * z - a.mx; el.scrollTop = a.cy * z - a.my
+    anchor.current = null
+  }, [z])
+
   const full: EditorProps = { ...ed, zoom: z }
   const ids = nb.pages.map((p) => p.id)
   return (
     <div className="relative min-h-0 flex-1">
       <div ref={box} onScroll={onScroll} className={`absolute inset-0 bg-canvas ${horizontal ? 'overflow-x-auto overflow-y-hidden' : 'overflow-y-auto overflow-x-auto'}`}
-        style={{ scrollSnapType: horizontal ? 'x proximity' : undefined }}>
+        style={{ scrollSnapType: horizontal ? 'x proximity' : undefined, touchAction: 'pan-x pan-y' }}>
         <div className={`flex min-h-full min-w-full gap-6 ${horizontal ? 'w-max flex-row items-center px-10' : 'w-max flex-col items-center px-6 pb-24'}`} style={{ paddingTop: topInset + 8, paddingBottom: horizontal ? 24 : 96 }}>
           {nb.pages.map((p) => (
             <PageSlot key={p.id} fresh={!known.current.has(p.id)} flash={scrollTo?.id === p.id ? scrollTo.n : 0} horizontal={horizontal}>

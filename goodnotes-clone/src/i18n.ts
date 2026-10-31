@@ -67,6 +67,11 @@ export const EN: Record<string, string> = {
   'Ordner gelöscht – Inhalt wurde eine Ebene nach oben verschoben': 'Folder deleted – its content moved up one level', 'Dieser Ordner ist leer': 'This folder is empty',
   'Erstelle ein Notizbuch mit Umschlag und Papiervorlage oder lege einen farbigen Ordner an.': 'Create a notebook with a cover and paper template, or add a coloured folder.', 'Listenansicht': 'List view', 'Rasteransicht': 'Grid view', 'Zurück': 'Back',
   'Werkzeugleiste': 'Toolbar', 'Angedockt': 'Docked', 'Schwebend': 'Floating',
+  'PDF wird importiert …': 'Importing PDF …', 'Seite importiert': 'page imported', 'Seiten importiert': 'pages imported', 'Bitte eine PDF-Datei wählen': 'Please choose a PDF file',
+  'Notizbuch importiert': 'Notebook imported', 'Noch keine Favoriten': 'No favourites yet', 'Gerade Linie zeichnen': 'Draw straight line', 'Vieleck': 'Polygon',
+  'Zeichne eine Form – Linie, Kreis, Ellipse, Dreieck, Rechteck oder Vieleck. Sie wird beim Absetzen automatisch geglättet.': 'Draw a shape – line, circle, ellipse, triangle, rectangle or polygon. It is cleaned up automatically when you lift the pen.',
+  'Kopieren': 'Copy', 'Ausschneiden': 'Cut', 'Einfügen': 'Paste', 'Kopiert': 'Copied', 'Screenshot': 'Screenshot', 'Größe ändern': 'Resize', 'Drehen': 'Rotate',
+  'Format': 'Format', 'Seiten mit Handschrift als PDF': 'Pages with handwriting as PDF', 'Eine PNG-Datei pro Seite': 'One PNG file per page', 'Bearbeitbare Notizbuch-Datei': 'Editable notebook file',
   // sidebar & library
   'Seiten': 'Pages', 'Gliederungen': 'Outlines', 'Audio': 'Audio', 'Favoriten': 'Favourites', 'Favorit': 'Favourite', 'Seitenmenü': 'Page menu', 'Nach oben': 'Move up', 'Nach unten': 'Move down', 'Seite löschen': 'Delete page',
   'Gliederungen – Übersichten über deine Dokumente': 'Outlines – overviews of your documents',

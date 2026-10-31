@@ -1,3 +1,4 @@
+import { pageDims } from '../lib/pageDims'
 import { useEffect, useRef } from 'react'
 import { paperStyle, SIZES, type PaperColor, type SizeId, type TemplateId } from '../lib/paper'
 import { renderPage } from '../lib/export'
@@ -10,7 +11,7 @@ export function PaperThumb({ template, color, size = 'a4p', className = '', styl
 
 /** Page thumbnail: paper + ink/objects rendered to a small canvas. */
 export function PageThumb({ page, className = '' }: { page: Page; className?: string }) {
-  const { w, h } = SIZES[page.size]
+  const { w, h } = pageDims(page)
   const cv = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
     let cancel = false

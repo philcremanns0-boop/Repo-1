@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react'
 import { COVERS, type CoverId } from '../lib/covers'
 import { createNotebookData, nbKey, saveNotebookData } from './useNotebook'
-import type { Folder, NbMeta, NewNotebookOpts } from './types'
+import type { Folder, NbMeta, NewNotebookOpts, PageBg } from './types'
 
-export type View = 'home' | 'shared' | 'trash' | 'cloud' | string // string = notebook id
+export type View = 'home' | 'favorites' | 'shared' | 'trash' | 'cloud' | string // string = notebook id
 export type Layout = 'grid' | 'list'
 interface Lib { notebooks: NbMeta[]; folders: Folder[]; tabs: string[]; view: View; folder: string | null; layout: Layout }
 const KEY = 'gn:library'
@@ -20,14 +20,14 @@ function load(): Lib {
 const persist = (l: Lib) => { try { localStorage.setItem(KEY, JSON.stringify(l)) } catch { /* ignore */ } }
 
 export function useLibrary() {
-  const [lib, setLib] = useState<Lib>(() => { const l = load(); return l.view !== 'home' && !l.notebooks.some((n) => n.id === l.view) && !['shared', 'trash', 'cloud'].includes(l.view) ? { ...l, view: 'home' } : l })
+  const [lib, setLib] = useState<Lib>(() => { const l = load(); return l.view !== 'home' && !l.notebooks.some((n) => n.id === l.view) && !['favorites', 'shared', 'trash', 'cloud'].includes(l.view) ? { ...l, view: 'home' } : l })
   const set = useCallback((fn: (l: Lib) => Lib) => setLib((l) => { const n = fn(l); persist(n); return n }), [])
 
-  const create = useCallback((o: NewNotebookOpts) => {
+  const create = useCallback((o: NewNotebookOpts, bgs?: PageBg[]) => {
     const id = `nb_${Date.now().toString(36)}`
-    saveNotebookData(createNotebookData(id, o.title, o))
+    saveNotebookData(createNotebookData(id, o.title, o, bgs))
     set((l) => {
-      const meta: NbMeta = { id, title: o.title, cover: o.cover, coverColor: o.coverColor, created: Date.now(), updated: Date.now(), pages: 1, folder: o.folder ?? l.folder }
+      const meta: NbMeta = { id, title: o.title, cover: o.cover, coverColor: o.coverColor, created: Date.now(), updated: Date.now(), pages: bgs?.length || 1, folder: o.folder ?? l.folder }
       return { ...l, notebooks: [meta, ...l.notebooks], tabs: [...l.tabs, id], view: id }
     })
     return id
@@ -53,6 +53,7 @@ export function useLibrary() {
   }), [set])
   const moveNotebook = useCallback((id: string, folder: string | null) => set((l) => ({ ...l, notebooks: l.notebooks.map((n) => (n.id === id ? { ...n, folder } : n)) })), [set])
   const enterFolder = useCallback((folder: string | null) => set((l) => ({ ...l, folder, view: 'home' })), [set])
+  const toggleStar = useCallback((id: string) => set((l) => ({ ...l, notebooks: l.notebooks.map((n) => (n.id === id ? { ...n, starred: !n.starred } : n)) })), [set])
   const setLayout = useCallback((layout: Layout) => set((l) => ({ ...l, layout })), [set])
 
   const backup = useCallback(() => {
@@ -60,6 +61,11 @@ export function useLibrary() {
     lib.notebooks.forEach((n) => { data[n.id] = localStorage.getItem(nbKey(n.id)) })
     return JSON.stringify({ app: 'goodnotes-clone', v: 2, notebooks: lib.notebooks, folders: lib.folders, data })
   }, [lib.notebooks, lib.folders])
+  /** Single notebook as a backup file (re-importable through 'Backup wiederherstellen' / Import). */
+  const backupOne = useCallback((id: string) => {
+    const n = lib.notebooks.find((x) => x.id === id)
+    return JSON.stringify({ app: 'goodnotes-clone', v: 2, notebooks: n ? [{ ...n, folder: null }] : [], folders: [], data: { [id]: localStorage.getItem(nbKey(id)) } })
+  }, [lib.notebooks])
   const restoreBackup = useCallback((json: string) => {
     const b = JSON.parse(json)
     if (b?.app !== 'goodnotes-clone' || !Array.isArray(b.notebooks)) throw new Error('bad backup')
@@ -70,6 +76,6 @@ export function useLibrary() {
       folders: [...(Array.isArray(b.folders) ? (b.folders as Folder[]).filter((f) => !l.folders.some((m) => m.id === f.id)) : []), ...l.folders],
     }))
   }, [set])
-  return { ...lib, create, open, close, go, patch, trash, restore, purge, createFolder, patchFolder, deleteFolder, moveNotebook, enterFolder, setLayout, backup, restoreBackup, defaultCover: COVERS[0].id as CoverId }
+  return { ...lib, create, open, close, go, patch, trash, restore, purge, createFolder, patchFolder, toggleStar, deleteFolder, moveNotebook, enterFolder, setLayout, backup, backupOne, restoreBackup, defaultCover: COVERS[0].id as CoverId }
 }
 export type Library = ReturnType<typeof useLibrary>

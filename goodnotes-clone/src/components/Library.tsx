@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ChevronDown, ChevronLeft, Cloud, Download, Folder as FolderIcon, FolderPlus, Info, LayoutGrid, List as ListIcon, NotebookPen, Plus, Settings, Trash2, Upload, User } from './glyphs'
+import { ChevronDown, ChevronLeft, Import, Star, Cloud, Download, Folder as FolderIcon, FolderPlus, Info, LayoutGrid, List as ListIcon, NotebookPen, Plus, Settings, Trash2, Upload, User } from './glyphs'
 import type { Library as Lib } from '../store/useLibrary'
 import type { Folder, NbMeta } from '../store/types'
 import { coverUri } from '../lib/covers'
@@ -11,6 +11,7 @@ import { FolderGlyph } from './FolderGlyph'
 import { GoodnotesLogo } from './Logo'
 import FolderSheet, { type FolderForm } from './sheets/FolderSheet'
 import { useSettings, useT } from '../context/Settings'
+import { importPdf, isPdf } from '../lib/files'
 
 const fmtDate = (ts: number, lang: string) => {
   const d = new Date(ts), now = new Date()
@@ -20,7 +21,7 @@ const fmtDate = (ts: number, lang: string) => {
 const Pill = ({ children }: { children: React.ReactNode }) => <div className="flex items-center rounded-full border border-hair bg-float px-1 shadow-pill">{children}</div>
 type Menu = { kind: 'nb' | 'folder'; id: string }
 
-export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () => void; onToast: (m: string) => void }) {
+export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () => void; onToast: (m: string, persistent?: boolean) => void }) {
   const t = useT()
   const { lang } = useSettings()
   const [side, setSide] = useState(false)
@@ -36,18 +37,31 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
   const plusBtn = useRef<HTMLButtonElement>(null)
   const menuAnchor = useRef<HTMLElement | null>(null)
   const file = useRef<HTMLInputElement>(null)
+  const pdfIn = useRef<HTMLInputElement>(null)
+  const importFile = async (f: File | undefined) => {
+    if (!f) return
+    if (f.name.endsWith('.json')) { try { lib.restoreBackup(await f.text()); onToast(t('Notizbuch importiert')) } catch { onToast(t('Ungültige Backup-Datei')) } return }
+    if (!isPdf(f)) { onToast(t('Bitte eine PDF-Datei wählen')); return }
+    try {
+      onToast(t('PDF wird importiert …'), true)
+      const bgs = await importPdf(f, (d, n) => onToast(`${t('PDF wird importiert …')} ${d}/${n}`, true))
+      lib.create({ title: f.name.replace(/\.pdf$/i, ''), template: 'blank', color: 'white', size: 'a4p', cover: 'hell', coverColor: '#02BDE4' }, bgs)
+      onToast(`${bgs.length} ${t(bgs.length === 1 ? 'Seite importiert' : 'Seiten importiert')}`)
+    } catch { onToast(t('Datei konnte nicht gelesen werden')) }
+  }
 
   const cur = lib.folder
   const curFolder = lib.folders.find((f) => f.id === cur)
-  const folders = lib.folders.filter((f) => f.parent === cur)
-  const nbs = lib.notebooks.filter((n) => !n.deleted && (n.folder ?? null) === cur)
+  const fav = lib.view === 'favorites'
+  const folders = fav ? [] : lib.folders.filter((f) => f.parent === cur)
+  const nbs = lib.notebooks.filter((n) => !n.deleted && (fav ? n.starred : (n.folder ?? null) === cur))
   const trashed = lib.notebooks.filter((n) => n.deleted)
   const v = lib.view === 'shared' || lib.view === 'trash' || lib.view === 'cloud' ? lib.view : 'home'
-  const title = v === 'home' ? (curFolder?.name ?? t('Dokumente')) : t(v === 'shared' ? 'Geteilt' : v === 'trash' ? 'Papierkorb' : 'Cloud & Backup')
+  const title = fav ? t('Favoriten') : v === 'home' ? (curFolder?.name ?? t('Dokumente')) : t(v === 'shared' ? 'Geteilt' : v === 'trash' ? 'Papierkorb' : 'Cloud & Backup')
   const crumbs = (() => { const out: Folder[] = []; let f = curFolder; while (f) { out.unshift(f); f = lib.folders.find((x) => x.id === f!.parent) } return out })()
   const folderOpts = (exclude?: string) => lib.folders.filter((f) => f.id !== exclude)
 
-  const nav = [{ id: 'home', label: 'Dokumente', icon: <FolderIcon size={20} /> }, { id: 'shared', label: 'Geteilt', icon: <ShareI size={20} /> }, { id: 'cloud', label: 'Cloud & Backup', icon: <Cloud size={20} /> }, { id: 'trash', label: 'Papierkorb', icon: <Trash2 size={20} /> }] as const
+  const nav = [{ id: 'home', label: 'Dokumente', icon: <FolderIcon size={20} /> }, { id: 'favorites', label: 'Favoriten', icon: <Star size={20} /> }, { id: 'shared', label: 'Geteilt', icon: <ShareI size={20} /> }, { id: 'cloud', label: 'Cloud & Backup', icon: <Cloud size={20} /> }, { id: 'trash', label: 'Papierkorb', icon: <Trash2 size={20} /> }] as const
   const openMenu = (e: React.MouseEvent, m: Menu) => { e.stopPropagation(); menuAnchor.current = e.currentTarget as HTMLElement; setMenuView('main'); setMenu(menu?.id === m.id ? null : m) }
   const editing = fsheet?.mode === 'edit' ? lib.folders.find((f) => f.id === fsheet.id) : undefined
   const formInit: FolderForm = editing ? { name: editing.name, color: editing.color, icon: editing.icon } : { name: '', color: '#a3222a', icon: 'none' }
@@ -61,7 +75,7 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
       {side && (
         <aside className="w-[260px] shrink-0 border-r border-hair bg-pop px-3 pt-20">
           {nav.map((n) => (
-            <button key={n.id} onClick={() => { lib.go(n.id); if (n.id === 'home') lib.enterFolder(null) }} className={`mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[18px] ${v === n.id ? 'bg-accent/15 text-accent' : ''}`}>{n.icon}{t(n.label)}</button>
+            <button key={n.id} onClick={() => { lib.go(n.id); if (n.id === 'home') lib.enterFolder(null) }} className={`mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[18px] ${(fav ? 'favorites' : v) === n.id ? 'bg-accent/15 text-accent' : ''}`}>{n.icon}{t(n.label)}</button>
           ))}
         </aside>
       )}
@@ -88,7 +102,7 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
             {folders.length === 0 && nbs.length === 0 ? (
               <div className="flex flex-col items-center pt-12 text-center">
                 <GoodnotesLogo size={96} tile className="mb-6 rounded-[22px] shadow-gn-float" />
-                <p className="text-[22px] font-semibold">{t(curFolder ? 'Dieser Ordner ist leer' : 'Noch keine Notizbücher')}</p>
+                <p className="text-[22px] font-semibold">{t(fav ? 'Noch keine Favoriten' : curFolder ? 'Dieser Ordner ist leer' : 'Noch keine Notizbücher')}</p>
                 <p className="mt-2 max-w-xs text-[18px] text-sub">{t('Erstelle ein Notizbuch mit Umschlag und Papiervorlage oder lege einen farbigen Ordner an.')}</p>
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
                   <button onClick={onNew} className="flex items-center gap-2 rounded-full bg-gn-ui-select px-6 py-3 text-[19px] font-semibold text-white shadow-pill"><NotebookPen size={22} />{t('Neues Notizbuch')}</button>
@@ -109,6 +123,10 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
                     <button onClick={() => lib.open(n.id)} className="group flex h-[200px] items-end" aria-label={n.title}>
                       <div className="relative aspect-[0.77] w-[150px] overflow-hidden rounded-[6px] bg-cover shadow-[0_6px_14px_rgba(0,0,0,.28),0_0_0_.5px_rgba(0,0,0,.2)] transition-transform group-active:scale-[.97]" style={{ backgroundImage: `url("${coverUri(n.cover, n.coverColor)}")` }}>
                         <span className="absolute inset-y-0 left-0 w-[6%] bg-gradient-to-r from-black/25 to-transparent" />
+                        <span role="button" aria-label={t(n.starred ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen')} onClick={(e) => { e.stopPropagation(); lib.toggleStar(n.id) }}
+                          className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center">
+                          <Star size={22} strokeWidth={1.6} color={n.starred ? '#e5503f' : 'rgba(255,255,255,.95)'} fill={n.starred ? '#e5503f' : 'rgba(0,0,0,.12)'} />
+                        </span>
                       </div>
                     </button>
                     <span className="mt-2 flex max-w-full items-center gap-1 text-[21px] font-semibold"><span className="truncate">{n.title || t('Unbenannt')}</span><Chevron m={{ kind: 'nb', id: n.id }} /></span>
@@ -155,12 +173,14 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
         )}
       </main>
 
+      <input ref={pdfIn} type="file" accept="application/pdf,.pdf,application/json,.json" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; void importFile(f) }} />
       {/* + menu: New notebook / New folder */}
       <Popover anchor={plusBtn} open={plus} onClose={() => setPlus(false)} width={300} align="right">
         <PopTitle>{t('Neu')}</PopTitle>
         <Group>
           <Row icon={<NotebookPen size={22} />} onClick={() => { setPlus(false); onNew() }}>{t('Notizbuch')}</Row>
           <Row icon={<FolderPlus size={22} />} onClick={() => { setPlus(false); lib.go('home'); setFsheet({ mode: 'create' }) }}>{t('Ordner')}</Row>
+          <Row icon={<Import size={22} />} onClick={() => { setPlus(false); pdfIn.current?.click() }}>{t('Importieren')}</Row>
         </Group>
         <div className="h-4" />
       </Popover>
@@ -180,6 +200,7 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
           <div className="pt-3">
             <Group>
               {menuNb && <>
+                <Row onClick={() => { lib.toggleStar(menuNb.id); setMenu(null) }}>{t(menuNb.starred ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen')}</Row>
                 <Row onClick={() => { setRename({ id: menuNb.id, title: menuNb.title }); setMenu(null) }}>{t('Umbenennen')}</Row>
                 <Row chevron onClick={() => setMenuView('move')}>{t('Verschieben')}</Row>
                 <Row danger onClick={() => { lib.trash(menuNb.id); setMenu(null) }}>{t('In den Papierkorb')}</Row>

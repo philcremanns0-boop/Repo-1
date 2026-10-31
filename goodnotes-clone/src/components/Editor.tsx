@@ -1,9 +1,12 @@
+import { pageDims } from '../lib/pageDims'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { X } from './glyphs'
 import { emptyContent, newId, type Content, type Selection } from '../lib/draw'
 import { ELEMENT_SIZE } from '../lib/elements'
-import { buildPdf, download, printPages, readImage } from '../lib/export'
-import { SIZES } from '../lib/paper'
+import { buildPdf, download, printPages, readImage, renderPage } from '../lib/export'
+import { importPdf, isPdf } from '../lib/files'
+import { clipFor, copySel, hasClip, remove } from '../lib/clipboard'
+
 import { useRecorder } from '../lib/recorder'
 import { useNotebook } from '../store/useNotebook'
 import type { NbMeta } from '../store/types'
@@ -21,7 +24,7 @@ import ColorPopover from './popovers/ColorPopover'
 import PenPopover from './popovers/PenPopover'
 import ShapesPopover from './popovers/ShapesPopover'
 import { AccessoriesPopover, EraserPopover, FontPopover, ImagesPopover, LassoPopover, ObjectsPopover, SettingsPopover, SizePopover, SpacingPopover, TextColorPopover } from './popovers/SimplePopovers'
-import { AddPagePopover, MorePopover, SearchPopover, SharePopover, type ClearKind, type Where } from './popovers/PagePopovers'
+import { AddPagePopover, MorePopover, SearchPopover, SharePopover, type ClearKind, type ExportFormat, type Where } from './popovers/PagePopovers'
 import CustomizeToolbar from './sheets/CustomizeToolbar'
 import FontPicker from './sheets/FontPicker'
 import TemplatePicker, { type TemplateResult } from './sheets/TemplatePicker'
@@ -51,6 +54,13 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
   const [selText, setSelText] = useState<TextRef | null>(null)
   const [editText, setEditTextRaw] = useState<TextRef | null>(null)
   const [ruler, setRuler] = useState<Ruler | null>(null)
+  const [pasteAt, setPasteAt] = useState<{ pageId: string; p: { x: number; y: number }; client: { x: number; y: number } } | null>(null)
+  const paste = (pageId: string, at?: { x: number; y: number }) => {
+    const r = clipFor(pageId, at)
+    if (!r) return
+    nb.store(pageId).commit((c) => ({ strokes: [...c.strokes, ...r.add.strokes], texts: [...c.texts, ...r.add.texts], images: [...c.images, ...r.add.images] }))
+    setTool('lasso'); setSelection(r.sel); setPasteAt(null)
+  }
   const [zoomSet, setZoom] = useState<number | null>(null)
   const zoomNow = useRef(1)
   const [readOnly, setReadOnly] = useState(false)
@@ -77,7 +87,7 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
   const closeText = () => { setSelText(null); setEditTextRaw(null) }
   const onTool = (id: ToolId, again: boolean) => {
     const popTools: ToolId[] = ['pen', 'eraser', 'lasso', 'objects', 'images', 'shapes']
-    const always: ToolId[] = ['objects', 'images', 'shapes']
+    const always: ToolId[] = ['objects', 'images']
     if (!again) {
       setTool(id); setSelection(null); closeText(); hideToast()
       setPopover(always.includes(id) ? (id as PopName) : null)
@@ -96,7 +106,7 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
 
   /* ------------------------------ images / elements ------------------------------ */
   const place = (src: string, w: number, h: number, max = 0.6) => {
-    const { w: pw, h: ph } = SIZES[page.size]
+    const { w: pw, h: ph } = pageDims(page)
     const tw = Math.min(w, pw * max), th = (tw * h) / w
     const id = newId()
     store.commit((c) => ({ ...c, images: [...c.images, { id, src, w: tw, h: th, x: (pw - tw) / 2, y: Math.max(40, (ph - th) / 3) }] }))
@@ -119,10 +129,19 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
     if (!f) return
     try {
       if (f.type === 'application/json' || f.name.endsWith('.json')) { lib.restoreBackup(await f.text()); toast(t('Backup wiederhergestellt')); return }
+      if (isPdf(f)) {
+        toast(t('PDF wird importiert …'), true)
+        const bgs = await importPdf(f, (d, n) => toast(`${t('PDF wird importiert …')} ${d}/${n}`, true))
+        let first = ''
+        for (const bg of bgs) { const id = nb.addPage(where, { template: 'blank', color: 'white' }, undefined, bg); first ||= id; where = 'after' }
+        if (first) setScrollTo({ id: first, n: Date.now() })
+        toast(`${bgs.length} ${t(bgs.length === 1 ? 'Seite importiert' : 'Seiten importiert')}`)
+        return
+      }
       const im = await readImage(f)
       if (mode === 'insert') place(im.src, im.w, im.h)
       else {
-        const { w: pw, h: ph } = SIZES[page.size]
+        const { w: pw, h: ph } = pageDims(page)
         const k = Math.min(pw / im.w, ph / im.h)
         addPageWith(where, { template: 'blank' }, { ...emptyContent(), images: [{ id: newId(), src: im.src, x: (pw - im.w * k) / 2, y: (ph - im.h * k) / 2, w: im.w * k, h: im.h * k }] })
       }
@@ -135,14 +154,29 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
     else if (a === 'recordings') { setSidebar(true); setSideTab('audio') }
     else if (a === 'zoom') setLens((v) => !v)
     else if (a === 'timer') setTimer((v) => !v)
-    else if (a === 'ruler') setRuler((r) => (r ? null : { pageId: page.id, x: SIZES[page.size].w / 2, y: SIZES[page.size].h / 2, angle: 0 }))
+    else if (a === 'ruler') setRuler((r) => (r ? null : { pageId: page.id, x: pageDims(page).w / 2, y: pageDims(page).h / 2, angle: 0 }))
   }
   const accActive: Record<AccId, boolean> = { record: rec.recording, recordings: sidebar && sideTab === 'audio', zoom: lens, ruler: !!ruler, timer }
 
   /* ------------------------------ export ------------------------------ */
-  const exportPdf = async (all: boolean) => {
+  const exportAs = async (all: boolean, format: ExportFormat) => {
+    const name = nb.title || meta.title || 'notizbuch'
+    const pages = all ? nb.pages : [page]
     toast(t('Export wird erstellt …'))
-    try { download(`${nb.title || meta.title || 'notizbuch'}${all ? '' : `-${nb.index + 1}`}.pdf`, await buildPdf(all ? nb.pages : [page]), 'application/pdf'); hideToast() } catch { toast(t('Export fehlgeschlagen')) }
+    try {
+      if (format === 'pdf') download(`${name}${all ? '' : `-${nb.index + 1}`}.pdf`, await buildPdf(pages), 'application/pdf')
+      else if (format === 'png') {
+        for (let i = 0; i < pages.length; i++) {
+          const cv = await renderPage(pages[i], 2)
+          const blob: Blob = await new Promise((r) => cv.toBlob((b) => r(b!), 'image/png'))
+          download(`${name}-${all ? i + 1 : nb.index + 1}.png`, blob)
+        }
+      } else {
+        nb.flush()
+        download(`${name}.goodnotes.json`, lib.backupOne(meta.id), 'application/json')
+      }
+      hideToast()
+    } catch { toast(t('Export fehlgeschlagen')) }
   }
 
   /* ------------------------------ keyboard ------------------------------ */
@@ -158,6 +192,8 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
     const mod = e.metaKey || e.ctrlKey, k = e.key.toLowerCase()
     if (mod && k === 'z') { e.preventDefault(); e.shiftKey ? store.redo() : store.undo() }
     else if (mod && k === 'y') { e.preventDefault(); store.redo() }
+    else if (mod && (k === 'c' || k === 'x') && selection) { e.preventDefault(); const st = nb.store(selection.pageId); copySel(st.content, selection); if (k === 'x') { st.commit((c) => remove(c, selection)); setSelection(null) } }
+    else if (mod && k === 'v' && hasClip()) { e.preventDefault(); paste(page.id) }
     else if ((e.key === 'Delete' || e.key === 'Backspace') && selection) { e.preventDefault(); deleteSelection() }
     else if (e.key === 'Escape') { setSelection(null); setPopover(null) }
   }
@@ -168,6 +204,8 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
   const ed = useMemo<Omit<EditorProps, 'zoom'>>(() => ({
     tool, canvasTool, selection, setSelection, textStyle: prefs.textStyle, selText, setSelText, editText, setEditText, ruler, setRuler, colors: prefs.colors,
     onTextCreated: () => { autoSwitch.current = true },
+    onLassoTap: (pageId, p, client) => { if (hasClip()) setPasteAt({ pageId, p, client }) },
+    toast,
   }), [tool, canvasTool, selection, prefs.textStyle, selText, editText, ruler, prefs.colors]) // eslint-disable-line react-hooks/exhaustive-deps
   const close = () => setPopover(null)
   const P = (name: PopName) => popover === name
@@ -193,7 +231,7 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
                 readOnly={readOnly} onReadOnly={() => { setReadOnly((v) => !v); setSelection(null) }} accActive={accActive} onAcc={onAcc} />
             </div></div>
           )}
-          <DocumentView nb={nb} ed={ed} zoom={zoomSet} setZoom={setZoom} scrollTo={scrollTo} topInset={present ? 8 : floating ? 116 : 58} onZoomValue={(z) => { zoomNow.current = z }}
+          <DocumentView nb={nb} ed={ed} zoom={zoomSet} setZoom={setZoom} scrollTo={scrollTo} topInset={present ? 8 : floating ? 116 : 58} onZoomValue={(z) => { zoomNow.current = z }} onUndo={() => nb.store(nb.page.id).undo()} onRedo={() => nb.store(nb.page.id).redo()}
             laser={{ on: tool === 'laser' && !readOnly, color: prefs.laserColor, trail: prefs.laserTrail, size: 9 }} />
           {!present && (
             <div className={`pointer-events-none absolute inset-x-0 ${floating ? 'top-[66px]' : 'top-2'} z-20 grid grid-cols-[96px_minmax(0,1fr)_96px] items-start px-2`}>
@@ -208,6 +246,12 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
       </div>
 
       {timer && <TimerWidget onClose={() => setTimer(false)} />}
+      {pasteAt && (
+        <div className="fixed inset-0 z-[58]" onPointerDown={() => setPasteAt(null)}>
+          <button onPointerDown={(e) => e.stopPropagation()} onClick={() => paste(pasteAt.pageId, pasteAt.p)}
+            className="absolute -translate-x-1/2 -translate-y-[130%] rounded-xl bg-gn-ui-toast px-4 py-2 text-[15px] font-medium text-white shadow-lg" style={{ left: pasteAt.client.x, top: pasteAt.client.y }}>{t('Einfügen')}</button>
+        </div>
+      )}
       {lens && <Magnifier onClose={() => setLens(false)} />}
 
       <PenPopover anchor={anchorFor('opt:pen', 'tool:pen')} open={P('pen')} onClose={close} prefs={prefs} set={set} />
@@ -225,7 +269,7 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
       <TextColorPopover anchor={anchorFor('textcolor')} open={P('textcolor')} onClose={close} prefs={prefs} onColor={(c) => onTextStyle({ color: c })} />
       <AddPagePopover anchor={anchorFor('add')} open={P('add')} onClose={close} current={{ size: page.size, template: page.template, color: page.color }}
         onAdd={(w, m) => addPageWith(w, m)} onMoreTemplates={(w) => setTpl({ kind: 'add', where: w })} onChoose={(k, w) => choose(k, w, true)} />
-      <SharePopover anchor={anchorFor('share')} open={P('share')} onClose={close} onExport={exportPdf} onPrint={async (all) => { if (!(await printPages(all ? nb.pages : [page]))) toast(t('Pop-ups sind blockiert')) }}
+      <SharePopover anchor={anchorFor('share')} open={P('share')} onClose={close} onExport={exportAs} onPrint={async (all) => { if (!(await printPages(all ? nb.pages : [page]))) toast(t('Pop-ups sind blockiert')) }}
         present={present} onPresent={setPresent} onUnavailable={() => toast(t('Zusammenarbeit ist in dieser Web-Version nicht verfügbar.'))} />
       <MorePopover anchor={anchorFor('more')} open={P('more')} onClose={close} page={page} index={nb.index} total={nb.pages.length}
         onBookmark={() => nb.toggleBookmark(page.id)} onCopy={() => nb.duplicatePage(page.id)} onRotate={(d) => nb.rotatePage(page.id, d)}
@@ -243,7 +287,7 @@ export default function Editor({ meta, lib, present, setPresent, toast, hideToas
 
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; const p = pending.current; void onFile(f, p.kind, p.kind === 'page' ? p.where : 'after') }} />
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; const p = pending.current; void onFile(f, p.kind, p.kind === 'page' ? p.where : 'after') }} />
-      <input ref={importRef} type="file" accept="image/*,application/json,.json" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; const p = pending.current; void onFile(f, 'page', p.kind === 'page' ? p.where : 'after') }} />
+      <input ref={importRef} type="file" accept="application/pdf,.pdf,image/*,application/json,.json" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; const p = pending.current; void onFile(f, 'page', p.kind === 'page' ? p.where : 'after') }} />
     </>
   )
 }

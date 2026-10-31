@@ -15,22 +15,18 @@ export const SHAPE_ICONS: Record<ShapeKind, () => JSX.Element> = {
   triangle: () => <S><path d="M12 4.5l8.5 15h-17z" /></S>,
   diamond: () => <S><path d="M12 3.5l8.5 8.5-8.5 8.5L3.5 12z" /></S>,
   tape: () => <S><path d="M3 9h18v6H3z" /></S>,
+  poly: () => <S><path d="M12 3.5l8 6-3 10H7l-3-10z" /></S>,
 }
-const LABEL: Record<ShapeKind, string> = { line: 'Linie', arrow: 'Pfeil', rect: 'Rechteck', ellipse: 'Ellipse', triangle: 'Dreieck', diamond: 'Raute', tape: 'Tape' }
+const LABEL: Record<ShapeKind, string> = { line: 'Linie', arrow: 'Pfeil', rect: 'Rechteck', ellipse: 'Ellipse', triangle: 'Dreieck', diamond: 'Raute', tape: 'Tape', poly: 'Vieleck' }
 
 export default function ShapesPopover({ anchor, open, onClose, prefs, set }: { anchor: RefObject<HTMLElement | null>; open: boolean; onClose: () => void; prefs: ToolPrefs; set: (fn: (p: ToolPrefs) => ToolPrefs) => void }) {
   const t = useT()
   return (
     <Popover anchor={anchor} open={open} onClose={onClose} width={380}>
       <PopTitle>{t('Formen')}</PopTitle>
-      <div className="mx-3 grid grid-cols-3 gap-2">
-        {(Object.keys(SHAPE_ICONS) as ShapeKind[]).filter((k) => k !== 'tape').map((k) => {
-          const I = SHAPE_ICONS[k]
-          return (
-            <button key={k} onClick={() => { set((p) => ({ ...p, shape: k })); onClose() }}
-              className={`flex flex-col items-center gap-1 rounded-[18px] bg-card py-3 text-[15px] ${prefs.shape === k ? 'ring-2 ring-accent' : ''}`}><I />{t(LABEL[k])}</button>
-          )
-        })}
+      <p className="px-5 pb-3 text-[15px] leading-snug text-sub">{t('Zeichne eine Form – Linie, Kreis, Ellipse, Dreieck, Rechteck oder Vieleck. Sie wird beim Absetzen automatisch geglättet.')}</p>
+      <div className="mx-3 grid grid-cols-6 gap-1.5 text-sub">
+        {(['line', 'ellipse', 'triangle', 'rect', 'diamond', 'poly'] as ShapeKind[]).map((k) => { const I = SHAPE_ICONS[k]; return <span key={k} title={t(LABEL[k])} className="flex h-11 items-center justify-center rounded-xl bg-card"><I /></span> })}
       </div>
       <div className="h-3" />
       <Group><Row as="div" trailing={<Toggle on={prefs.fill} onChange={(v) => set((p) => ({ ...p, fill: v }))} label={t('Füllung')} />}>{t('Füllung')}</Row></Group>

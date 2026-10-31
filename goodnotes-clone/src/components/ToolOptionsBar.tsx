@@ -7,8 +7,6 @@ import type { ToolId } from './editorTypes'
 import { useT } from '../context/Settings'
 import { colorKey, WIDTHS, type PenMode, type ToolPrefs } from './toolState'
 import type { PopName } from './Toolbar'
-import type { ShapeKind } from '../lib/draw'
-import { SHAPE_ICONS } from './popovers/ShapesPopover'
 
 export function UndoPill({ canUndo, canRedo, onUndo, onRedo }: { canUndo: boolean; canRedo: boolean; onUndo: () => void; onRedo: () => void }) {
   const t = useT()
@@ -98,6 +96,11 @@ export function OptionsBar({ tool, prefs, set, anchors, popover, onPop, onTextSt
       </Opt>
       <Opt group="gn-penmode" label={t('Textmarker')} active={m === 'highlighter'} onClick={() => pick('highlighter')}><HighlighterI size={25} /></Opt>
       <Opt group="gn-penmode" label={t('Washi-Tape')} active={m === 'tape'} onClick={() => pick('tape')}><WashiI size={25} /></Opt>
+      {m === 'highlighter' && (
+        <Opt label={t('Gerade Linie zeichnen')} active={prefs.hlStraight} onClick={() => set((p) => ({ ...p, hlStraight: !p.hlStraight }))}>
+          <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M4 19L20 5" strokeWidth="3.2" opacity=".45" /><circle cx="4" cy="19" r="1.6" fill="currentColor" /><circle cx="20" cy="5" r="1.6" fill="currentColor" /></svg>
+        </Opt>
+      )}
       <Opt label={t('Formen automatisch erkennen (Zeichnen und halten)')} active={prefs.autoShape} onClick={() => set((p) => ({ ...p, autoShape: !p.autoShape }))}><ShapeAutoI size={25} /></Opt>
       <Sep />{th(m)}<Sep />{sw(m)}
     </>)
@@ -123,12 +126,6 @@ export function OptionsBar({ tool, prefs, set, anchors, popover, onPop, onTextSt
   }
   if (tool === 'shapes') {
     return wrap(<>
-      <div className="no-scrollbar flex min-w-0 items-center overflow-x-auto">
-        {(Object.keys(SHAPE_ICONS) as ShapeKind[]).filter((k) => k !== 'tape').map((k) => {
-          const I = SHAPE_ICONS[k]
-          return <Opt key={k} group="gn-shape" active={prefs.shape === k} label={t(k)} onClick={() => set((p) => ({ ...p, shape: k }))}><I /></Opt>
-        })}
-      </div>
       <Opt label={t('Füllung')} active={prefs.fill} onClick={() => set((p) => ({ ...p, fill: !p.fill }))}><span className="h-[16px] w-[16px] rounded-[4px] border-2 border-ink" style={{ background: prefs.fill ? 'currentColor' : 'transparent', opacity: prefs.fill ? 0.5 : 1 }} /></Opt>
       <Sep />{th('shape')}<Sep />{sw('shape')}
     </>)
