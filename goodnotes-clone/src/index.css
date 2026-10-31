@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-gn-canvas font-sans text-gn-ink antialiased;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  button {
+    @apply outline-none;
+  }
+}
+
+@layer components {
+  .tool-btn {
+    @apply relative flex h-10 w-11 items-center justify-center rounded-[10px] text-gn-ink transition-colors;
+  }
+  .tool-btn:hover {
+    @apply bg-black/5;
+  }
+  .tool-btn[data-active='true'] {
+    @apply bg-gn-active text-gn-accent;
+  }
+}
