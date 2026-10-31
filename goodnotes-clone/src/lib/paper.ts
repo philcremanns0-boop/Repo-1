@@ -1,5 +1,5 @@
 export type PaperColor = 'white' | 'yellow' | 'black' | 'blue' | 'pink' | 'green'
-export type SizeId = 'a4p' | 'a4l' | 'a5p' | 'a5l' | 'lp' | 'll'
+export type SizeId = 'a4p' | 'a4l' | 'a5p' | 'a5l' | 'lp' | 'll' | 'wb'
 export type TemplateId =
   | 'blank' | 'dots' | 'grid' | 'narrow' | 'wide'
   | 'cornell' | 'notepad' | 'mixed' | 'onecol' | 'twocolL' | 'twocolR' | 'twocol' | 'threecol'
@@ -12,6 +12,7 @@ export const SIZES: Record<SizeId, { w: number; h: number; label: string }> = {
   a5l: { w: 794, h: 559, label: 'A5, Querformat' },
   lp: { w: 816, h: 1056, label: 'Letter, Hochformat' },
   ll: { w: 1056, h: 816, label: 'Letter, Querformat' },
+  wb: { w: 2400, h: 1600, label: 'Whiteboard' },
 }
 export const PAPER_COLORS: Record<PaperColor, { bg: string; line: string; label: string }> = {
   yellow: { bg: '#fbf6dc', line: '#d8d0ac', label: 'Gelb' },

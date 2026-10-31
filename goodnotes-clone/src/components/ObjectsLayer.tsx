@@ -9,14 +9,22 @@ export const DEFAULT_TEXT: TextStyle = { font: 'Helvetica Neue', size: 20, color
 export function ImagesLayer({ images }: { images: ImageObj[] }) {
   return (
     <>
-      {images.map((i) => (
-        <img key={i.id} src={i.src} alt="" draggable={false} className="pointer-events-none absolute select-none" style={{ left: i.x, top: i.y, width: i.w, height: i.h }} />
-      ))}
+      {images.map((i) => {
+        const c = i.crop
+        if (!c) return <img key={i.id} src={i.src} alt="" draggable={false} className="pointer-events-none absolute select-none" style={{ left: i.x, top: i.y, width: i.w, height: i.h }} />
+        const fw = i.w / c.w, fh = i.h / c.h
+        return (
+          <div key={i.id} className="pointer-events-none absolute overflow-hidden" style={{ left: i.x, top: i.y, width: i.w, height: i.h }}>
+            <img src={i.src} alt="" draggable={false} className="absolute max-w-none select-none" style={{ left: -c.x * fw, top: -c.y * fh, width: fw, height: fh }} />
+          </div>
+        )
+      })}
     </>
   )
 }
 
 interface TBProps {
+  spell: boolean
   t: TextObj
   store: PageStore
   interactive: boolean
@@ -26,7 +34,7 @@ interface TBProps {
   onEdit: (on: boolean) => void
   baseRef: React.MutableRefObject<Map<number, Content>>
 }
-function TextBox({ t, store, interactive, selected, editing, onSelect, onEdit, baseRef }: TBProps) {
+function TextBox({ t, store, interactive, selected, editing, onSelect, onEdit, baseRef, spell }: TBProps) {
   const el = useRef<HTMLDivElement>(null)
   const drag = useRef<{ x: number; y: number; ox: number; oy: number; base: Content; moved: boolean } | null>(null)
   useEffect(() => { if (el.current && document.activeElement !== el.current) el.current.innerText = t.text }, [t.text, editing])
@@ -68,14 +76,14 @@ function TextBox({ t, store, interactive, selected, editing, onSelect, onEdit, b
     <div data-text-id={t.id} className="absolute"
       style={{ left: t.x, top: t.y, width: t.w, pointerEvents: interactive ? 'auto' : 'none', zIndex: selected ? 3 : 1 }}
       onPointerDown={(e) => { if (!interactive) return; e.stopPropagation(); if (!editing) { baseRef.current.set(t.id, store.content); onSelect(); onEdit(true) } }}>
-      <div ref={el} contentEditable={editing} suppressContentEditableWarning spellCheck={false}
+      <div ref={el} contentEditable={editing} suppressContentEditableWarning spellCheck={spell && editing}
         onBlur={() => { if (editing) { commit(); onEdit(false) } }}
         onKeyDown={(e) => { if (e.key === 'Escape') (e.target as HTMLElement).blur(); e.stopPropagation() }}
         className="outline-none"
         style={{
           fontFamily: fontStack(t.font), fontSize: t.size, color: t.color, fontWeight: t.bold ? 700 : 400, fontStyle: t.italic ? 'italic' : 'normal',
           textAlign: t.align, lineHeight: t.lh * 1.2, padding: pad, minHeight: t.size * 1.4, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', cursor: interactive ? 'text' : 'default',
-          background: t.note ? '#fff3a6' : t.fill ?? 'transparent', boxShadow: t.note ? '0 3px 10px rgba(0,0,0,.25)' : t.border ? `inset 0 0 0 1.5px ${t.border}` : undefined,
+          background: t.note ? t.fill ?? '#fff3a6' : t.fill ?? 'transparent', boxShadow: t.note ? '0 3px 10px rgba(0,0,0,.25)' : t.border ? `inset 0 0 0 1.5px ${t.border}` : undefined,
           borderRadius: !t.note && (t.fill || t.border) ? 4 : undefined,
           outline: selected ? '1.5px dashed #2f8cf0' : undefined, outlineOffset: 1,
         }} />
@@ -93,6 +101,8 @@ function TextBox({ t, store, interactive, selected, editing, onSelect, onEdit, b
 }
 
 interface TLProps {
+  spell: boolean
+  noteColor: string
   texts: TextObj[]
   store: PageStore
   /** text / note tool active → boxes are editable and page clicks create boxes */
@@ -106,7 +116,7 @@ interface TLProps {
   zoom: number
   onCreated: () => void
 }
-export function TextLayer({ texts, store, mode, style, selectedId, editingId, onSelect, onEdit, pageW, zoom, onCreated }: TLProps) {
+export function TextLayer({ texts, store, mode, style, selectedId, editingId, onSelect, onEdit, pageW, zoom, onCreated, spell, noteColor }: TLProps) {
   const base = useRef(new Map<number, Content>())
   const press = useRef<{ x: number; y: number; t: number; long: boolean; timer: ReturnType<typeof setTimeout> } | null>(null)
   const layer = useRef<HTMLDivElement>(null)
@@ -115,7 +125,7 @@ export function TextLayer({ texts, store, mode, style, selectedId, editingId, on
     const id = newId()
     const note = mode === 'note'
     const w = full ? pageW - 2 * 48 : note ? 200 : Math.max(160, 14 * style.size)
-    const obj: TextObj = { id, x: full ? 48 : x, y, w, text: '', ...style, note, color: note ? '#1c1c1e' : style.color }
+    const obj: TextObj = { id, x: full ? 48 : x, y, w, text: '', ...style, note, color: note ? '#1c1c1e' : style.color, ...(note ? { fill: noteColor, border: null } : {}) }
     base.current.set(id, store.content)
     store.live((c) => ({ ...c, texts: [...c.texts, obj] }))
     onSelect(id); onEdit(id); onCreated()
@@ -139,7 +149,7 @@ export function TextLayer({ texts, store, mode, style, selectedId, editingId, on
     <div ref={layer} className="absolute inset-0" style={{ pointerEvents: mode ? 'auto' : 'none', cursor: mode ? 'text' : 'default', touchAction: mode ? 'none' : 'auto' }}
       onPointerDown={down} onPointerUp={up} onPointerCancel={() => { if (press.current) { clearTimeout(press.current.timer); press.current = null } }}>
       {texts.map((t) => (
-        <TextBox key={t.id} t={t} store={store} baseRef={base} interactive={!!mode} selected={selectedId === t.id} editing={editingId === t.id}
+        <TextBox key={t.id} t={t} store={store} baseRef={base} spell={spell} interactive={!!mode} selected={selectedId === t.id} editing={editingId === t.id}
           onSelect={() => onSelect(t.id)} onEdit={(on) => onEdit(on ? t.id : null)} />
       ))}
     </div>

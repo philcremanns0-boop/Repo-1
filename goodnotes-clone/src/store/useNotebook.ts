@@ -133,7 +133,7 @@ export function useNotebook(id: string, initial: NotebookData, onMeta: (m: { pag
     }),
     rotatePage: (pid: string, dir: 1 | -1) => upd(pid, (p) => {
       const { w: ow, h: oh } = SIZES[p.size]
-      const swap: Record<string, SizeId> = { a4p: 'a4l', a4l: 'a4p', a5p: 'a5l', a5l: 'a5p', lp: 'll', ll: 'lp' }
+      const swap: Record<string, SizeId> = { a4p: 'a4l', a4l: 'a4p', a5p: 'a5l', a5l: 'a5p', lp: 'll', ll: 'lp', wb: 'wb' }
       const rp = (x: number, y: number) => (dir === 1 ? { x: oh - y, y: x } : { x: y, y: ow - x })
       const c = p.content
       const content: Content = {

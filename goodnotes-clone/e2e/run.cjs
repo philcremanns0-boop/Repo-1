@@ -96,6 +96,12 @@ function makePdf(file) {
     await p.getByRole('button', { name: 'Objekte' }).first().click(); await p.getByRole('button', { name: 'Meine Objekte' }).click()
     await p.locator('[data-popover] button[aria-label="object"]').first().click(); await p.waitForTimeout(400)
     check('own object saved + inserted', (await content()).images.length === 1)
+    await p.getByRole('button', { name: 'Zuschneiden', exact: true }).click()
+    const hr = await p.getByLabel('Zuschneiden r').boundingBox()
+    await p.mouse.move(hr.x + hr.width / 2, hr.y + hr.height / 2); await p.mouse.down(); await p.mouse.move(hr.x - 30, hr.y + hr.height / 2, { steps: 5 }); await p.mouse.up(); await p.waitForTimeout(500)
+    const im = (await content()).images[0]
+    check('image crop', !!im.crop && im.crop.w < 1 && im.crop.w > 0.05, JSON.stringify(im.crop))
+    await p.getByRole('button', { name: 'Fertig', exact: true }).click()
     // ruler
     await p.getByRole('button', { name: 'Zubehör' }).click(); await p.getByText('Lineal', { exact: true }).click(); await p.waitForTimeout(300)
     check('ruler opens', (await p.locator('[data-ruler]').count()) === 1)

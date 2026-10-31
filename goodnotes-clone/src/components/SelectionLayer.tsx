@@ -47,6 +47,7 @@ interface Props {
 export default function SelectionLayer({ store, selection, zoom, colors, pageW, pageH, onChange, onToast, onLink, onSaveElement }: Props) {
   const t = useT()
   const [palette, setPalette] = useState(false)
+  const [cropping, setCropping] = useState(false)
   const c = store.content
   const bb = selectionBBox(c, selection)
   if (!bb) return null
@@ -60,6 +61,21 @@ export default function SelectionLayer({ store, selection, zoom, colors, pageW, 
     window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up)
   }
   const centre = { x: (bb.x0 + bb.x1) / 2, y: (bb.y0 + bb.y1) / 2 }
+  const single = selection.images.length === 1 && !selection.strokes.length && !selection.texts.length ? c.images.find((i) => i.id === selection.images[0]) : undefined
+  /** crop: drag an edge – the image keeps its scale, the visible window (crop fractions + box) changes */
+  const startCrop = (e: React.PointerEvent, edge: 'l' | 'r' | 't' | 'b') => run(e, (ev, base, sx, sy) => {
+    const im = base.images.find((i) => i.id === single!.id)!
+    const cr = im.crop ?? { x: 0, y: 0, w: 1, h: 1 }
+    const fw = im.w / cr.w, fh = im.h / cr.h, min = 0.05
+    const dx = (ev.clientX - sx) / zoom / fw, dy = (ev.clientY - sy) / zoom / fh
+    const n = { ...cr }
+    if (edge === 'l') { const v = Math.max(-cr.x, Math.min(cr.w - min, dx)); n.x += v; n.w -= v }
+    if (edge === 'r') n.w = Math.max(min, Math.min(1 - cr.x, cr.w + dx))
+    if (edge === 't') { const v = Math.max(-cr.y, Math.min(cr.h - min, dy)); n.y += v; n.h -= v }
+    if (edge === 'b') n.h = Math.max(min, Math.min(1 - cr.y, cr.h + dy))
+    const box = { x: im.x + (n.x - cr.x) * fw, y: im.y + (n.y - cr.y) * fh, w: n.w * fw, h: n.h * fh }
+    return { ...base, images: base.images.map((i) => (i.id === im.id ? { ...i, ...box, crop: n } : i)) }
+  })
   const startScale = (e: React.PointerEvent) => run(e, (ev, base, sx) => {
     const w0 = bb.x1 - bb.x0 || 1
     return scale(base, selection, { x: bb.x0, y: bb.y0 }, Math.max(0.1, (w0 + (ev.clientX - sx) / zoom) / w0))
@@ -125,13 +141,21 @@ export default function SelectionLayer({ store, selection, zoom, colors, pageW, 
       <div className="pointer-events-auto absolute cursor-move" data-selection
         style={{ left: bb.x0 - pad, top: bb.y0 - pad, width: bb.x1 - bb.x0 + 2 * pad, height: bb.y1 - bb.y0 + 2 * pad, border: `${lw}px dashed #2f8cf0`, background: 'rgba(47,140,240,.06)', touchAction: 'none' }}
         onPointerDown={(e) => run(e, (ev, base, sx, sy) => move(base, selection, (ev.clientX - sx) / zoom, (ev.clientY - sy) / zoom))}>
+        {cropping && single ? (['l', 'r', 't', 'b'] as const).map((ed) => (
+          <div key={ed} aria-label={`${t('Zuschneiden')} ${ed}`} onPointerDown={(e) => startCrop(e, ed)} className="absolute rounded-full bg-white shadow-[0_0_0_1.5px_#2f8cf0]"
+            style={ed === 'l' || ed === 'r'
+              ? { width: 8 / zoom, height: 36 / zoom, top: '50%', marginTop: -18 / zoom, [ed === 'l' ? 'left' : 'right']: -4 / zoom, cursor: 'ew-resize' }
+              : { height: 8 / zoom, width: 36 / zoom, left: '50%', marginLeft: -18 / zoom, [ed === 't' ? 'top' : 'bottom']: -4 / zoom, cursor: 'ns-resize' }} />
+        )) : <>
         <div aria-label={t('Größe ändern')} className="absolute rounded-full border-white bg-gn-ui-lasso" style={{ width: knob, height: knob, right: -knob / 2, bottom: -knob / 2, borderWidth: 2 / zoom, cursor: 'nwse-resize' }} onPointerDown={startScale} />
         <div aria-label={t('Drehen')} className="absolute left-1/2 rounded-full border-white bg-gn-ui-lasso" style={{ width: knob, height: knob, top: -28 / zoom, marginLeft: -knob / 2, borderWidth: 2 / zoom, cursor: 'grab' }} onPointerDown={startRotate} />
         <div className="absolute left-1/2 bg-gn-ui-lasso" style={{ width: lw, height: 28 / zoom - knob, top: -28 / zoom + knob, marginLeft: -lw / 2 }} />
+        </>}
       </div>
       <div className="pointer-events-auto absolute flex items-center gap-0.5 rounded-xl bg-gn-ui-toast px-1 py-1 text-[14px] text-white shadow-lg"
         style={{ left: bb.x0 - pad, top: bb.y0 - pad - 40 / zoom, transform: `translateY(-100%) scale(${1 / zoom})`, transformOrigin: 'bottom left' }}
         onPointerDown={(e) => e.stopPropagation()}>
+        {single && <Btn onClick={() => setCropping((v) => !v)}>{t(cropping ? 'Fertig' : 'Zuschneiden')}</Btn>}
         <Btn onClick={copy}><Copy size={15} />{t('Kopieren')}</Btn>
         <Btn onClick={cut}>{t('Ausschneiden')}</Btn>
         <Btn onClick={dup}>{t('Duplizieren')}</Btn>

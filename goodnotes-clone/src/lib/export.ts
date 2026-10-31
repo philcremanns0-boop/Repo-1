@@ -38,7 +38,7 @@ function drawText(ctx: CanvasRenderingContext2D, t: TextObj) {
     ctx.fillStyle = t.color
   }
   if (t.note) {
-    ctx.fillStyle = '#fff3a6'; ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 8
+    ctx.fillStyle = t.fill ?? '#fff3a6'; ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 8
     ctx.fillRect(t.x, t.y, t.w, lines.length * lh + pad * 2); ctx.shadowBlur = 0; ctx.fillStyle = t.color
   }
   const x = t.align === 'left' ? t.x + pad : t.align === 'center' ? t.x + t.w / 2 : t.x + t.w - pad
@@ -47,7 +47,13 @@ function drawText(ctx: CanvasRenderingContext2D, t: TextObj) {
 }
 
 export async function drawContent(ctx: CanvasRenderingContext2D, c: Content) {
-  for (const im of c.images) { try { ctx.drawImage(await loadImg(im.src), im.x, im.y, im.w, im.h) } catch { /* skip broken image */ } }
+  for (const im of c.images) {
+    try {
+      const img = await loadImg(im.src)
+      if (im.crop) ctx.drawImage(img, im.crop.x * img.naturalWidth, im.crop.y * img.naturalHeight, im.crop.w * img.naturalWidth, im.crop.h * img.naturalHeight, im.x, im.y, im.w, im.h)
+      else ctx.drawImage(img, im.x, im.y, im.w, im.h)
+    } catch { /* skip broken image */ }
+  }
   c.strokes.filter((s) => s.tool === 'highlighter').forEach((s) => drawStroke(ctx, s))
   c.strokes.filter((s) => s.tool !== 'highlighter').forEach((s) => drawStroke(ctx, s))
   c.texts.forEach((t) => drawText(ctx, t))

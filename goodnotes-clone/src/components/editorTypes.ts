@@ -36,4 +36,6 @@ export interface EditorProps {
   /** audio playback position: ink written later during the same recording is dimmed (Goodnotes audio sync) */
   playback: { now: number; end: number; start: number } | null
   onSaveElement: (src: string) => void
+  spell: boolean
+  noteColor: string
 }

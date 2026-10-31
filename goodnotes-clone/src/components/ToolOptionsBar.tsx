@@ -136,6 +136,17 @@ export function OptionsBar({ tool, prefs, set, anchors, popover, onPop, onTextSt
       <Sep />{th('shape')}<Sep />{sw('shape')}
     </>)
   }
+  if (tool === 'note') {
+    const NOTE = ['#fff3a6', '#ffd6a5', '#ffc6d9', '#d7c6ff', '#c6e2ff', '#c8f2c2', '#ffffff']
+    return wrap(<>
+      {NOTE.map((c) => (
+        <button key={c} aria-label={`${t('Notizzettel')} ${c}`} aria-pressed={prefs.noteColor === c} onClick={() => set((p) => ({ ...p, noteColor: c }))} className="relative flex h-[36px] w-[44px] items-center justify-center">
+          {prefs.noteColor === c && <motion.span layoutId="gn-note" className="absolute left-1/2 top-1/2 h-[31px] w-[31px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--opt-sel)]" transition={GN_SPRING} />}
+          <span className="relative h-[21px] w-[21px] rounded-[5px]" style={{ background: c, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.15), 0 1px 2px rgba(0,0,0,.15)' }} />
+        </button>
+      ))}
+    </>)
+  }
   if (tool === 'laser') {
     return wrap(<>
       {['#ff3b30', '#34c759', '#0a84ff', '#ffd60a', '#ffffff'].map((c) => (

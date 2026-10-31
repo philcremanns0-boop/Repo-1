@@ -25,7 +25,8 @@ export interface TextObj {
   /** Textfeld-Stil: box fill / border colour (null = none) */
   fill?: string | null; border?: string | null
 }
-export interface ImageObj { id: number; x: number; y: number; w: number; h: number; src: string }
+/** `crop` = visible part of the source image as fractions (0–1); x/y/w/h is the visible box on the page. */
+export interface ImageObj { id: number; x: number; y: number; w: number; h: number; src: string; crop?: { x: number; y: number; w: number; h: number } }
 /** Hyperlink area on a page (Goodnotes: Lasso → Link hinzufügen). */
 export interface LinkObj { id: number; x: number; y: number; w: number; h: number; to: { page: string } | { url: string } }
 export interface Content { strokes: Stroke[]; texts: TextObj[]; images: ImageObj[]; links?: LinkObj[] }

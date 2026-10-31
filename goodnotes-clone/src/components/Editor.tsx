@@ -274,8 +274,9 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
     pageNo: (id) => nb.pages.findIndex((p) => p.id === id) + 1,
     zoomRegion, setZoomRegion, flash, clearFlash, playback,
     onSaveElement: (src) => myEls.add(src),
+    spell: prefs.spell, noteColor: prefs.noteColor,
     onEraseEnd: () => { if (prefs.erAuto && prevTool.current && prevTool.current !== 'eraser') setTool(prevTool.current) },
-  }), [tool, canvasTool, selection, prefs.textStyle, selText, editText, ruler, prefs.colors, readOnly, nb.pages, zoomRegion, flash, prefs.erAuto, playback]) // eslint-disable-line react-hooks/exhaustive-deps
+  }), [tool, canvasTool, selection, prefs.textStyle, selText, editText, ruler, prefs.colors, readOnly, nb.pages, zoomRegion, flash, prefs.erAuto, playback, prefs.spell, prefs.noteColor]) // eslint-disable-line react-hooks/exhaustive-deps
   const close = () => setPopover(null)
   const P = (name: PopName) => popover === name
   const tplInit: TemplateResult = { template: page.template, color: page.color, size: page.size, cover: meta.cover, coverColor: meta.coverColor, title: meta.title }
