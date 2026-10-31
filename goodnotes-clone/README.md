@@ -14,7 +14,12 @@ npm run build    # type-check + production build
 - Not available in the web version: collaboration, handwriting/equation recognition, AI summaries, Apple-Pencil gestures.
 
 ## Design tokens, type & motion
-- **Typeface:** `Roobert` is used when installed locally (it is a commercial font and is not bundled); otherwise the bundled Inter Variable, tuned with slightly tighter tracking. `Goodnotes Hand` likewise loads locally, with Caveat as the bundled fallback.
-- **Palette:** `--gn-navy`, `--gn-teal-1…3`, `--gn-ink`, `--gn-eraser`, `--gn-matcha`, `--gn-sky`, `--gn-lavender`, `--gn-candy` in `src/index.css` (Tailwind: `gn-*`). Values are sampled from reference screenshots; no official Goodnotes hex values were publicly available.
-- **Motion:** Framer Motion springs for popovers (scale from the anchor icon), sheets, nested menu push/pop, sliding active-tool highlight and page slide/fade along the scroll axis.
-- **Toolbar:** Settings → Werkzeugleiste → Angedockt (as in the reference) or Schwebend (floating pill).
+- **Tokens** live in `tailwind.config.js` (`gn.*`) and are mirrored as CSS variables in `src/index.css`.
+  - Sampled from the official app logo: Teal I `#02BDE4`, Ink I `#0F1010`, Eraser I `#F7F7F7`.
+  - Navy `#0A192F`: value from the design brief.
+  - Teal II/III, Ink II/III, Eraser II, Matcha, Sky, Kale, Merlot, Lavender, Candy Floss: derived placeholders — the official Brandpad swatches (brandpad.io/goodnotes-guidelines) were not readable from the build environment. Swap the hex values in one place when you have them.
+  - `gn.ui.*`: values measured from the reference iPad screenshots (toolbar navy, selection blue …).
+- **Type:** Roobert (local, commercial) → Inter (Google Fonts) → bundled Inter Variable → Noto Sans. Body uses −0.02em tracking, 1.2 line-height and grayscale antialiasing (`.gn-text`, `.gn-title`).
+- **Motion:** one spring (`stiffness 400, damping 30`, `src/components/motion.ts`) for popovers (scale from the tapped icon), sheets, nested menu push/pop and sliding selection tiles; page slide/fade follows the scroll axis.
+- **Toolbar:** Settings → Werkzeugleiste → Angedockt (reference layout) or Schwebend (frosted pill: rounded-full, px-4 py-2, backdrop-blur-xl, bg-white/80, layered shadow).
+- **Icons:** all inline SVG (`src/components/icons.tsx`, `src/components/glyphs.tsx`); no icon library.

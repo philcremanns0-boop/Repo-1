@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { X } from 'lucide-react'
+import { X } from './glyphs'
 import { emptyContent, newId, type Content, type Selection } from '../lib/draw'
 import { ELEMENT_SIZE } from '../lib/elements'
 import { buildPdf, download, printPages, readImage } from '../lib/export'

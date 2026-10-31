@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check } from 'lucide-react'
+import { Check } from '../glyphs'
 import { CloseBtn, Sheet } from '../ui'
 import { FolderGlyph, FOLDER_COLORS, FOLDER_ICONS } from '../FolderGlyph'
 import { Wheel, hex2hsv, hsv2hex } from '../popovers/ColorPopover'
@@ -21,7 +21,7 @@ export default function FolderSheet({ open, mode, initial, onClose, onDone }: { 
       <div className="relative flex h-[68px] shrink-0 items-center justify-center">
         <div className="absolute left-3 top-3"><CloseBtn onClick={onClose} /></div>
         <h2 className="text-[21px] font-semibold">{t(mode === 'create' ? 'Neuer Ordner' : 'Ordner bearbeiten')}</h2>
-        <button aria-label={t('Fertig')} disabled={!ok} onClick={() => onDone({ ...f, name: f.name.trim() })} className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-[#2f9bf0] text-white shadow-pill disabled:opacity-40"><Check size={26} strokeWidth={3} /></button>
+        <button aria-label={t('Fertig')} disabled={!ok} onClick={() => onDone({ ...f, name: f.name.trim() })} className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-gn-ui-action text-white shadow-pill disabled:opacity-40"><Check size={26} strokeWidth={3} /></button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6">
         <div className="flex justify-center pb-3 pt-1"><FolderGlyph color={f.color} icon={f.icon} width={140} /></div>

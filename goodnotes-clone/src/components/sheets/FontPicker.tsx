@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ChevronRight, Search } from 'lucide-react'
+import { ChevronRight, Search } from '../glyphs'
 import { FONTS, fontStack } from '../../lib/fonts'
 import { CloseBtn, Group, Sheet } from '../ui'
 import { useT } from '../../context/Settings'

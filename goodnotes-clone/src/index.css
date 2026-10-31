@@ -3,59 +3,57 @@
 @tailwind utilities;
 
 :root {
-  /* ---------- GN palette (names from the brief; values sampled from the reference screenshots,
-     teal cross-checked with the public Goodnotes style sample #45bfdb / #bcedf8) ---------- */
-  --gn-navy: #3262a6;        /* toolbar */
-  --gn-navy-deep: #284d83;   /* tab strip */
-  --gn-teal-1: #45bfdb;      /* active tool fill / brand turquoise */
-  --gn-teal-2: #a8dde9;      /* selected option (light) */
-  --gn-teal-3: #bcedf8;      /* tint / hover */
-  --gn-ink: #0b0b0d;
-  --gn-eraser: #e8e8ec;
-  --gn-matcha: #cfe6b8;
-  --gn-sky: #bfdcf5;
-  --gn-lavender: #b4aed0;    /* illustration lilac */
-  --gn-candy: #f6c6d8;
-  --gn-blue: #1a82e0;        /* selection blue (thumb ring, checkmarks) */
+  /* GN tokens (mirrors tailwind.config.js `gn`) */
+  --gn-navy: #0a192f;
+  --gn-teal-1: #02bde4;
+  --gn-teal-2: #7fddf1;
+  --gn-teal-3: #ccf2fa;
+  --gn-ink-1: #0f1010;
+  --gn-ink-2: #3c3c43;
+  --gn-ink-3: #8a8a8f;
+  --gn-white: #ffffff;
+  --gn-eraser-1: #f7f7f7;
+  --gn-eraser-2: #e5e5ea;
 
-  --tab: var(--gn-navy-deep);
-  --bar: var(--gn-navy);
-  --canvas: #f4f4f5;
+  /* semantic (light) */
+  --tab: #284d83;
+  --bar: #3262a6;
+  --canvas: var(--gn-eraser-1);
   --pop: #f4f4f5;
-  --card: #ffffff;
-  --ink: var(--gn-ink);
-  --sub: #8a8a8f;
-  --hair: rgba(0, 0, 0, 0.12);
-  --accent: #0a84ff;
-  --chip: rgba(0, 0, 0, 0.07);
-  --float: rgba(250, 250, 251, 0.82);
+  --card: var(--gn-white);
+  --ink: var(--gn-ink-1);
+  --sub: var(--gn-ink-3);
+  --hair: rgba(15, 16, 16, 0.12);
+  --accent: #1a82e0;
+  --chip: rgba(15, 16, 16, 0.07);
+  --float: rgba(255, 255, 255, 0.8);
   --danger: #e5372e;
   --good: #07b97f;
-  --tool-active: #ffffff;
-  --tool-active-ink: #0c2a4b;
-  --opt-active: var(--gn-teal-2);
-  --opt-sel: #d6d6d9;
-  --shadow-float: 0 6px 20px rgba(16, 24, 40, 0.08), 0 1px 3px rgba(16, 24, 40, 0.06), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --tool-active: var(--gn-white);
+  --tool-active-ink: var(--gn-navy);
+  --opt-active: var(--gn-teal-3);
+  --opt-sel: var(--gn-eraser-2);
+  --shadow-float: 0 0 0 .5px rgba(15,16,16,.08), 0 2px 6px rgba(15,16,16,.06), 0 10px 28px -6px rgba(15,16,16,.14);
 }
 .dark {
-  --gn-navy: #284a85;
-  --gn-navy-deep: #1f3260;
-  --gn-teal-2: #3b8d9d;
-  --gn-ink: #f5f5f7;
-  --gn-eraser: #3a3a3c;
+  --gn-logo-ink: #f5f5f7;
+  --tab: #1f3260;
+  --bar: #284a85;
   --canvas: #1a1a1a;
   --pop: #1c1c1e;
   --card: #2c2c2e;
+  --ink: #f5f5f7;
   --sub: #98989f;
   --hair: rgba(255, 255, 255, 0.12);
   --accent: #3b9bff;
   --chip: rgba(255, 255, 255, 0.1);
-  --float: rgba(40, 40, 42, 0.78);
+  --float: rgba(28, 28, 30, 0.72);
   --danger: #ff5a4d;
   --tool-active: #d4d8e1;
-  --tool-active-ink: #0c2a4b;
+  --tool-active-ink: var(--gn-navy);
+  --opt-active: rgba(2, 189, 228, 0.38);
   --opt-sel: #3a3a3c;
-  --shadow-float: 0 6px 20px rgba(0, 0, 0, 0.35), 0 0 0 0.5px rgba(255, 255, 255, 0.1);
+  --shadow-float: 0 0 0 .5px rgba(255,255,255,.10), 0 2px 6px rgba(0,0,0,.30), 0 12px 32px -6px rgba(0,0,0,.50);
 }
 
 /* Roobert is a commercial typeface (Displaay) – used when installed locally, otherwise Inter
@@ -70,9 +68,13 @@
   html, body, #root { height: 100%; }
   body {
     @apply bg-canvas font-sans text-ink antialiased;
-    letter-spacing: -0.006em;
-    line-height: 1.25;
-    font-feature-settings: 'cv05' 1, 'ss03' 1; /* Inter: rounder l / a closer to Roobert */
+    /* Roobert footprint: tight tracking, compact leading, grayscale AA like iPadOS */
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv05' 1, 'ss03' 1, 'calt' 1; /* Inter: open l, round a – closer to Roobert */
+    font-optical-sizing: auto;
     text-rendering: optimizeLegibility;
     overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
@@ -84,6 +86,9 @@
   input, textarea { -webkit-user-select: text; user-select: text; }
 }
 @layer utilities {
+  .gn-text { letter-spacing: -0.02em; line-height: 1.2; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  .gn-title { letter-spacing: -0.03em; line-height: 1.05; font-weight: 700; }
+  .gn-glass { background: var(--float); -webkit-backdrop-filter: blur(24px) saturate(1.6); backdrop-filter: blur(24px) saturate(1.6); }
   .no-scrollbar { scrollbar-width: none; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
 }

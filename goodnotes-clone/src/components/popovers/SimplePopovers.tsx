@@ -1,5 +1,5 @@
 import { useState, type RefObject } from 'react'
-import { Check, Clock, Image as ImageIcon, Camera, FileDown, ScanLine, Settings } from 'lucide-react'
+import { Check, Clock, Image as ImageIcon, Camera, FileDown, ScanLine, Settings } from '../glyphs'
 import { ELEMENT_CATEGORIES } from '../../lib/elements'
 import { fontStack, QUICK_FONTS } from '../../lib/fonts'
 import { Group, Popover, PopTitle, Row, Segmented, Slider, Toggle } from '../ui'

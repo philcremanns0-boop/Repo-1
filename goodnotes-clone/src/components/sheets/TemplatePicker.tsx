@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, ChevronDown, Plus } from 'lucide-react'
+import { Check, ChevronDown, Plus } from '../glyphs'
 import { COVERS, COVER_COLORS, coverUri, type CoverId } from '../../lib/covers'
 import { PAPER_COLORS, SIZES, TEMPLATE_GROUPS, colorsFor, templateLabel, type PaperColor, type SizeId, type TemplateId } from '../../lib/paper'
 import { PaperThumb } from '../PaperThumb'
@@ -33,7 +33,7 @@ export default function TemplatePicker({ open, mode, initial, onClose, onConfirm
       <div className="relative flex h-[76px] shrink-0 items-center justify-center bg-pop">
         <div className="absolute left-3 top-3"><CloseBtn onClick={onClose} /></div>
         {mode === 'new' ? <Segmented value={tab} onChange={setTab} className="min-w-[320px]" options={[{ id: 'cover', label: t('Umschlag') }, { id: 'paper', label: t('Papier') }]} /> : <h2 className="text-[22px] font-semibold">{t('Vorlage wechseln')}</h2>}
-        <button aria-label={t('Fertig')} onClick={() => onConfirm(r)} className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-[#2f9bf0] text-white shadow-pill"><Check size={26} strokeWidth={3} /></button>
+        <button aria-label={t('Fertig')} onClick={() => onConfirm(r)} className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-gn-ui-action text-white shadow-pill"><Check size={26} strokeWidth={3} /></button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="flex flex-wrap items-center gap-6 px-6 pb-6 pt-2 sm:flex-nowrap">
@@ -57,7 +57,7 @@ export default function TemplatePicker({ open, mode, initial, onClose, onConfirm
             </div>
           </div>
         </div>
-        <div className="border-t border-hair bg-card px-5 pb-8 pt-5 dark:bg-[#1c1c1e]">
+        <div className="border-t border-hair bg-card px-5 pb-8 pt-5 dark:bg-pop">
           <h3 className="mb-1 text-[28px] font-bold">{t(tab === 'cover' ? 'Umschlag-Vorlagen' : 'Papier-Vorlagen')}</h3>
           {tab === 'paper' ? TEMPLATE_GROUPS.map((g) => (
             <section key={g.title}>
@@ -67,7 +67,7 @@ export default function TemplatePicker({ open, mode, initial, onClose, onConfirm
                   <div key={it.id} className="flex flex-col items-center gap-1.5">
                     <button onClick={() => pickTpl(it.id)} className="relative w-full" aria-label={t(it.label)}>
                       <PaperThumb template={it.id} color={r.template === it.id ? r.color : 'white'} size={r.size} className="w-full rounded-[10px] shadow-[0_1px_6px_rgba(0,0,0,.22)]" />
-                      {r.template === it.id && <span className="absolute -bottom-3 left-1/2 flex h-[30px] w-[30px] -translate-x-1/2 items-center justify-center rounded-full border-2 border-white bg-[#1a82e0] text-white"><Check size={17} strokeWidth={3} /></span>}
+                      {r.template === it.id && <span className="absolute -bottom-3 left-1/2 flex h-[30px] w-[30px] -translate-x-1/2 items-center justify-center rounded-full border-2 border-white bg-gn-ui-select text-white"><Check size={17} strokeWidth={3} /></span>}
                     </button>
                     <span className="pt-2 text-center text-[16px] leading-tight">{t(it.label)}</span>
                     <span className="flex items-center gap-1.5">{colorsFor(it.id).slice(0, 3).map((c) => <Dot key={c} c={PAPER_COLORS[c].bg} on={r.template === it.id && r.color === c} onClick={() => setR({ ...r, template: it.id, color: c })} />)}{colorsFor(it.id).length > 3 && <span className="text-[13px] text-sub">+{colorsFor(it.id).length - 3}</span>}</span>

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Copy, Trash2 } from 'lucide-react'
+import { Copy, Trash2 } from './glyphs'
 import { measureText, newId, selectionBBox, translateStroke, type Content, type Selection } from '../lib/draw'
 import type { PageStore } from '../store/useNotebook'
 import { useT } from '../context/Settings'
@@ -60,7 +60,7 @@ export default function SelectionLayer({ store, selection, zoom, colors, onChang
         style={{ left: bb.x0 - pad, top: bb.y0 - pad, width: bb.x1 - bb.x0 + 2 * pad, height: bb.y1 - bb.y0 + 2 * pad, border: `${lw}px dashed #2f8cf0`, background: 'rgba(47,140,240,.06)', touchAction: 'none' }}
         onPointerDown={(e) => run(e, (dx, dy, base) => move(base, selection, dx, dy))}>
         {(img || txt) && (
-          <div className="absolute rounded-full border-white bg-[#2f8cf0]" style={{ width: 14 / zoom, height: 14 / zoom, right: -7 / zoom, bottom: -7 / zoom, borderWidth: 2 / zoom, cursor: 'nwse-resize' }}
+          <div className="absolute rounded-full border-white bg-gn-ui-lasso" style={{ width: 14 / zoom, height: 14 / zoom, right: -7 / zoom, bottom: -7 / zoom, borderWidth: 2 / zoom, cursor: 'nwse-resize' }}
             onPointerDown={(e) => run(e, (dx, _dy, base) => {
               if (img) { const r = img.h / img.w, w = Math.max(24, img.w + dx); return { ...base, images: base.images.map((i) => (i.id === img.id ? { ...i, w, h: w * r } : i)) } }
               const m = measureText(txt!); void m
@@ -68,18 +68,18 @@ export default function SelectionLayer({ store, selection, zoom, colors, onChang
             })} />
         )}
       </div>
-      <div className="pointer-events-auto absolute flex origin-bottom-left items-center gap-0.5 rounded-xl bg-[#2b2b2e] px-1 py-1 text-[14px] text-white shadow-lg"
+      <div className="pointer-events-auto absolute flex origin-bottom-left items-center gap-0.5 rounded-xl bg-gn-ui-toast px-1 py-1 text-[14px] text-white shadow-lg"
         style={{ left: bb.x0 - pad, top: bb.y0 - pad - 8 / zoom, transform: `translateY(-100%) scale(${1 / zoom})`, transformOrigin: 'bottom left' }}
         onPointerDown={(e) => e.stopPropagation()}>
         <button className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 hover:bg-white/10" onClick={dup}><Copy size={15} />{t('Duplizieren')}</button>
-        <button className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[#ff6a5e] hover:bg-white/10" onClick={del}><Trash2 size={15} />{t('Löschen')}</button>
+        <button className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-danger hover:bg-white/10" onClick={del}><Trash2 size={15} />{t('Löschen')}</button>
         {(selection.strokes.length > 0 || selection.texts.length > 0) && (
           <div className="relative">
             <button className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 hover:bg-white/10" onClick={() => setPalette((v) => !v)}>
               <span className="h-4 w-4 rounded-full border border-white/50 bg-[conic-gradient(red,yellow,lime,cyan,blue,magenta,red)]" />{t('Farbe')}
             </button>
             {palette && (
-              <div className="absolute left-0 top-full z-10 mt-1 flex gap-1.5 rounded-xl bg-[#2b2b2e] p-2 shadow-lg">
+              <div className="absolute left-0 top-full z-10 mt-1 flex gap-1.5 rounded-xl bg-gn-ui-toast p-2 shadow-lg">
                 {colors.map((col) => <button key={col} aria-label={col} onClick={() => recolor(col)} className="h-6 w-6 rounded-full border border-white/30" style={{ background: col }} />)}
               </div>
             )}

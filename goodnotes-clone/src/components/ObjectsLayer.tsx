@@ -81,10 +81,10 @@ function TextBox({ t, store, interactive, selected, editing, onSelect, onEdit, b
       {selected && interactive && (
         <>
           <div onPointerDown={(e) => startDrag(e, 'move')} title="Verschieben"
-            className="absolute -left-3 -top-3 flex h-6 w-6 cursor-move items-center justify-center rounded-full bg-[#2f8cf0] text-white shadow" style={{ transform: 'scale(1)' }}>
+            className="absolute -left-3 -top-3 flex h-6 w-6 cursor-move items-center justify-center rounded-full bg-gn-ui-lasso text-white shadow" style={{ transform: 'scale(1)' }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M12 3v18M3 12h18" /></svg>
           </div>
-          <div onPointerDown={(e) => startDrag(e, 'resize')} className="absolute -right-2 top-1/2 h-6 w-3 -translate-y-1/2 cursor-ew-resize rounded-full bg-[#2f8cf0]" />
+          <div onPointerDown={(e) => startDrag(e, 'resize')} className="absolute -right-2 top-1/2 h-6 w-3 -translate-y-1/2 cursor-ew-resize rounded-full bg-gn-ui-lasso" />
         </>
       )}
     </div>

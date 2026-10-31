@@ -1,5 +1,5 @@
 import { useEffect, useState, type RefObject } from 'react'
-import { ArrowRightToLine, Bookmark, BookmarkCheck, Camera, Copy, FileDown, FilePen, Image as ImageIcon, Import, LayoutTemplate, List, Palette, Printer, RotateCw, ScanLine, Search as SearchIcon, Trash2, Users, Presentation, Settings, Shapes } from 'lucide-react'
+import { ArrowRightToLine, Bookmark, BookmarkCheck, Camera, Copy, FileDown, FilePen, Image as ImageIcon, Import, LayoutTemplate, List, Palette, Printer, RotateCw, ScanLine, Search as SearchIcon, Trash2, Users, Presentation, Settings, Shapes } from '../glyphs'
 import type { Page, OutlineItem, PageMeta } from '../../store/types'
 import { colorsFor, templateLabel, type PaperColor, type TemplateId } from '../../lib/paper'
 import { PageThumb, PaperThumb } from '../PaperThumb'

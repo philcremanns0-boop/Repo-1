@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Pause, Play, RotateCcw, X } from 'lucide-react'
+import { Pause, Play, RotateCcw, X } from './glyphs'
 import { RULER_H, RULER_LEN, type Ruler } from './NoteCanvas'
 import { useT } from '../context/Settings'
 
@@ -28,7 +28,7 @@ export function RulerOverlay({ ruler, zoom, onChange, onClose }: { ruler: Ruler;
           {ticks.filter((i) => i % 5 === 0 && i > 0).map((i) => <text key={i} x={i * 12 + 2} y={30} fontSize="9" fill="#444">{i / 5}</text>)}
         </svg>
         <button className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white" onPointerDown={(e) => e.stopPropagation()} onClick={onClose}><X size={13} /></button>
-        <div className="absolute -right-3 top-1/2 h-6 w-6 -translate-y-1/2 cursor-grab rounded-full border-2 border-white bg-[#2f8cf0] shadow" onPointerDown={(e) => start(e, 'rot')} title="Drehen" />
+        <div className="absolute -right-3 top-1/2 h-6 w-6 -translate-y-1/2 cursor-grab rounded-full border-2 border-white bg-gn-ui-lasso shadow" onPointerDown={(e) => start(e, 'rot')} title="Drehen" />
       </div>
     </div>
   )
@@ -112,7 +112,7 @@ export function Magnifier({ onClose }: { onClose: () => void }) {
 export function Toast({ msg, onClose, persistent }: { msg: string; onClose: () => void; persistent?: boolean }) {
   useEffect(() => { if (persistent) return; const id = setTimeout(onClose, 3600); return () => clearTimeout(id) }, [msg, persistent, onClose])
   return (
-    <div className="fixed bottom-5 left-1/2 z-[80] flex max-w-[min(92vw,820px)] -translate-x-1/2 items-center gap-3 rounded-full bg-[#2c2c2e] px-5 py-3.5 text-[16px] text-white shadow-pop">
+    <div className="fixed bottom-5 left-1/2 z-[80] flex max-w-[min(92vw,820px)] -translate-x-1/2 items-center gap-3 rounded-full bg-gn-ui-toast px-5 py-3.5 text-[16px] text-white shadow-pop">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="9.5" /><path d="M12 11v6M12 7.5v.2" /></svg>
       <span>{msg}</span>
       <button aria-label="Schließen" onClick={onClose} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/15"><X size={15} /></button>

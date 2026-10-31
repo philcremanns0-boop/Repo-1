@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Minus, Plus } from 'lucide-react'
+import { Minus, Plus } from './glyphs'
 import { motion, useAnimate } from 'framer-motion'
 import { SIZES } from '../lib/paper'
 import type { Notebook } from '../store/useNotebook'

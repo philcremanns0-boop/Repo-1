@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Check, GripHorizontal, Minus, Plus } from 'lucide-react'
+import { Check, GripHorizontal, Minus, Plus } from '../glyphs'
 import { Group, Row, Segmented, Sheet } from '../ui'
 import { useT } from '../../context/Settings'
 import { ACC_META, TOOL_ICON, TOOL_LABEL } from '../Toolbar'
@@ -58,7 +58,7 @@ export default function CustomizeToolbar({ open, onClose, prefs, set, onCustomiz
   return (
     <Sheet open={open} onClose={onClose} width={540} className="h-[min(820px,92vh)] !rounded-[34px]">
       <div className="relative flex h-[68px] shrink-0 items-center justify-center"><h2 className="text-[22px] font-semibold">{t('Werkzeugleiste anpassen')}</h2>
-        <button aria-label={t('Fertig')} onClick={onClose} className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-[#2f9bf0] text-white"><Check size={24} strokeWidth={3} /></button></div>
+        <button aria-label={t('Fertig')} onClick={onClose} className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-gn-ui-action text-white"><Check size={24} strokeWidth={3} /></button></div>
       <div className="shrink-0 px-8 pb-1"><Segmented value={tab} onChange={setTab} options={[{ id: 'tools', label: t('Werkzeuge') }, { id: 'acc', label: t('Zubehör') }]} /></div>
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-5">
         <H>{t('In der Werkzeugleiste sichtbar')}</H>

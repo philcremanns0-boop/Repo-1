@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Bookmark, ChevronDown, ListTree, MoreHorizontal, Plus, Trash2, X } from 'lucide-react'
+import { Bookmark, ChevronDown, ListTree, MoreHorizontal, Plus, Trash2, X } from './glyphs'
 import type { Notebook } from '../store/useNotebook'
 import type { Recording } from '../lib/recorder'
 import { PageThumb } from './PaperThumb'
@@ -54,7 +54,7 @@ export default function Sidebar({ nb, tab, setTab, onClose, onGo, recordings, on
               const sel = p.id === nb.page.id
               return (
                 <div key={p.id} className="flex flex-col">
-                  <button onClick={() => onGo(p.id)} className={`relative rounded-[3px] bg-white ${sel ? 'ring-[3px] ring-[#1a82e0]' : 'ring-1 ring-hair'}`} aria-label={`${t('Seite')} ${i + 1}`}>
+                  <button onClick={() => onGo(p.id)} className={`relative rounded-[3px] bg-white ${sel ? 'ring-[3px] ring-gn-ui-select' : 'ring-1 ring-hair'}`} aria-label={`${t('Seite')} ${i + 1}`}>
                     <PageThumb page={p} className="block w-full" />
                     <span role="button" aria-label={t('Favorit')} onClick={(e) => { e.stopPropagation(); nb.toggleBookmark(p.id) }} className="absolute right-1.5 top-0 text-black/60"><Bookmark size={24} fill={p.bookmarked ? '#1a82e0' : 'none'} color={p.bookmarked ? '#1a82e0' : 'currentColor'} strokeWidth={1.6} /></span>
                   </button>

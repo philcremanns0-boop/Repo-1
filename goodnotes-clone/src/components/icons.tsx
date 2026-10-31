@@ -39,10 +39,15 @@ export const BrushI = (p: P) => (
 )
 export const UndoI = (p: P) => (<Svg {...p}><path d="M9.4 6.8L5.2 11l4.2 4.2" /><path d="M5.6 11h9a4.6 4.6 0 010 9.2h-2.4" /></Svg>)
 export const RedoI = (p: P) => (<Svg {...p}><path d="M14.6 6.8l4.2 4.2-4.2 4.2" /><path d="M18.4 11h-9a4.6 4.6 0 000 9.2h2.4" /></Svg>)
+/** Segmented eraser: tilted block, ferrule line splitting the rubber tip, baseline. */
 export const EraserI = (p: P) => (
   <Svg {...p}>
-    <path d="M8.6 20.2l-4.5-4.5a2 2 0 010-2.8l9.3-9.3a2 2 0 012.8 0l4.5 4.5a2 2 0 010 2.8l-8.2 8.2" fill={f(p.active)} />
-    <path d="M8.6 20.2h11M6.7 10.9l6.4 6.4" />
+    <g transform="rotate(-45 12 11)">
+      <rect x="3.6" y="6.8" width="16.8" height="8.6" rx="2.2" />
+      <rect x="3.6" y="6.8" width="6" height="8.6" rx="2.2" fill={f(p.active)} stroke="none" />
+      <path d="M9.6 6.8v8.6" />
+    </g>
+    <path d="M9.4 20.4h10.2" />
   </Svg>
 )
 export const TextI = (p: P) => (

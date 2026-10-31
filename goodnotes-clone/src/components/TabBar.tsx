@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ChevronDown, X } from 'lucide-react'
+import { ChevronDown, X } from './glyphs'
 import type { NbMeta } from '../store/types'
 import type { View } from '../store/useLibrary'
 import { HomeI } from './icons'

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ChevronDown, ChevronLeft, Cloud, Download, Folder as FolderIcon, FolderPlus, Info, LayoutGrid, List as ListIcon, NotebookPen, Plus, Settings, Trash2, Upload, User } from 'lucide-react'
+import { ChevronDown, ChevronLeft, Cloud, Download, Folder as FolderIcon, FolderPlus, Info, LayoutGrid, List as ListIcon, NotebookPen, Plus, Settings, Trash2, Upload, User } from './glyphs'
 import type { Library as Lib } from '../store/useLibrary'
 import type { Folder, NbMeta } from '../store/types'
 import { coverUri } from '../lib/covers'
@@ -8,6 +8,7 @@ import { Group, Popover, PopTitle, Push, Row, Sheet, BackBtn, CloseBtn } from '.
 import { SettingsBody } from './popovers/SimplePopovers'
 import { SidebarI, ShareI } from './icons'
 import { FolderGlyph } from './FolderGlyph'
+import { GoodnotesLogo } from './Logo'
 import FolderSheet, { type FolderForm } from './sheets/FolderSheet'
 import { useSettings, useT } from '../context/Settings'
 
@@ -76,7 +77,7 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
           </Pill>
         </div>
         {v === 'home' && crumbs.length > 1 && <div className="-mt-1 pb-1 text-[16px] text-sub">{t('Dokumente')} › {crumbs.map((c) => c.name).join(' › ')}</div>}
-        <h1 className="pb-5 pt-2 text-[44px] font-extrabold leading-none tracking-tight">{title}</h1>
+        <h1 className="gn-title pb-5 pt-2 text-[44px] font-extrabold">{title}</h1>
 
         {v === 'home' && (
           <>
@@ -85,11 +86,12 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
               <button aria-label={t(lib.layout === 'grid' ? 'Listenansicht' : 'Rasteransicht')} onClick={() => lib.setLayout(lib.layout === 'grid' ? 'list' : 'grid')} className="flex h-10 w-10 items-center justify-center text-ink">{lib.layout === 'grid' ? <ListIcon size={26} /> : <LayoutGrid size={26} />}</button>
             </div>
             {folders.length === 0 && nbs.length === 0 ? (
-              <div className="flex flex-col items-center pt-16 text-center">
+              <div className="flex flex-col items-center pt-12 text-center">
+                <GoodnotesLogo size={96} tile className="mb-6 rounded-[22px] shadow-gn-float" />
                 <p className="text-[22px] font-semibold">{t(curFolder ? 'Dieser Ordner ist leer' : 'Noch keine Notizbücher')}</p>
                 <p className="mt-2 max-w-xs text-[18px] text-sub">{t('Erstelle ein Notizbuch mit Umschlag und Papiervorlage oder lege einen farbigen Ordner an.')}</p>
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
-                  <button onClick={onNew} className="flex items-center gap-2 rounded-full bg-[#1a82e0] px-6 py-3 text-[19px] font-semibold text-white shadow-pill"><NotebookPen size={22} />{t('Neues Notizbuch')}</button>
+                  <button onClick={onNew} className="flex items-center gap-2 rounded-full bg-gn-ui-select px-6 py-3 text-[19px] font-semibold text-white shadow-pill"><NotebookPen size={22} />{t('Neues Notizbuch')}</button>
                   <button onClick={() => setFsheet({ mode: 'create' })} className="flex items-center gap-2 rounded-full bg-card px-6 py-3 text-[19px] font-semibold shadow-pill"><FolderPlus size={22} />{t('Neuer Ordner')}</button>
                 </div>
               </div>
@@ -198,7 +200,7 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
         <div className="relative flex h-[64px] items-center justify-center"><div className="absolute left-3 top-3"><CloseBtn onClick={() => setRename(null)} /></div><h2 className="text-[21px] font-semibold">{t('Umbenennen')}</h2></div>
         <div className="px-5 pb-6">
           <input autoFocus value={rename?.title ?? ''} onChange={(e) => setRename((r) => r && { ...r, title: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter' && rename) { lib.patch(rename.id, { title: rename.title.trim() || t('Unbenannt') }); setRename(null) } }} aria-label={t('Titel')} className="w-full rounded-2xl bg-card px-4 py-3.5 text-[20px] outline-none" />
-          <button onClick={() => { if (rename) lib.patch(rename.id, { title: rename.title.trim() || t('Unbenannt') }); setRename(null) }} className="mt-3 w-full rounded-2xl bg-[#2f9bf0] py-3 text-[18px] font-semibold text-white">{t('Fertig')}</button>
+          <button onClick={() => { if (rename) lib.patch(rename.id, { title: rename.title.trim() || t('Unbenannt') }); setRename(null) }} className="mt-3 w-full rounded-2xl bg-gn-ui-action py-3 text-[18px] font-semibold text-white">{t('Fertig')}</button>
         </div>
       </Sheet>
 
@@ -223,6 +225,7 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
       </Popover>
       <Sheet open={!!info} onClose={() => setInfo(null)} width={460}>
         <div className="relative flex h-[64px] items-center justify-center"><div className="absolute left-3 top-3"><CloseBtn onClick={() => setInfo(null)} /></div><h2 className="text-[21px] font-semibold">{t(info === 'about' ? 'Über' : 'Rechtliches')}</h2></div>
+        {info === 'about' && <div className="flex flex-col items-center gap-2 pb-2"><GoodnotesLogo size={84} tile className="rounded-[20px] shadow-gn-float" /><span className="gn-title text-[26px]">Goodnotes</span></div>}
         <p className="px-6 pb-8 pt-2 text-[18px] leading-relaxed text-sub">{t('Dies ist ein inoffizieller UI-Nachbau zu Demonstrationszwecken. Alle Daten bleiben lokal in deinem Browser; es gibt kein Konto und keine Server-Anbindung.')}</p>
       </Sheet>
     </div>

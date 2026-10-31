@@ -1,6 +1,7 @@
 import { type MutableRefObject, type ReactNode } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown } from './glyphs'
 import { motion } from 'framer-motion'
+import { GN_SPRING, GN_TAP } from './motion'
 import { AlignI, RedoI, UndoI, EraserI, HighlighterI, LineSpacingI, PenI, PinI, PixelEraserI, ShapeAutoI, StrokeEraserI, WashiI } from './icons'
 import type { ToolId } from './editorTypes'
 import { useT } from '../context/Settings'
@@ -13,7 +14,7 @@ export function UndoPill({ canUndo, canRedo, onUndo, onRedo }: { canUndo: boolea
   const t = useT()
   const cls = (on: boolean) => `flex h-[33px] w-[36px] items-center justify-center rounded-[10px] ${on ? 'text-ink' : 'text-sub/70'}`
   return (
-    <div className="flex h-[42px] items-center gap-0.5 rounded-full bg-float px-1.5 shadow-pill backdrop-blur-md backdrop-saturate-150">
+    <div className="flex h-[40px] items-center gap-0.5 rounded-full bg-white/80 px-1.5 py-[3.5px] shadow-gn-float backdrop-blur-xl backdrop-saturate-150 dark:bg-gn-ui-toast/70 dark:shadow-gn-float-dark">
       <motion.button whileTap={{ scale: 0.85 }} aria-label={t('Rückgängig')} disabled={!canUndo} onClick={onUndo} className={cls(canUndo)}><UndoI size={22} /></motion.button>
       <motion.button whileTap={{ scale: 0.85 }} aria-label={t('Wiederholen')} disabled={!canRedo} onClick={onRedo} className={cls(canRedo)}><RedoI size={22} /></motion.button>
     </div>
@@ -23,9 +24,9 @@ export function UndoPill({ canUndo, canRedo, onUndo, onRedo }: { canUndo: boolea
 const Opt = ({ active, onClick, label, children, refFn, w = 42, tone = 'tool', group }: { active?: boolean; onClick: () => void; label: string; children: ReactNode; refFn?: (el: HTMLButtonElement | null) => void; w?: number; tone?: 'tool' | 'sel'; group?: string }) => {
   const bg = tone === 'tool' ? 'bg-[var(--opt-active)]' : 'bg-[var(--opt-sel)]'
   return (
-    <motion.button ref={refFn} aria-label={label} title={label} aria-pressed={active} onClick={onClick} whileTap={{ scale: 0.88 }}
+    <motion.button ref={refFn} aria-label={label} title={label} aria-pressed={active} onClick={onClick} whileTap={{ scale: 0.88 }} transition={GN_TAP}
       className={`relative flex h-[33px] shrink-0 items-center justify-center gap-0.5 rounded-[10px] text-ink ${active && !group ? bg : ''}`} style={{ width: w }}>
-      {active && group && <motion.span layoutId={group} className={`absolute inset-0 rounded-[10px] ${bg}`} transition={{ type: 'spring', stiffness: 520, damping: 36 }} />}
+      {active && group && <motion.span layoutId={group} className={`absolute inset-0 rounded-[10px] ${bg}`} transition={GN_SPRING} />}
       <span className="relative flex items-center gap-0.5">{children}</span>
     </motion.button>
   )
@@ -53,7 +54,7 @@ export function Swatches({ colors, idx, onPick, onOpen, anchor }: { colors: stri
         return (
           <button key={i} ref={sel ? anchor : undefined} aria-label={c} aria-pressed={sel} onClick={() => (sel ? onOpen() : onPick(i))}
             className="relative flex h-[36px] w-[38px] shrink-0 items-center justify-center rounded-full">
-            {sel && <motion.span layoutId="gn-swatch" className="absolute inset-0 rounded-full bg-[var(--opt-sel)]" transition={{ type: 'spring', stiffness: 520, damping: 36 }} />}
+            {sel && <motion.span layoutId="gn-swatch" className="absolute inset-0 rounded-full bg-[var(--opt-sel)]" transition={GN_SPRING} />}
             <span className="relative flex h-[27px] w-[27px] items-center justify-center rounded-full" style={{ background: c, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.14)' }}>
               {sel && <ChevronDown size={13} strokeWidth={3} color={isDark(c) ? '#fff' : '#111'} />}
             </span>
@@ -77,8 +78,8 @@ export function OptionsBar({ tool, prefs, set, anchors, popover, onPop, onTextSt
   const t = useT()
   const reg = (k: string) => (el: HTMLElement | null) => { anchors.current[k] = el }
   const wrap = (children: ReactNode) => (
-    <motion.div key={tool} initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 480, damping: 34 }}
-      className="flex h-[42px] max-w-full items-center rounded-full bg-float px-1.5 shadow-pill backdrop-blur-md backdrop-saturate-150">{children}</motion.div>
+    <motion.div key={tool} initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={GN_SPRING}
+      className="flex h-[40px] max-w-full items-center rounded-full bg-white/80 px-1.5 py-[3.5px] shadow-gn-float backdrop-blur-xl backdrop-saturate-150 dark:bg-gn-ui-toast/70 dark:shadow-gn-float-dark">{children}</motion.div>
   )
   const th = (k: ReturnType<typeof colorKey>) => (
     <Thickness value={prefs.thick[k]} labels={[t('Dünn'), t('Mittel'), t('Dick')]} onChange={(v) => set((p) => ({ ...p, thick: { ...p.thick, [k]: v } }))} />

@@ -111,7 +111,7 @@ export default function PenPopover({ anchor, open, onClose, prefs, set }: Props)
       {view === 'math' && sub('Mathe-Assistenz', (
         <>
           <div className="mx-3 mt-2 overflow-hidden rounded-[20px] bg-card">
-            <div className="h-[150px] bg-[#faf7ea] bg-[linear-gradient(#e8e4d4_1px,transparent_1px),linear-gradient(90deg,#e8e4d4_1px,transparent_1px)] bg-[length:22px_22px] p-6 font-serif text-[22px] text-black/80">(6x−5+3)</div>
+            <div className="h-[150px] bg-gn-eraser-1 bg-[linear-gradient(#e8e4d4_1px,transparent_1px),linear-gradient(90deg,#e8e4d4_1px,transparent_1px)] bg-[length:22px_22px] p-6 font-serif text-[22px] text-black/80">(6x−5+3)</div>
             <Row as="div" trailing={<Toggle on={prefs.mathSug} onChange={(v) => set((p) => ({ ...p, mathSug: v }))} />}>{t('Vorschläge')}</Row>
           </div>
           <p className="px-5 pb-2 pt-2 text-[16px] leading-snug text-sub">{t('Erhalte Vorschläge und Lösungen, wenn du an mathematischen Gleichungen arbeitest.')}</p>
