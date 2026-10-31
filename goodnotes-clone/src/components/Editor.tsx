@@ -5,7 +5,7 @@ import { emptyContent, newId, type Content, type Selection } from '../lib/draw'
 import { ELEMENT_SIZE } from '../lib/elements'
 import { buildPdf, download, printPages, readImage, renderPage } from '../lib/export'
 import { importPdf, isPdf } from '../lib/files'
-import { parseInkHtml, strokesFromPayload, type InkPayload } from '../lib/inkTransfer'
+import { parseInk, strokesFromPayload, type InkPayload } from '../lib/inkTransfer'
 import { clipFor, copyPage, copySel, hasClip, hasPageClip, pastedPage, remove } from '../lib/clipboard'
 
 import { useRecorder } from '../lib/recorder'
@@ -87,6 +87,7 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
       const add = strokesFromPayload(data.ink, pw, ph, at)
       st.commit((c) => ({ ...c, strokes: [...c.strokes, ...add] }))
       setTool('lasso'); setSelection({ pageId, strokes: add.map((x) => x.id), texts: [], images: [] })
+      toast(t('Handschrift eingefügt – radierbar wie eigene Striche'))
     } else if (data.image) {
       void readImage(data.image).then((im) => {
         const tw = Math.min(im.w, pw * 0.6), th = (tw * im.h) / im.w, id = newId()
@@ -106,17 +107,17 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
     try {
       const items = await navigator.clipboard.read()
       for (const it of items) {
-        if (it.types.includes('text/html')) {
-          const ink = parseInkHtml(await (await it.getType('text/html')).text())
-          if (ink) return pasteExternal(pageId, { ink }, at)
-        }
+        const read = async (type: string) => (it.types.includes(type) ? (await it.getType(type)).text() : null)
+        const html = await read('text/html'), plain = await read('text/plain')
+        const ink = parseInk(html, plain)
+        if (ink) return pasteExternal(pageId, { ink }, at)
         const img = it.types.find((x) => x.startsWith('image/'))
         if (img) return pasteExternal(pageId, { image: await it.getType(img) }, at)
-        if (it.types.includes('text/plain')) return pasteExternal(pageId, { text: await (await it.getType('text/plain')).text() }, at)
+        if (plain != null) return pasteExternal(pageId, { text: plain }, at)
       }
       toast(t('Die Zwischenablage ist leer'))
     } catch {
-      try { const text = await navigator.clipboard.readText(); if (text) return pasteExternal(pageId, { text }, at) } catch { /* no permission */ }
+      try { const text = await navigator.clipboard.readText(); const ink = parseInk(null, text); if (ink) return pasteExternal(pageId, { ink }, at); if (text) return pasteExternal(pageId, { text }, at) } catch { /* no permission */ }
       toast(t('Kein Zugriff auf die Zwischenablage – nutze ⌘V / Strg+V'))
     }
     setPasteAt(null)
@@ -269,7 +270,7 @@ export default function Editor({ initial, meta, lib, present, setPresent, toast,
     const el = e.target as HTMLElement
     if (el?.isContentEditable || /^(INPUT|TEXTAREA)$/.test(el?.tagName)) return
     const d = e.clipboardData; if (!d) return
-    const ink = parseInkHtml(d.getData('text/html'))
+    const ink = parseInk(d.getData('text/html'), d.getData('text/plain'))
     if (ink) { e.preventDefault(); pasteExternal(page.id, { ink }); return }
     const file = Array.from(d.files).find((f) => f.type.startsWith('image/'))
     const text = d.getData('text/plain')

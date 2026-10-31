@@ -91,6 +91,15 @@ function makePdf(file) {
     await p.keyboard.press('Escape')
     for (let i = 0; i < 2; i++) { await p.getByRole('button', { name: 'Rückgängig' }).click(); await p.waitForTimeout(600) }
     check('undo removes the paste', (await content()).strokes.length === 0, String((await content()).strokes.length))
+    // Safari case: HTML arrives sanitised (no data attribute), strokes ride in text/plain
+    await p.evaluate((ink) => {
+      const dt = new DataTransfer()
+      dt.setData('text/html', '<p>Test</p>'); dt.setData('text/plain', 'EIGENHAND-INK1:' + btoa(JSON.stringify(ink)))
+      window.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true }))
+    }, ink)
+    await p.waitForTimeout(600)
+    check('Eigenhand ink via plain-text carrier', (await content()).strokes.length === 5 && (await content()).texts.length === 0)
+    await p.getByRole('button', { name: 'Rückgängig' }).click(); await p.waitForTimeout(600)
     // shapes
     await p.getByRole('button', { name: 'Formen' }).first().click(); await p.keyboard.press('Escape')
     const rect = [[100, 300], [300, 302], [302, 420], [98, 418], [101, 305]]

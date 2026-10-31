@@ -50,6 +50,6 @@ Siehe `docs/IPAD-CHECKLIST.md` für den Abnahmetest auf echter Hardware.
 
 ## Eigenhand-Brücke (Handschrift einfügen)
 
-In Eigenhand: Export-Blatt öffnen, bei „Ganze Seite“ oder einem Absatz auf **Als Striche** tippen. In dieser App lange auf die Seite tippen und „Einfügen“ wählen (oder ⌘V). Die Handschrift kommt als echte Kugelschreiber-Striche an: radierbar (Strich- und Pixelradierer), umfärbbar, mit dem Lasso verschiebbar, rückgängig machbar.
+In Eigenhand im Reiter „Text“ auf **In Notizen kopieren** tippen, dann bei „Ganze Seite“ oder einem Absatz auf **Kopieren** (das bisherige Bild-Kopieren heißt jetzt „Als Bild“). In dieser App lange auf die Seite tippen und „Einfügen“ wählen (oder ⌘V). Die Handschrift kommt als echte Kugelschreiber-Striche an: radierbar (Strich- und Pixelradierer), umfärbbar, mit dem Lasso verschiebbar, rückgängig machbar.
 
-Format in der Zwischenablage: `text/plain` (reiner Text) und `text/html` mit `<div data-gn-ink="BASE64(JSON)">`. JSON: `{ v: 1, src, unit: 'pt' | 'px', text, strokes: [{ p: [x0, y0, x1, y1, ...], w, c: '#rrggbb' }] }`. Parser: `src/lib/inkTransfer.ts`, Eigenhand-Seite: `docs/eigenhand-bridge.js`.
+Format in der Zwischenablage: `text/plain` = `EIGENHAND-INK1:BASE64(JSON)` (Safari filtert eigene HTML-Attribute beim Einfügen über Seitengrenzen, reinen Text nicht) und zusätzlich `text/html` mit `<div data-gn-ink="BASE64(JSON)">`. JSON: `{ v: 1, src, unit: 'pt' | 'px', text, strokes: [{ p: [x0, y0, x1, y1, ...], w, c: '#rrggbb' }] }`. Parser: `src/lib/inkTransfer.ts`, Eigenhand-Seite: `docs/eigenhand-bridge.js`.

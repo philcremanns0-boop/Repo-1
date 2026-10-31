@@ -75,7 +75,7 @@ export const EN: Record<string, string> = {
   'Textfeld-Stil': 'Text box style', 'Füllfarbe': 'Fill colour', 'Rahmen': 'Border', 'Keine': 'None', 'Textstile': 'Text styles', 'Überschrift': 'Heading', 'Unterüberschrift': 'Subheading',
   'Aktuellen Stil speichern als …': 'Save current style as …', 'Sichern': 'Save', 'Eigene Schriften': 'My fonts', 'Schriften verwalten': 'Manage fonts', 'Schrift importieren': 'Import font',
   'Importiere eigene Schriftdateien (TTF, OTF, WOFF). Sie stehen danach in allen Notizbüchern zur Verfügung.': 'Import your own font files (TTF, OTF, WOFF). They are then available in all notebooks.',
-  'Schrift konnte nicht geladen werden': 'Font could not be loaded', 'Die Zwischenablage ist leer': 'The clipboard is empty', 'Kein Zugriff auf die Zwischenablage – nutze ⌘V / Strg+V': 'No clipboard access – use ⌘V / Ctrl+V',
+  'Schrift konnte nicht geladen werden': 'Font could not be loaded', 'Die Zwischenablage ist leer': 'The clipboard is empty', 'Handschrift eingefügt – radierbar wie eigene Striche': 'Handwriting pasted – erasable like your own strokes', 'Kein Zugriff auf die Zwischenablage – nutze ⌘V / Strg+V': 'No clipboard access – use ⌘V / Ctrl+V',
   'Link': 'Link', 'Link hinzufügen': 'Add link', 'Link hinzugefügt': 'Link added', 'Link öffnen': 'Open link', 'Link entfernen': 'Remove link', 'Webadresse': 'Web address',
   'Herauszoomen': 'Zoom out', 'Hineinzoomen': 'Zoom in', 'Weiter': 'Advance', 'Neue Zeile': 'New line',
   'ausgewählt': 'selected',

@@ -59,27 +59,35 @@
     return ok
   }
 
-  /** Kopiert; ruft msg(text) mit einer Rueckmeldung auf. */
+  /** Kopiert; ruft msg(text) mit einer Rueckmeldung auf.
+   * text/plain traegt die Striche als "EIGENHAND-INK1:<base64>" (Safari filtert eigene
+   * HTML-Attribute beim Einfuegen auf einer anderen Seite heraus, reinen Text nie). */
   function copyInk(blocks, msg) {
     var v = view()
     var data = v && payload(v, blocks)
     if (!data) { msg('Auf dieser Seite gibt es noch keine Schrift.'); return }
-    var text = data.text || ' '
-    var html = '<meta charset="utf-8"><div data-gn-ink="' + b64(JSON.stringify(data)) + '">' + esc(text).replace(/\n/g, '<br>') + '</div>'
-    var done = 'Kopiert. In der Notizen-App lange auf die Seite tippen und „Einfügen“ wählen. Die Schrift ist dort radierbar.'
+    var enc = b64(JSON.stringify(data))
+    var text = 'EIGENHAND-INK1:' + enc
+    var html = '<meta charset="utf-8"><div data-gn-ink="' + enc + '">' + esc(data.text || '').replace(/\n/g, '<br>') + '</div>'
+    var done = 'Kopiert (' + data.strokes.length + (data.strokes.length === 1 ? ' Strich' : ' Striche') + '). Jetzt in der Notizen-App lange auf die Seite tippen und \u201eEinf\u00fcgen\u201c w\u00e4hlen. Die Schrift ist dort radierbar.'
+    var fail = 'Kopieren wurde vom Browser blockiert. Bitte noch einmal tippen.'
     try {
       if (navigator.clipboard && window.ClipboardItem) {
         navigator.clipboard.write([new ClipboardItem({
-          'text/html': new Blob([html], { type: 'text/html' }),
-          'text/plain': new Blob([text], { type: 'text/plain' })
-        })]).then(function () { msg(done) }, function () { msg(legacyCopy(html, text) ? done : 'Kopieren wurde vom Browser blockiert.') })
+          'text/plain': new Blob([text], { type: 'text/plain' }),
+          'text/html': new Blob([html], { type: 'text/html' })
+        })]).then(function () { msg(done) }, function () {
+          if (navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { msg(done) }, function () { msg(legacyCopy(html, text) ? done : fail) })
+          else msg(legacyCopy(html, text) ? done : fail)
+        })
         return
       }
     } catch (e) { /* fall through */ }
-    msg(legacyCopy(html, text) ? done : 'Kopieren wurde vom Browser blockiert.')
+    msg(legacyCopy(html, text) ? done : fail)
   }
 
-  /* Export-Blatt ("Als Bild fuer GoodNotes") um "Als Striche" erweitern. */
+  /* Export-Blatt: "Kopieren" kopiert jetzt radierbare Striche fuer die Notizen-App,
+   * das bisherige Bild-Kopieren heisst "Als Bild". */
   function enhance(body) {
     if (body.querySelector('[data-gn-copy]')) return
     var rows = body.querySelectorAll('.exp-row')
@@ -87,24 +95,41 @@
     var v = view(); if (!v) return
     var pg = pageOf(v), seen = {}, ids = []
     pg.ops.forEach(function (s) { if (!seen[s.b]) { seen[s.b] = 1; ids.push(s.b) } })
+    Array.prototype.forEach.call(body.children, function (el) { if (!el.classList.contains('exp-list')) el.style.display = 'none' })
     var info = document.createElement('div')
     info.className = 'exp-info'
-    info.innerHTML = '<b>Als Striche:</b> Für die Notizen-App. Die Handschrift kommt dort als echte Stiftstriche an und lässt sich radieren, umfärben und mit dem Lasso verschieben.'
+    info.innerHTML = '<b>Kopieren</b> legt die Handschrift als echte Stiftstriche in die Zwischenablage. In der Notizen-App lange auf die Seite tippen und \u201eEinf\u00fcgen\u201c w\u00e4hlen: Die Schrift l\u00e4sst sich dort radieren, umf\u00e4rben und mit dem Lasso verschieben. <b>Als Bild</b> kopiert ein festes Bild f\u00fcr andere Apps.'
     body.insertBefore(info, body.firstChild)
+    var head = document.querySelector('#exSheet .sch-h b')
+    if (head) head.textContent = 'In die Notizen-App kopieren'
     var out = document.getElementById('exMsg')
     Array.prototype.forEach.call(rows, function (row, i) {
       var blocks = i === 0 ? null : (ids[i - 1] != null ? [ids[i - 1]] : undefined)
       if (blocks === undefined) return
+      var old = row.querySelectorAll('button')
+      if (old[0]) { old[0].textContent = 'Als Bild'; old[0].className = 'btn' }
       var b = document.createElement('button')
-      b.type = 'button'; b.className = 'btn'; b.textContent = 'Als Striche'
+      b.type = 'button'; b.className = 'btn pri'; b.textContent = 'Kopieren'
       b.setAttribute('data-gn-copy', i === 0 ? 'page' : String(i - 1))
       b.addEventListener('click', function () { copyInk(blocks, function (t) { if (out && t) out.textContent = t }) })
-      var share = row.querySelectorAll('button')[1]
-      row.insertBefore(b, share || null)
+      row.insertBefore(b, old[0] || null)
     })
   }
 
+  /* Gut sichtbarer Einstieg neben dem bisherigen Export-Knopf im Text-Reiter. */
+  function addEntry() {
+    var more = document.getElementById('exMore')
+    if (!more || document.getElementById('gnCopyEntry')) return
+    var b = document.createElement('button')
+    b.type = 'button'; b.id = 'gnCopyEntry'; b.className = (more.className || 'btn') + ' pri'
+    b.textContent = 'In Notizen kopieren'
+    b.addEventListener('click', function () { more.click() })
+    more.parentNode.insertBefore(b, more)
+  }
+
+  addEntry()
   new MutationObserver(function () {
+    addEntry()
     var body = document.getElementById('exBody')
     if (body && body.querySelector('.exp-row')) enhance(body)
   }).observe(document.body, { childList: true, subtree: true })

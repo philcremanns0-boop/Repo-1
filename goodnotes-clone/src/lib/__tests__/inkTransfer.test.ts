@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { hitStroke, pixelErase } from '../draw'
-import { parseInkHtml, strokesFromPayload, type InkPayload } from '../inkTransfer'
+import { parseInk, parseInkHtml, parseInkText, strokesFromPayload, type InkPayload } from '../inkTransfer'
 
 const payload: InkPayload = { v: 1, src: 'eigenhand', unit: 'pt', text: 'Hi', strokes: [
   { p: [0, 0, 10, 20, 20, 0], w: 1.5, c: '#1A2B3C' },
@@ -13,6 +13,13 @@ describe('ink transfer (Eigenhand -> notebook)', () => {
     const p = parseInkHtml(html(payload))!
     expect(p.strokes).toHaveLength(2)
     expect(p.text).toBe('Hi')
+  })
+  it('parses the plain-text carrier (Safari-safe), also with line breaks', () => {
+    const b = btoa(JSON.stringify(payload))
+    expect(parseInkText(`EIGENHAND-INK1:${b}`)!.strokes).toHaveLength(2)
+    expect(parseInkText(`EIGENHAND-INK1:\n${b.slice(0, 10)}\n${b.slice(10)}`)!.strokes).toHaveLength(2)
+    expect(parseInkText('Hallo')).toBeNull()
+    expect(parseInk('<p>sanitised</p>', `EIGENHAND-INK1:${b}`)).not.toBeNull()
   })
   it('ignores foreign or broken HTML', () => {
     expect(parseInkHtml('<b>hello</b>')).toBeNull()

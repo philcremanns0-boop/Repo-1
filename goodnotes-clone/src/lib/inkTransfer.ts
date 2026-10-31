@@ -10,6 +10,8 @@ import { DEFAULT_OPTS, newId, type Stroke } from './draw'
  * pen strokes here: erasable, lasso-selectable, recolourable.
  */
 export const INK_ATTR = 'data-gn-ink'
+/** Plain-text carrier (Safari may strip custom HTML attributes when pasting across sites). */
+export const INK_TEXT_PREFIX = 'EIGENHAND-INK1:'
 
 export interface InkPayload {
   v: 1
@@ -44,6 +46,17 @@ export function parseInkHtml(html: string | null | undefined): InkPayload | null
   if (!m) return null
   try { return parseInkPayload(b64decode(m[1])) } catch { return null }
 }
+
+/** Find an ink payload inside clipboard plain text ("EIGENHAND-INK1:<base64>"). */
+export function parseInkText(text: string | null | undefined): InkPayload | null {
+  if (!text || !text.includes(INK_TEXT_PREFIX)) return null
+  const m = /EIGENHAND-INK1:\s*([A-Za-z0-9+/=\s]+)/.exec(text)
+  if (!m) return null
+  try { return parseInkPayload(b64decode(m[1].replace(/\s+/g, ''))) } catch { return null }
+}
+
+/** Either carrier. */
+export const parseInk = (html?: string | null, text?: string | null) => parseInkHtml(html) ?? parseInkText(text)
 
 const HEX = /^#[0-9a-f]{6}$/i
 
