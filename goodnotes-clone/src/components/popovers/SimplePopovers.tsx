@@ -18,20 +18,23 @@ interface Base { anchor: A; open: boolean; onClose: () => void }
 /* ------------------------------ Eraser ------------------------------ */
 export function EraserPopover({ prefs, set, onClearPage, ...b }: Base & { prefs: ToolPrefs; set: Set; onClearPage: () => void }) {
   const t = useT()
+  const styles = [['precision', 'Präzisionsradierer', 'Radiert nur, was im Kreis liegt'], ['standard', 'Standardradierer', 'Radiert ein kurzes Stück eines Strichs'], ['stroke', 'Strichradierer', 'Radiert den ganzen Strich']] as const
   return (
-    <Popover {...b} width={360}>
+    <Popover {...b} width={370}>
       <PopTitle>{t('Radierer')}</PopTitle>
       <Group>
-        {(['stroke', 'pixel'] as const).map((k) => (
-          <Row key={k} icon={<EraserI size={22} />} onClick={() => set((p) => ({ ...p, eraser: k }))} trailing={prefs.eraser === k ? <Check size={20} className="text-accent" /> : null}>
-            {t(k === 'stroke' ? 'Strichradierer' : 'Pixelradierer')}
-          </Row>
+        {styles.map(([k, label, sub]) => (
+          <Row key={k} icon={<EraserI size={22} />} sub={t(sub)} onClick={() => set((p) => ({ ...p, eraser: k }))} trailing={prefs.eraser === k ? <Check size={20} className="text-accent" /> : null}>{t(label)}</Row>
         ))}
       </Group>
       <div className="px-4 pb-0 pt-4 text-[16px] uppercase tracking-wide text-sub">{t('Größe')}</div>
       <Group className="px-3.5"><Slider value={prefs.eraserSize} min={0} max={2} ticks={3} onChange={(v) => set((p) => ({ ...p, eraserSize: v as 0 | 1 | 2 }))} /></Group>
-      <div className="h-3" />
-      <Group><Row as="div" trailing={<Toggle on={prefs.erHl} onChange={(v) => set((p) => ({ ...p, erHl: v }))} />}>{t('Nur Textmarker radieren')}</Row></Group>
+      <div className="px-4 pb-1.5 pt-4 text-[16px] uppercase tracking-wide text-sub">{t('Radierfilter')}</div>
+      <Group>
+        {([['pen', 'Stift'], ['highlighter', 'Textmarker'], ['tape', 'Washi-Tape']] as const).map(([k, l]) => (
+          <Row as="div" key={k} trailing={<Toggle on={prefs.erFilter[k]} onChange={(v) => set((p) => ({ ...p, erFilter: { ...p.erFilter, [k]: v } }))} />}>{t(l)}</Row>
+        ))}
+      </Group>
       <div className="h-3" />
       <Group><Row danger onClick={() => { onClearPage(); b.onClose() }}>{t('Seite leeren')}</Row></Group>
       <div className="h-4" />

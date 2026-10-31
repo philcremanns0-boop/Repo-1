@@ -8,6 +8,7 @@ export interface OutlineItem { id: string; pageId: string; title: string }
 export interface NotebookData { id: string; title: string; pages: Page[]; currentId: string; outline: OutlineItem[] }
 export interface NbMeta {
   id: string; title: string; cover: CoverId; coverColor: string
-  created: number; updated: number; pages: number; deleted?: number
+  created: number; updated: number; pages: number; deleted?: number; folder?: string | null
 }
-export interface NewNotebookOpts extends PageMeta { title: string; cover: CoverId; coverColor: string }
+export interface Folder { id: string; name: string; color: string; icon: string; parent: string | null; created: number }
+export interface NewNotebookOpts extends PageMeta { title: string; cover: CoverId; coverColor: string; folder?: string | null }

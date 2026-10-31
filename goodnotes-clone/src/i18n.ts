@@ -10,6 +10,7 @@ export const EN: Record<string, string> = {
   'Füllung': 'Fill', 'Spur': 'Trail', 'Textfarbe': 'Text colour', 'Schriftgröße': 'Font size', 'Schrift': 'Font', 'Fett': 'Bold', 'Kursiv': 'Italic', 'Ausrichtung': 'Alignment',
   'Zeilenabstand': 'Line spacing', 'Textwerkzeug fixieren': 'Pin text tool',
   'Linie': 'Line', 'Pfeil': 'Arrow', 'Rechteck': 'Rectangle', 'Ellipse': 'Ellipse', 'Dreieck': 'Triangle', 'Raute': 'Diamond', 'Tape': 'Tape',
+  'Präzisionsradierer': 'Precision eraser', 'Standardradierer': 'Standard eraser', 'Radiert nur, was im Kreis liegt': 'Erases only what is inside the circle', 'Radiert ein kurzes Stück eines Strichs': 'Erases a short segment of a stroke', 'Radiert den ganzen Strich': 'Erases the whole stroke', 'Radierfilter': 'Erase filter',
   // pen popover
   'Füllfederhalter': 'Fountain pen', 'Kugelschreiber': 'Ballpoint pen', 'Pinselstift': 'Brush pen', 'Schärfe der Spitze': 'Tip sharpness', 'Druckempfindlichkeit': 'Pressure sensitivity',
   'Rundung der Spitze': 'Tip roundness', 'Strich-Stabilisierung': 'Stroke stabilisation', 'Rund': 'Round', 'Leicht': 'Slight', 'Flach': 'Flat', 'Einstellungen': 'Settings',
@@ -61,6 +62,10 @@ export const EN: Record<string, string> = {
   'Hell': 'Light', 'Reise': 'Travel', 'Einfach': 'Simple', 'Farbig': 'Coloured', 'Schlicht': 'Plain', 'Einband': 'Binding', 'Bunt': 'Colourful', 'Flüssig': 'Liquid', 'Kabel': 'Cable', 'Samen': 'Seeds',
   'Pinsel': 'Brush', 'Punkte': 'Dots', 'Blumen': 'Flowers', 'Stäbe': 'Sticks', 'Wellen': 'Waves', 'Geometrisch': 'Geometric', 'Mathe': 'Math', 'Linien': 'Lines', 'Blüte': 'Blossom',
   'Leuchten': 'Lanterns', 'Schätze': 'Treasures', 'Feierlichkeiten': 'Celebrations',
+  'Neuer Ordner': 'New folder', 'Ordner bearbeiten': 'Edit folder', 'Ordnername': 'Folder name', 'Eigene Farbe': 'Custom colour', 'Symbol': 'Icon', 'Kein': 'None', 'Neu': 'New', 'Notizbuch': 'Notebook', 'Ordner': 'Folder',
+  'Menü': 'Menu', 'In den Papierkorb': 'Move to trash', 'Name, Farbe oder Symbol ändern': 'Change name, colour or icon', 'Ordner löschen': 'Delete folder',
+  'Ordner gelöscht – Inhalt wurde eine Ebene nach oben verschoben': 'Folder deleted – its content moved up one level', 'Dieser Ordner ist leer': 'This folder is empty',
+  'Erstelle ein Notizbuch mit Umschlag und Papiervorlage oder lege einen farbigen Ordner an.': 'Create a notebook with a cover and paper template, or add a coloured folder.', 'Listenansicht': 'List view', 'Rasteransicht': 'Grid view', 'Zurück': 'Back',
   // sidebar & library
   'Seiten': 'Pages', 'Gliederungen': 'Outlines', 'Audio': 'Audio', 'Favoriten': 'Favourites', 'Favorit': 'Favourite', 'Seitenmenü': 'Page menu', 'Nach oben': 'Move up', 'Nach unten': 'Move down', 'Seite löschen': 'Delete page',
   'Gliederungen – Übersichten über deine Dokumente': 'Outlines – overviews of your documents',

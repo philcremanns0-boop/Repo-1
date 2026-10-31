@@ -24,7 +24,7 @@
 .dark {
   --tab: #1f3260;
   --bar: #284a85;
-  --canvas: #1b1c1e;
+  --canvas: #1a1a1a;
   --pop: #1c1c1e;
   --card: #2c2c2e;
   --ink: #f5f5f7;
@@ -38,7 +38,7 @@
   --tool-active: #d4d8e1;
   --tool-active-ink: #0c2a4b;
   --opt-active: #3b8d9d;
-  --opt-sel: #4a4a4e;
+  --opt-sel: #3a3a3c;
 }
 
 @layer base {

@@ -18,9 +18,9 @@ export const useT = () => useContext(Context).t
 function load(): Stored {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) || '{}')
-    return { theme: v.theme ?? 'light', lang: v.lang ?? 'de', scroll: v.scroll ?? 'vertical' }
+    return { theme: v.theme ?? 'system', lang: v.lang ?? 'de', scroll: v.scroll ?? 'vertical' }
   } catch {
-    return { theme: 'light', lang: 'de', scroll: 'vertical' }
+    return { theme: 'system', lang: 'de', scroll: 'vertical' }
   }
 }
 

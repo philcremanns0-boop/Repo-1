@@ -1,11 +1,14 @@
 import { useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, Cloud, Download, Folder, Info, LayoutList, Plus, Settings, Trash2, Upload, User } from 'lucide-react'
+import { ChevronDown, ChevronLeft, Cloud, Download, Folder as FolderIcon, FolderPlus, Info, LayoutGrid, List as ListIcon, NotebookPen, Plus, Settings, Trash2, Upload, User } from 'lucide-react'
 import type { Library as Lib } from '../store/useLibrary'
+import type { Folder, NbMeta } from '../store/types'
 import { coverUri } from '../lib/covers'
 import { download } from '../lib/export'
 import { Group, Popover, PopTitle, Row, Sheet, BackBtn, CloseBtn } from './ui'
 import { SettingsBody } from './popovers/SimplePopovers'
 import { SidebarI, ShareI } from './icons'
+import { FolderGlyph } from './FolderGlyph'
+import FolderSheet, { type FolderForm } from './sheets/FolderSheet'
 import { useSettings, useT } from '../context/Settings'
 
 const fmtDate = (ts: number, lang: string) => {
@@ -14,62 +17,112 @@ const fmtDate = (ts: number, lang: string) => {
   return d.toDateString() === now.toDateString() ? `${lang === 'de' ? 'Heute' : 'Today'}, ${time}` : `${d.toLocaleDateString(lang, { day: '2-digit', month: '2-digit', year: 'numeric' })}, ${time}`
 }
 const Pill = ({ children }: { children: React.ReactNode }) => <div className="flex items-center rounded-full border border-hair bg-float px-1 shadow-pill">{children}</div>
+type Menu = { kind: 'nb' | 'folder'; id: string }
 
 export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () => void; onToast: (m: string) => void }) {
   const t = useT()
   const { lang } = useSettings()
   const [side, setSide] = useState(false)
   const [acct, setAcct] = useState(false)
+  const [plus, setPlus] = useState(false)
   const [view, setView] = useState<'menu' | 'settings'>('menu')
   const [info, setInfo] = useState<'about' | 'legal' | null>(null)
+  const [fsheet, setFsheet] = useState<{ mode: 'create' | 'edit'; id?: string } | null>(null)
+  const [menu, setMenu] = useState<Menu | null>(null)
+  const [menuView, setMenuView] = useState<'main' | 'move'>('main')
+  const [rename, setRename] = useState<{ id: string; title: string } | null>(null)
   const gear = useRef<HTMLButtonElement>(null)
+  const plusBtn = useRef<HTMLButtonElement>(null)
+  const menuAnchor = useRef<HTMLElement | null>(null)
   const file = useRef<HTMLInputElement>(null)
-  const nbs = lib.notebooks.filter((n) => !n.deleted)
+
+  const cur = lib.folder
+  const curFolder = lib.folders.find((f) => f.id === cur)
+  const folders = lib.folders.filter((f) => f.parent === cur)
+  const nbs = lib.notebooks.filter((n) => !n.deleted && (n.folder ?? null) === cur)
   const trashed = lib.notebooks.filter((n) => n.deleted)
   const v = lib.view === 'shared' || lib.view === 'trash' || lib.view === 'cloud' ? lib.view : 'home'
-  const title = v === 'home' ? 'Dokumente' : v === 'shared' ? 'Geteilt' : v === 'trash' ? 'Papierkorb' : 'Cloud & Backup'
+  const title = v === 'home' ? (curFolder?.name ?? t('Dokumente')) : t(v === 'shared' ? 'Geteilt' : v === 'trash' ? 'Papierkorb' : 'Cloud & Backup')
+  const crumbs = (() => { const out: Folder[] = []; let f = curFolder; while (f) { out.unshift(f); f = lib.folders.find((x) => x.id === f!.parent) } return out })()
+  const folderOpts = (exclude?: string) => lib.folders.filter((f) => f.id !== exclude)
 
-  const nav = [{ id: 'home', label: 'Dokumente', icon: <Folder size={20} /> }, { id: 'shared', label: 'Geteilt', icon: <ShareI size={20} /> }, { id: 'cloud', label: 'Cloud & Backup', icon: <Cloud size={20} /> }, { id: 'trash', label: 'Papierkorb', icon: <Trash2 size={20} /> }] as const
+  const nav = [{ id: 'home', label: 'Dokumente', icon: <FolderIcon size={20} /> }, { id: 'shared', label: 'Geteilt', icon: <ShareI size={20} /> }, { id: 'cloud', label: 'Cloud & Backup', icon: <Cloud size={20} /> }, { id: 'trash', label: 'Papierkorb', icon: <Trash2 size={20} /> }] as const
+  const openMenu = (e: React.MouseEvent, m: Menu) => { e.stopPropagation(); menuAnchor.current = e.currentTarget as HTMLElement; setMenuView('main'); setMenu(menu?.id === m.id ? null : m) }
+  const editing = fsheet?.mode === 'edit' ? lib.folders.find((f) => f.id === fsheet.id) : undefined
+  const formInit: FolderForm = editing ? { name: editing.name, color: editing.color, icon: editing.icon } : { name: '', color: '#a3222a', icon: 'none' }
+  const menuNb: NbMeta | undefined = menu?.kind === 'nb' ? lib.notebooks.find((n) => n.id === menu.id) : undefined
+  const menuFolder: Folder | undefined = menu?.kind === 'folder' ? lib.folders.find((f) => f.id === menu.id) : undefined
+
+  const Chevron = ({ m }: { m: Menu }) => <button aria-label={t('Menü')} onClick={(e) => openMenu(e, m)} className="inline-flex h-6 w-6 items-center justify-center text-sub"><ChevronDown size={16} /></button>
+
   return (
     <div className="flex min-h-0 flex-1 bg-canvas">
       {side && (
         <aside className="w-[260px] shrink-0 border-r border-hair bg-pop px-3 pt-20">
           {nav.map((n) => (
-            <button key={n.id} onClick={() => lib.go(n.id)} className={`mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[18px] ${v === n.id ? 'bg-accent/15 text-accent' : ''}`}>{n.icon}{t(n.label)}</button>
+            <button key={n.id} onClick={() => { lib.go(n.id); if (n.id === 'home') lib.enterFolder(null) }} className={`mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[18px] ${v === n.id ? 'bg-accent/15 text-accent' : ''}`}>{n.icon}{t(n.label)}</button>
           ))}
         </aside>
       )}
       <main className="relative flex min-w-0 flex-1 flex-col overflow-y-auto px-6 pb-16">
         <div className="sticky top-0 z-10 -mx-6 flex items-center justify-between bg-canvas/90 px-4 py-3 backdrop-blur">
-          <Pill><button aria-label={t('Seitenleiste')} onClick={() => setSide((s) => !s)} className="flex h-11 w-11 items-center justify-center"><SidebarI size={24} /></button></Pill>
+          <div className="flex items-center gap-2">
+            <Pill><button aria-label={t('Seitenleiste')} onClick={() => setSide((s) => !s)} className="flex h-11 w-11 items-center justify-center"><SidebarI size={24} /></button></Pill>
+            {v === 'home' && curFolder && <Pill><button aria-label={t('Zurück')} onClick={() => lib.enterFolder(curFolder.parent)} className="flex h-11 w-11 items-center justify-center"><ChevronLeft size={26} strokeWidth={2.4} /></button></Pill>}
+          </div>
           <Pill>
-            <button aria-label={t('Neues Notizbuch')} onClick={onNew} className="flex h-11 w-11 items-center justify-center"><Plus size={24} /></button>
+            <button ref={plusBtn} aria-label={t('Neu')} onClick={() => setPlus((p) => !p)} className="flex h-11 w-11 items-center justify-center"><Plus size={24} /></button>
             <button ref={gear} aria-label={t('Einstellungen')} onClick={() => { setView('menu'); setAcct((a) => !a) }} className="flex h-11 w-11 items-center justify-center"><Settings size={23} /></button>
           </Pill>
         </div>
-        <h1 className="pb-5 pt-2 text-[44px] font-extrabold leading-none tracking-tight">{t(title)}</h1>
+        {v === 'home' && crumbs.length > 1 && <div className="-mt-1 pb-1 text-[16px] text-sub">{t('Dokumente')} › {crumbs.map((c) => c.name).join(' › ')}</div>}
+        <h1 className="pb-5 pt-2 text-[44px] font-extrabold leading-none tracking-tight">{title}</h1>
 
         {v === 'home' && (
           <>
-            <div className="mb-8 flex items-center gap-3 text-[22px] font-medium text-sub"><LayoutList size={26} />{t('Alle')}</div>
-            {nbs.length === 0 ? (
+            <div className="mb-8 flex items-center justify-between text-[22px] font-medium text-sub">
+              <span className="flex items-center gap-3"><LayoutGrid size={26} />{t('Alle')}</span>
+              <button aria-label={t(lib.layout === 'grid' ? 'Listenansicht' : 'Rasteransicht')} onClick={() => lib.setLayout(lib.layout === 'grid' ? 'list' : 'grid')} className="flex h-10 w-10 items-center justify-center text-ink">{lib.layout === 'grid' ? <ListIcon size={26} /> : <LayoutGrid size={26} />}</button>
+            </div>
+            {folders.length === 0 && nbs.length === 0 ? (
               <div className="flex flex-col items-center pt-16 text-center">
-                <p className="text-[22px] font-semibold">{t('Noch keine Notizbücher')}</p>
-                <p className="mt-2 max-w-xs text-[18px] text-sub">{t('Erstelle dein erstes Notizbuch mit Umschlag und Papiervorlage.')}</p>
-                <button onClick={onNew} className="mt-6 flex items-center gap-2 rounded-full bg-[#1a82e0] px-6 py-3 text-[19px] font-semibold text-white shadow-pill"><Plus size={22} />{t('Neues Notizbuch')}</button>
+                <p className="text-[22px] font-semibold">{t(curFolder ? 'Dieser Ordner ist leer' : 'Noch keine Notizbücher')}</p>
+                <p className="mt-2 max-w-xs text-[18px] text-sub">{t('Erstelle ein Notizbuch mit Umschlag und Papiervorlage oder lege einen farbigen Ordner an.')}</p>
+                <div className="mt-6 flex flex-wrap justify-center gap-3">
+                  <button onClick={onNew} className="flex items-center gap-2 rounded-full bg-[#1a82e0] px-6 py-3 text-[19px] font-semibold text-white shadow-pill"><NotebookPen size={22} />{t('Neues Notizbuch')}</button>
+                  <button onClick={() => setFsheet({ mode: 'create' })} className="flex items-center gap-2 rounded-full bg-card px-6 py-3 text-[19px] font-semibold shadow-pill"><FolderPlus size={22} />{t('Neuer Ordner')}</button>
+                </div>
               </div>
-            ) : (
+            ) : lib.layout === 'grid' ? (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-x-8 gap-y-12">
+                {folders.map((f) => (
+                  <div key={f.id} className="flex flex-col items-center text-center">
+                    <button data-folder={f.name} onClick={() => lib.enterFolder(f.id)} className="flex h-[200px] w-full items-end justify-center pb-2 transition-transform active:scale-[.97]" aria-label={f.name}><FolderGlyph color={f.color} icon={f.icon} width={160} className="drop-shadow-[0_6px_8px_rgba(0,0,0,.25)]" /></button>
+                    <span className="mt-2 flex max-w-full items-center gap-1 text-[21px] font-semibold"><span className="truncate">{f.name}</span><Chevron m={{ kind: 'folder', id: f.id }} /></span>
+                    <span className="text-[16px] text-sub">{fmtDate(f.created, lang)}</span>
+                  </div>
+                ))}
                 {nbs.map((n) => (
-                  <button key={n.id} onClick={() => lib.open(n.id)} className="group flex flex-col items-center text-center">
-                    <div className="relative aspect-[0.77] w-[150px] overflow-hidden rounded-[6px] bg-cover shadow-[0_6px_14px_rgba(0,0,0,.28),0_0_0_.5px_rgba(0,0,0,.2)] transition-transform group-active:scale-[.97]" style={{ backgroundImage: `url("${coverUri(n.cover, n.coverColor)}")` }}>
-                      <span className="absolute inset-y-0 left-0 w-[6%] bg-gradient-to-r from-black/25 to-transparent" />
-                    </div>
-                    <span className="mt-4 max-w-full truncate text-[21px] font-semibold">{n.title || t('Unbenannt')}</span>
-                    <span className="mt-0.5 text-[16px] text-sub">{fmtDate(n.updated, lang)}</span>
-                  </button>
+                  <div key={n.id} className="flex flex-col items-center text-center">
+                    <button onClick={() => lib.open(n.id)} className="group flex h-[200px] items-end" aria-label={n.title}>
+                      <div className="relative aspect-[0.77] w-[150px] overflow-hidden rounded-[6px] bg-cover shadow-[0_6px_14px_rgba(0,0,0,.28),0_0_0_.5px_rgba(0,0,0,.2)] transition-transform group-active:scale-[.97]" style={{ backgroundImage: `url("${coverUri(n.cover, n.coverColor)}")` }}>
+                        <span className="absolute inset-y-0 left-0 w-[6%] bg-gradient-to-r from-black/25 to-transparent" />
+                      </div>
+                    </button>
+                    <span className="mt-2 flex max-w-full items-center gap-1 text-[21px] font-semibold"><span className="truncate">{n.title || t('Unbenannt')}</span><Chevron m={{ kind: 'nb', id: n.id }} /></span>
+                    <span className="mt-0.5 text-[16px] text-sub">{n.pages} {t(n.pages === 1 ? 'Seite' : 'Seiten')} · {fmtDate(n.updated, lang)}</span>
+                  </div>
                 ))}
               </div>
+            ) : (
+              <Group className="!mx-0">
+                {folders.map((f) => (
+                  <Row key={f.id} onClick={() => lib.enterFolder(f.id)} icon={<FolderGlyph color={f.color} icon={f.icon} width={44} />} sub={fmtDate(f.created, lang)} trailing={<Chevron m={{ kind: 'folder', id: f.id }} />}>{f.name}</Row>
+                ))}
+                {nbs.map((n) => (
+                  <Row key={n.id} onClick={() => lib.open(n.id)} icon={<div className="h-12 w-9 rounded bg-cover shadow" style={{ backgroundImage: `url("${coverUri(n.cover, n.coverColor)}")` }} />} sub={`${n.pages} ${t(n.pages === 1 ? 'Seite' : 'Seiten')} · ${fmtDate(n.updated, lang)}`} trailing={<Chevron m={{ kind: 'nb', id: n.id }} />}>{n.title || t('Unbenannt')}</Row>
+                ))}
+              </Group>
             )}
           </>
         )}
@@ -100,14 +153,61 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
         )}
       </main>
 
+      {/* + menu: New notebook / New folder */}
+      <Popover anchor={plusBtn} open={plus} onClose={() => setPlus(false)} width={300} align="right">
+        <PopTitle>{t('Neu')}</PopTitle>
+        <Group>
+          <Row icon={<NotebookPen size={22} />} onClick={() => { setPlus(false); onNew() }}>{t('Notizbuch')}</Row>
+          <Row icon={<FolderPlus size={22} />} onClick={() => { setPlus(false); lib.go('home'); setFsheet({ mode: 'create' }) }}>{t('Ordner')}</Row>
+        </Group>
+        <div className="h-4" />
+      </Popover>
+
+      {/* notebook / folder item menu */}
+      <Popover anchor={menuAnchor} open={!!menu && !!(menuNb || menuFolder)} onClose={() => setMenu(null)} width={310} align="left">
+        {menuView === 'move' && menuNb ? (
+          <>
+            <PopTitle left={<BackBtn onClick={() => setMenuView('main')} />}>{t('Verschieben')}</PopTitle>
+            <Group>
+              <Row onClick={() => { lib.moveNotebook(menuNb.id, null); setMenu(null) }} trailing={(menuNb.folder ?? null) === null ? <span className="text-accent">✓</span> : null}>{t('Dokumente')}</Row>
+              {folderOpts().map((f) => <Row key={f.id} icon={<FolderGlyph color={f.color} icon={f.icon} width={30} />} onClick={() => { lib.moveNotebook(menuNb.id, f.id); setMenu(null) }} trailing={menuNb.folder === f.id ? <span className="text-accent">✓</span> : null}>{f.name}</Row>)}
+            </Group>
+            <div className="h-4" />
+          </>
+        ) : (
+          <div className="pt-3">
+            <Group>
+              {menuNb && <>
+                <Row onClick={() => { setRename({ id: menuNb.id, title: menuNb.title }); setMenu(null) }}>{t('Umbenennen')}</Row>
+                <Row chevron onClick={() => setMenuView('move')}>{t('Verschieben')}</Row>
+                <Row danger onClick={() => { lib.trash(menuNb.id); setMenu(null) }}>{t('In den Papierkorb')}</Row>
+              </>}
+              {menuFolder && <>
+                <Row onClick={() => { setFsheet({ mode: 'edit', id: menuFolder.id }); setMenu(null) }}>{t('Name, Farbe oder Symbol ändern')}</Row>
+                <Row danger onClick={() => { lib.deleteFolder(menuFolder.id); setMenu(null); onToast(t('Ordner gelöscht – Inhalt wurde eine Ebene nach oben verschoben')) }}>{t('Ordner löschen')}</Row>
+              </>}
+            </Group>
+            <div className="h-3" />
+          </div>
+        )}
+      </Popover>
+
+      <FolderSheet open={!!fsheet} mode={fsheet?.mode ?? 'create'} initial={formInit} onClose={() => setFsheet(null)}
+        onDone={(f) => { if (fsheet?.mode === 'edit' && fsheet.id) lib.patchFolder(fsheet.id, f); else lib.createFolder(f); setFsheet(null) }} />
+      <Sheet open={!!rename} onClose={() => setRename(null)} width={420}>
+        <div className="relative flex h-[64px] items-center justify-center"><div className="absolute left-3 top-3"><CloseBtn onClick={() => setRename(null)} /></div><h2 className="text-[21px] font-semibold">{t('Umbenennen')}</h2></div>
+        <div className="px-5 pb-6">
+          <input autoFocus value={rename?.title ?? ''} onChange={(e) => setRename((r) => r && { ...r, title: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter' && rename) { lib.patch(rename.id, { title: rename.title.trim() || t('Unbenannt') }); setRename(null) } }} aria-label={t('Titel')} className="w-full rounded-2xl bg-card px-4 py-3.5 text-[20px] outline-none" />
+          <button onClick={() => { if (rename) lib.patch(rename.id, { title: rename.title.trim() || t('Unbenannt') }); setRename(null) }} className="mt-3 w-full rounded-2xl bg-[#2f9bf0] py-3 text-[18px] font-semibold text-white">{t('Fertig')}</button>
+        </div>
+      </Sheet>
+
       <Popover anchor={gear} open={acct} onClose={() => setAcct(false)} width={400} align="right">
         {view === 'settings' ? (
           <><PopTitle left={<BackBtn onClick={() => setView('menu')} />}>{t('Einstellungen')}</PopTitle><SettingsBody /></>
         ) : (
           <div className="pb-3 pt-3">
-            <Group>
-              <Row as="div" icon={<span className="flex h-11 w-11 items-center justify-center rounded-full bg-chip"><User size={24} /></span>} sub={t('Lokal in diesem Browser gespeichert')}><span className="text-[22px] font-semibold">{t('Gast')}</span></Row>
-            </Group>
+            <Group><Row as="div" icon={<span className="flex h-11 w-11 items-center justify-center rounded-full bg-chip"><User size={24} /></span>} sub={t('Lokal in diesem Browser gespeichert')}><span className="text-[22px] font-semibold">{t('Gast')}</span></Row></Group>
             <div className="h-3" />
             <Group>
               <Row icon={<Settings size={22} />} chevron onClick={() => setView('settings')}>{t('Einstellungen')}</Row>
@@ -117,9 +217,7 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
             <div className="h-3" />
             <Group><Row icon={<Info size={22} />} onClick={() => { setAcct(false); setInfo('about') }}>{t('Über')}</Row></Group>
             <div className="h-3" />
-            <Group>
-              {['Datenschutzrichtlinie', 'Nutzungsbedingungen', 'Impressum'].map((x) => <Row key={x} ext onClick={() => { setAcct(false); setInfo('legal') }}>{t(x)}</Row>)}
-            </Group>
+            <Group>{['Datenschutzrichtlinie', 'Nutzungsbedingungen', 'Impressum'].map((x) => <Row key={x} ext onClick={() => { setAcct(false); setInfo('legal') }}>{t(x)}</Row>)}</Group>
           </div>
         )}
       </Popover>
@@ -130,4 +228,3 @@ export default function Library({ lib, onNew, onToast }: { lib: Lib; onNew: () =
     </div>
   )
 }
-export { ChevronLeft, ChevronRight }

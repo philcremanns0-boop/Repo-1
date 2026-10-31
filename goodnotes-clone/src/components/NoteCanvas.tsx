@@ -12,9 +12,9 @@ export interface CanvasTool {
   pen: PenType
   opts: PenOpts
   stab: number
-  eraser: 'pixel' | 'stroke'
+  eraser: 'precision' | 'standard' | 'stroke'
   eraserSize: number
-  erHl: boolean
+  erFilter: { pen: boolean; highlighter: boolean; tape: boolean }
   shape: ShapeKind
   fill: boolean
   autoShape: boolean
@@ -54,13 +54,15 @@ interface Gesture {
   line?: { o: Pt; d: Pt }
 }
 
-function eraseStep(c: Content, x: number, y: number, r: number, kind: 'pixel' | 'stroke', hlOnly: boolean): Content {
+const category = (s: Stroke): 'pen' | 'highlighter' | 'tape' => (s.tool === 'highlighter' ? 'highlighter' : s.tool === 'shape' && s.shape === 'tape' ? 'tape' : 'pen')
+/** Goodnotes-style eraser styles: stroke = whole stroke, standard = a short segment, precision = only what is inside the circle. */
+function eraseStep(c: Content, x: number, y: number, r: number, kind: CanvasTool['eraser'], filter: CanvasTool['erFilter']): Content {
   let changed = false
   const strokes: Stroke[] = []
   for (const s of c.strokes) {
-    if (hlOnly && s.tool !== 'highlighter') { strokes.push(s); continue }
+    if (!filter[category(s)]) { strokes.push(s); continue }
     if (kind === 'stroke') { if (hitStroke(s, x, y, r)) changed = true; else strokes.push(s) }
-    else { const res = pixelErase(s, x, y, r); if (res === null) strokes.push(s); else { changed = true; strokes.push(...res) } }
+    else { const res = pixelErase(s, x, y, kind === 'standard' ? r * 1.8 + 6 : r); if (res === null) strokes.push(s); else { changed = true; strokes.push(...res) } }
   }
   return changed ? { ...c, strokes } : c
 }
@@ -122,7 +124,7 @@ export default function NoteCanvas({ pageId, store, tool, zoom, width, height, r
     const n = Math.max(1, Math.ceil(Math.hypot(p.x - from.x, p.y - from.y) / Math.max(1, r / 2)))
     let cur = a.erased ?? cfg.current.store.content
     const before = cur
-    for (let i = 1; i <= n; i++) cur = eraseStep(cur, from.x + ((p.x - from.x) * i) / n, from.y + ((p.y - from.y) * i) / n, r, t.eraser, t.erHl)
+    for (let i = 1; i <= n; i++) cur = eraseStep(cur, from.x + ((p.x - from.x) * i) / n, from.y + ((p.y - from.y) * i) / n, r, t.eraser, t.erFilter)
     a.lastErase = p
     if (cur !== before) { a.erased = cur; cfg.current.store.live(() => cur) }
   }

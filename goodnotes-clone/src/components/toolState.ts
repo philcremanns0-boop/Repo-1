@@ -13,9 +13,9 @@ export interface ToolPrefs {
   thick: Record<ColorKey, 0 | 1 | 2>
   colors: string[]
   colorIdx: Record<ColorKey, number>
-  eraser: 'pixel' | 'stroke'
+  eraser: 'precision' | 'standard' | 'stroke'
   eraserSize: 0 | 1 | 2
-  erHl: boolean
+  erFilter: { pen: boolean; highlighter: boolean; tape: boolean }
   shape: ShapeKind
   fill: boolean
   autoShape: boolean
@@ -46,7 +46,7 @@ export const DEFAULT_PREFS: ToolPrefs = {
   thick: { pen: 1, highlighter: 1, tape: 1, shape: 1 },
   colors: ['#000000', '#b9ffb9', '#e00000', '#9b2335', '#ffff88', '#00aa00', '#1f6fe5'],
   colorIdx: { pen: 0, highlighter: 4, tape: 1, shape: 0 },
-  eraser: 'stroke', eraserSize: 1, erHl: false,
+  eraser: 'stroke', eraserSize: 1, erFilter: { pen: true, highlighter: true, tape: true },
   shape: 'rect', fill: false, autoShape: false,
   lassoMode: 'free', lassoStrokes: true, lassoObjects: true,
   laserColor: '#ff3b30', laserTrail: true,
@@ -57,7 +57,7 @@ const KEY = 'gn:tools'
 export function loadPrefs(): ToolPrefs {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) || 'null')
-    if (v) return { ...DEFAULT_PREFS, ...v, thick: { ...DEFAULT_PREFS.thick, ...v.thick }, colorIdx: { ...DEFAULT_PREFS.colorIdx, ...v.colorIdx }, penOpts: { ...DEFAULT_PREFS.penOpts, ...v.penOpts }, textStyle: { ...DEFAULT_TEXT, ...v.textStyle } }
+    if (v) return { ...DEFAULT_PREFS, ...v, eraser: ['precision', 'standard', 'stroke'].includes(v.eraser) ? v.eraser : v.eraser === 'pixel' ? 'precision' : 'stroke', erFilter: { ...DEFAULT_PREFS.erFilter, ...v.erFilter }, thick: { ...DEFAULT_PREFS.thick, ...v.thick }, colorIdx: { ...DEFAULT_PREFS.colorIdx, ...v.colorIdx }, penOpts: { ...DEFAULT_PREFS.penOpts, ...v.penOpts }, textStyle: { ...DEFAULT_TEXT, ...v.textStyle } }
   } catch { /* ignore */ }
   return DEFAULT_PREFS
 }
@@ -70,7 +70,7 @@ export function buildCanvasTool(tool: ToolId, p: ToolPrefs, readOnly: boolean): 
   const k = colorKey(tool, p)
   const base: CanvasTool = {
     kind: 'none', color: p.colors[p.colorIdx[k]] ?? '#000', width: WIDTHS[k][p.thick[k]], pen: p.penType, opts: p.penOpts[p.penType], stab: p.stab,
-    eraser: p.eraser, eraserSize: ERASER_SIZES[p.eraserSize], erHl: p.erHl, shape: p.shape, fill: p.fill, autoShape: p.autoShape,
+    eraser: p.eraser, eraserSize: ERASER_SIZES[p.eraserSize], erFilter: p.erFilter, shape: p.shape, fill: p.fill, autoShape: p.autoShape,
     lassoMode: p.lassoMode, lassoStrokes: p.lassoStrokes, lassoObjects: p.lassoObjects,
   }
   if (readOnly) return base

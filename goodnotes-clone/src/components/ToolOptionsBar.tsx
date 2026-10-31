@@ -95,8 +95,13 @@ export function OptionsBar({ tool, prefs, set, anchors, popover, onPop, onTextSt
     </>)
   }
   if (tool === 'eraser') {
+    const flt = prefs.erFilter
+    const toggle = (k: keyof typeof flt, label: string, I: (p: { size?: number }) => JSX.Element) => (
+      <Opt key={k} tone="sel" w={34} active={flt[k]} label={`${t('Radierfilter')}: ${t(label)}`} onClick={() => set((p) => ({ ...p, erFilter: { ...p.erFilter, [k]: !p.erFilter[k] } }))}><I size={20} /></Opt>
+    )
     return wrap(<>
-      <Opt label={t('Pixelradierer')} active={prefs.eraser === 'pixel'} onClick={() => set((p) => ({ ...p, eraser: 'pixel' }))}><PixelEraserI size={23} /></Opt>
+      <Opt label={t('Präzisionsradierer')} active={prefs.eraser === 'precision'} onClick={() => set((p) => ({ ...p, eraser: 'precision' }))}><PixelEraserI size={23} /></Opt>
+      <Opt label={t('Standardradierer')} active={prefs.eraser === 'standard'} onClick={() => set((p) => ({ ...p, eraser: 'standard' }))}><EraserI size={23} /></Opt>
       <Opt label={t('Strichradierer')} active={prefs.eraser === 'stroke'} onClick={() => set((p) => ({ ...p, eraser: 'stroke' }))}><StrokeEraserI size={23} /></Opt>
       <Sep />
       {[0, 1, 2].map((i) => (
@@ -105,10 +110,7 @@ export function OptionsBar({ tool, prefs, set, anchors, popover, onPop, onTextSt
         </Opt>
       ))}
       <Sep />
-      <button aria-pressed={prefs.erHl} onClick={() => set((p) => ({ ...p, erHl: !p.erHl }))}
-        className={`mr-1 flex h-[30px] items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[14px] font-semibold ${prefs.erHl ? 'bg-accent text-white' : 'bg-chip text-ink'}`}>
-        <HighlighterI size={16} />{t('Nur Textmarker')}
-      </button>
+      {toggle('pen', 'Stift', PenI)}{toggle('highlighter', 'Textmarker', HighlighterI)}{toggle('tape', 'Washi-Tape', WashiI)}
     </>)
   }
   if (tool === 'shapes') {

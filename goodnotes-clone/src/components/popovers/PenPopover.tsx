@@ -33,8 +33,8 @@ export default function PenPopover({ anchor, open, onClose, prefs, set }: Props)
   useEffect(() => { if (!open) setView('main') }, [open])
   const o = prefs.penOpts[prefs.penType]
   const setOpt = (patch: Partial<typeof o>) => set((p) => ({ ...p, penOpts: { ...p.penOpts, [p.penType]: { ...p.penOpts[p.penType], ...patch } } }))
-  const Cap = ({ label, value, children }: { label: string; value: string; children: React.ReactNode }) => (
-    <div className="px-3.5 pb-0.5 pt-3 [&:not(:first-child)]:border-t [&:not(:first-child)]:border-hair">
+  const Cap = ({ label, value, children, off }: { label: string; value: string; children: React.ReactNode; off?: boolean }) => (
+    <div className={`px-3.5 pb-0.5 pt-3 [&:not(:first-child)]:border-t [&:not(:first-child)]:border-hair ${off ? 'pointer-events-none opacity-40' : ''}`}>
       <div className="flex justify-between text-[16px] uppercase tracking-wide"><span>{label}</span><span className="normal-case">{value}</span></div>{children}
     </div>
   )
@@ -60,8 +60,8 @@ export default function PenPopover({ anchor, open, onClose, prefs, set }: Props)
           </div>
           <div className="h-3" />
           <Group>
-            <Cap label={t('Schärfe der Spitze')} value={`${o.sharp}%`}><Slider value={o.sharp} onChange={(v) => setOpt({ sharp: v })} ticks={5} step={5} /></Cap>
-            <Cap label={t('Druckempfindlichkeit')} value={`${o.press}%`}><Slider value={o.press} onChange={(v) => setOpt({ press: v })} ticks={5} step={5} /></Cap>
+            <Cap off={prefs.penType === 'ballpoint'} label={t('Schärfe der Spitze')} value={`${o.sharp}%`}><Slider value={o.sharp} onChange={(v) => setOpt({ sharp: v })} ticks={5} step={5} /></Cap>
+            <Cap off={prefs.penType === 'ballpoint'} label={t('Druckempfindlichkeit')} value={`${o.press}%`}><Slider value={o.press} onChange={(v) => setOpt({ press: v })} ticks={5} step={5} /></Cap>
             <Cap label={t('Rundung der Spitze')} value={t(ROUND[o.round])}><Slider value={o.round} min={0} max={3} ticks={4} onChange={(v) => setOpt({ round: v })} /></Cap>
             <Cap label={t('Strich-Stabilisierung')} value={`${prefs.stab}%`}><Slider value={prefs.stab} onChange={(v) => set((p) => ({ ...p, stab: v }))} step={5} /></Cap>
           </Group>
