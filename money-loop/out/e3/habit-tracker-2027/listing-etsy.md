@@ -34,14 +34,14 @@ Bitte beachten: Digitales Produkt, kein Versand. Nach dem Kauf erhältst du den 
 
 ## Kennzeichnung
 
-Mit Hilfe von Software erstellt: Dieser Planer wurde mit Hilfe von Software (eigenes Python-Skript, keine generative Bild-KI) automatisch erzeugt und vor Veröffentlichung von Hand geprüft. Etsy-Feld "Wer hat es hergestellt" und Angabe zu KI-/Tool-Einsatz im Shop vor dem Einstellen gegen die aktuelle Etsy-Richtlinie prüfen (Etsy Creativity Standards).
+Mit Hilfe von Software erstellt: Dieser Planer wurde mit Hilfe von Software (eigenes Python-Skript, keine generative Bild-KI) automatisch erzeugt. Vor Veröffentlichung von Hand zu prüfen. Etsy-Feld "Wer hat es hergestellt" und Angabe zu KI-/Tool-Einsatz im Shop vor dem Einstellen gegen die aktuelle Etsy-Richtlinie prüfen (Etsy Creativity Standards).
 
 ## Import in GoodNotes (iPad)
 
 1. PDF-Datei per Download-Link/Dateien-App auf das iPad laden.
 2. GoodNotes öffnen, Plus-Symbol, "Importieren", PDF auswählen.
 3. Bei "Als Dokument importieren" bleiben die Tabs und Links erhalten. Nicht als "Seiten in bestehendes Dokument" einfügen, wenn die Links zwischen den Seiten funktionieren sollen (Seitenverweise setzen die Seitenreihenfolge voraus).
-4. Tabs am rechten Rand, Haus-Symbol und Pfeile oben antippen (Lesemodus bzw. Stift deaktiviert); Monate und Wochen sind ebenfalls antippbar.
+4. Tabs am rechten Rand, Haus-Symbol und Pfeile oben antippen (Lesemodus bzw. Stift deaktiviert); Monate sind ebenfalls antippbar.
 5. Mit dem Apple Pencil direkt in die Felder schreiben. Notability: Import über "Importieren", Links sind dort ebenfalls aktiv.
 
 ## Preisvorschlag (Annahme)

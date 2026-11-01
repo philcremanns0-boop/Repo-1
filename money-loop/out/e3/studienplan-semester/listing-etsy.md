@@ -34,7 +34,7 @@ Bitte beachten: Digitales Produkt, kein Versand. Nach dem Kauf erhältst du den 
 
 ## Kennzeichnung
 
-Mit Hilfe von Software erstellt: Dieser Planer wurde mit Hilfe von Software (eigenes Python-Skript, keine generative Bild-KI) automatisch erzeugt und vor Veröffentlichung von Hand geprüft. Etsy-Feld "Wer hat es hergestellt" und Angabe zu KI-/Tool-Einsatz im Shop vor dem Einstellen gegen die aktuelle Etsy-Richtlinie prüfen (Etsy Creativity Standards).
+Mit Hilfe von Software erstellt: Dieser Planer wurde mit Hilfe von Software (eigenes Python-Skript, keine generative Bild-KI) automatisch erzeugt. Vor Veröffentlichung von Hand zu prüfen. Etsy-Feld "Wer hat es hergestellt" und Angabe zu KI-/Tool-Einsatz im Shop vor dem Einstellen gegen die aktuelle Etsy-Richtlinie prüfen (Etsy Creativity Standards).
 
 ## Import in GoodNotes (iPad)
 

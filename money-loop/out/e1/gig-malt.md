@@ -10,7 +10,7 @@ Hinweis: Malt verlangt eine Kundengebühr ab 10 Prozent (memory/recherche.md). B
 
 ## Beschreibung
 
-Viele Handwerksbetriebe schreiben Angebote und hören danach nichts mehr. Ich richte Ihnen einen Ablauf ein, der offene Angebote in Ihrer Google-Tabelle täglich prüft und für Angebote ohne Antwort nach 3 Tagen einen kurzen, höflichen Nachfass-Text als Gmail-Entwurf vorbereitet. Sie lesen den Entwurf, ändern ihn bei Bedarf und senden selbst. Es wird nichts automatisch verschickt.
+Offene Angebote bleiben oft unbeantwortet (Annahme, nicht belegt). Ich richte Ihnen einen Ablauf ein, der offene Angebote in Ihrer Google-Tabelle täglich prüft und für Angebote ohne Antwort nach 3 Tagen einen kurzen, höflichen Nachfass-Text als Gmail-Entwurf vorbereitet. Sie lesen den Entwurf, ändern ihn bei Bedarf und senden selbst. Es wird nichts automatisch verschickt.
 
 Technik: n8n (Workflow-Automation) und die Claude-API von Anthropic für die Textvorschläge.
 
@@ -44,7 +44,7 @@ Alle Preise sind Vorschläge (E), nicht durch Marktdaten belegt. Vor Veröffentl
 - Die Kundendaten (Name, E-Mail, Angebotsinhalt) werden an die Claude-API von Anthropic übermittelt, um den Text zu erzeugen. Prüfen Sie dafür den Auftragsverarbeitungsvertrag (AVV) bzw. die Datenverarbeitungsbedingungen von Anthropic, Google und n8n.
 - Wenn ich auf Ihre Systeme zugreife, bin ich in der Regel Auftragsverarbeiter. Dafür schließen wir vor Beginn einen AVV (Vorlage beim Kunden bzw. von Ihnen zu prüfen). VOR VEROEFFENTLICHUNG PRUEFEN: Wortlaut mit Datenschutzbeauftragten oder Anwalt klären.
 - Beachten Sie die Einwilligung bzw. Rechtsgrundlage der Angebotsempfänger. Nachfassen auf ein von Ihnen gesendetes Angebot ist eine andere Situation als Kaltakquise, die Einordnung nach UWG und DSGVO liegt aber bei Ihnen. Der Workflow sendet nur an Empfänger, die in der Tabelle mit Einwilligung markiert sind.
-- Daten nur minimal übergeben (keine Preise oder Adressen, wenn nicht nötig). Empfehlung: Löschfristen in der Tabelle festlegen.
+- Daten nur minimal übergeben (der Workflow übergibt derzeit Kundenname und Angebotssumme an die Anthropic API; im Workflow anpassbar). Empfehlung: Löschfristen in der Tabelle festlegen.
 - Der Entwurf muss vor dem Senden von Ihnen geprüft werden. Keine Gewähr für Inhalte, die ein Sprachmodell erzeugt.
 
 ## Abgrenzung
